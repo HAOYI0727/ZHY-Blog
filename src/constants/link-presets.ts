@@ -6,7 +6,7 @@ import I18nKey from "@i18n/i18nKey";
 export const LinkPresets: { [key in LinkPreset]: NavbarLink } = {
     [LinkPreset.Home]: {
         name: i18n(I18nKey.home),
-        url: "/",
+        url: "/?view=home",
         icon: "material-symbols:home",
         description: i18n(I18nKey.homeDescription),
     },

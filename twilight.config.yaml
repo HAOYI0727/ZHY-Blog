@@ -124,7 +124,8 @@ site:
     # 加载页配置
     loadingOverlay:
         # 是否启用加载页
-        enable: true
+        # 关闭遮罩，让服务端输出的内容立即可见；页面切换仍由 Swup 提供平滑过渡。
+        enable: false
         # 是否等待所有资源 (如图片、样式表) 加载完成
         waitForAllResources: false
         # 加载标题配置
@@ -404,18 +405,8 @@ particle:
 musicPlayer:
     # 启用音乐播放器功能
     enable: true
-    # 默认模式 ("meting" API | "local" 本地)
+    # 固定使用本地资源
     mode: "local"
-    # meting 模式专属配置
-    meting:
-        # Meting API 地址
-        meting_api: "https://meting.spr-aachen.com/api"
-        # 音乐平台
-        server: "netease"
-        # 类型 ("playlist" 歌单 | "song" 单曲)
-        type: "playlist"
-        # 资源 ID
-        id: "2161912966"
     # local 模式专属配置
     local:
         # 播放列表
@@ -720,8 +711,8 @@ musicPlayer:
                 lrc: ""
                 # 时长
                 duration: 157
-    # 是否自动播放
-    autoplay: true
+    # 避免浏览器拦截自动播放并弹出错误提示，由用户主动开始播放
+    autoplay: false
 
 # 看板娘配置
 pio:

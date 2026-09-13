@@ -6,6 +6,8 @@ declare global {
     }
 
     interface Window {
+        loadPagefind?: () => Promise<void>;
+        __pagefindLoadPromise?: Promise<void>;
         // Define swup type directly since @swup/astro doesn't export AstroIntegration
         swup: any;
         semifullScrollHandler: (() => void) | null;

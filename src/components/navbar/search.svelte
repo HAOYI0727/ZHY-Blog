@@ -21,7 +21,6 @@ let isDesktopSearchExpanded = $state(false);
 let isMobilePanelOpen = $state(false);
 let selectedIndex = $state(-1);
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
-let initializationTimer: ReturnType<typeof setTimeout> | undefined;
 let requestSequence = 0;
 let lastFocusedElement: HTMLElement | null = null;
 
@@ -53,6 +52,7 @@ function focusSearchInput(desktop: boolean) {
 }
 
 function openSearch() {
+    document.dispatchEvent(new CustomEvent("twilight:search-intent"));
     const desktop = window.matchMedia("(min-width: 1280px)").matches;
     if (!panelVisible && !isDesktopSearchExpanded) {
         lastFocusedElement = document.activeElement as HTMLElement | null;
@@ -82,6 +82,7 @@ function toggleMobilePanel() {
 }
 
 function expandDesktopSearch() {
+    document.dispatchEvent(new CustomEvent("twilight:search-intent"));
     isDesktopSearchExpanded = true;
 }
 
@@ -217,21 +218,15 @@ function handleGlobalKeydown(event: KeyboardEvent) {
 }
 
 function handlePagefindReady() {
-    if (initializationTimer) {
-        clearTimeout(initializationTimer);
-        initializationTimer = undefined;
-    }
     pagefindLoaded = !!window.pagefind && typeof window.pagefind.search === "function";
     initialized = true;
+    if (keyword.trim()) void search(keyword);
 }
 
 function handlePagefindError() {
-    if (initializationTimer) {
-        clearTimeout(initializationTimer);
-        initializationTimer = undefined;
-    }
     pagefindLoaded = false;
     initialized = true;
+    if (keyword.trim()) status = "unavailable";
 }
 
 onMount(() => {
@@ -245,8 +240,6 @@ onMount(() => {
         document.addEventListener("pagefindloaderror", handlePagefindError);
         if (window.pagefind && typeof window.pagefind.search === "function") {
             handlePagefindReady();
-        } else {
-            initializationTimer = setTimeout(handlePagefindError, 2500);
         }
     }
 
@@ -255,12 +248,10 @@ onMount(() => {
         document.removeEventListener("keydown", handleGlobalKeydown);
         document.removeEventListener("pagefindready", handlePagefindReady);
         document.removeEventListener("pagefindloaderror", handlePagefindError);
-        if (initializationTimer) clearTimeout(initializationTimer);
     };
 });
 
 $effect(() => {
-    if (!initialized) return;
     const query = keyword.trim();
     if (debounceTimer) clearTimeout(debounceTimer);
     if (!query) {
@@ -268,6 +259,10 @@ $effect(() => {
         result = [];
         status = "idle";
         selectedIndex = -1;
+        return;
+    }
+    if (!initialized) {
+        status = "loading";
         return;
     }
     selectedIndex = -1;

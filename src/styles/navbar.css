@@ -198,12 +198,52 @@
 }
 
 /* 手机端导航栏 */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
     #navbar > div {
         max-width: none !important;
         width: 100% !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
+        padding-left: 0.45rem !important;
+        padding-right: 0.45rem !important;
+        gap: 0.2rem;
+    }
+
+    #navbar .navbar-nav-links {
+        flex: 1 1 auto;
+        justify-content: flex-start;
+        gap: 0.08rem;
+    }
+
+    #navbar .nav-link-item {
+        width: auto;
+        height: 2.5rem;
+        padding: 0 0.42rem;
+        font-size: 0.76rem;
+        white-space: nowrap;
+    }
+
+    #navbar .nav-link-text {
+        display: inline !important;
+        margin-left: 0;
+    }
+
+    #navbar .nav-link-icon,
+    #navbar .dropdown-arrow {
+        display: none;
+    }
+
+    #navbar .nav-link-container:last-child .dropdown-menu {
+        right: 0;
+        left: auto;
+    }
+
+    #navbar .navbar-buttons {
+        flex: 0 0 auto;
+    }
+
+    #navbar .navbar-buttons > :not(:first-child) {
+        display: none !important;
     }
 }
 /* 手机端导航栏 - 小屏 */
@@ -217,9 +257,7 @@
         width: 100% !important;
     }
 
-    #navbar-buttons {
-        gap: 0.123rem !important;
-    }
+    #navbar-buttons { gap: 0 !important; }
     /* Only size the trigger buttons; do not affect nested buttons inside panels */
     #navbar-buttons button:not(.float-panel *) {
         width: 2.4rem !important;
@@ -227,19 +265,11 @@
         padding: 0 !important;
     }
 
-    /* home button */
-    #navbar > div > a:first-child {
-        width: 7.2rem !important;
-        height: 2.4rem !important;
-        padding: 0 !important;
-    }
 }
 
 /* 手机端导航栏 - 更小屏 */
 @media (min-width: 333px) and (max-width: 444px) {
-    #navbar-buttons {
-        gap: 0.111rem !important;
-    }
+    #navbar-buttons { gap: 0 !important; }
     /* Only size the trigger buttons; do not affect nested buttons inside panels */
     #navbar-buttons button:not(.float-panel *) {
         width: 2.1rem !important;
@@ -247,12 +277,7 @@
         padding: 0 !important;
     }
 
-    /* home button */
-    #navbar > div > a:first-child {
-        width: 6.3rem !important;
-        height: 2.1rem !important;
-        padding: 0 !important;
-    }
+    #navbar .nav-link-item { padding: 0 0.32rem; font-size: 0.71rem; }
 }
 
 /* 手机端导航栏按钮 -超小屏 */
@@ -262,8 +287,6 @@
         justify-content: flex-end !important;
     }
 
-    /* Hide home button text (keep icon) */
-    #navbar > div > a:first-child > div {
-        font-size: 0 !important;
-    }
+    #navbar .nav-link-item { padding: 0 0.22rem; font-size: 0.66rem; }
+    #navbar-buttons button:not(.float-panel *) { width: 2rem !important; min-width: 2rem !important; }
 }

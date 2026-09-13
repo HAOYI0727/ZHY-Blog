@@ -1,7 +1,3 @@
-import { i18n } from "@i18n/translation";
-import Key from "@i18n/i18nKey";
-import type { MusicPlayerTrack } from "@/types/config";
-
 // Storage keys for local storage
 export const STORAGE_KEYS = {
     USER_PAUSED: "player_user_paused",
@@ -26,7 +22,8 @@ export function formatTime(seconds: number): string {
  * Get absolute asset path
  */
 export function getAssetPath(path: string): string {
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    // 音乐播放器只允许站点本地资源，防止配置误触发云端请求。
+    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("//")) return "";
     if (path.startsWith("/")) return path;
     return `/${path}`;
 }
@@ -73,10 +70,11 @@ export function parseLRC(lrc: string): { time: number; text: string }[] {
  */
 export async function fetchLyrics(lrcSource: string): Promise<string> {
     if (!lrcSource) return "";
+    if (/^(?:https?:)?\/\//i.test(lrcSource)) return "";
     
     const assetPath = getAssetPath(lrcSource);
     
-    if (assetPath.startsWith('http') || assetPath.startsWith('/')) {
+    if (assetPath.startsWith('/')) {
          try {
              const res = await fetch(assetPath);
              if (res.ok) {
@@ -89,54 +87,6 @@ export async function fetchLyrics(lrcSource: string): Promise<string> {
         return lrcSource;
     }
     return "";
-}
-
-/**
- * Fetch playlist from Meting API
- */
-export async function fetchMetingPlaylist(
-    api: string,
-    server: string,
-    type: string,
-    id: string
-): Promise<MusicPlayerTrack[]> {
-    if (!api || !id) return [];
-    
-    const query = new URLSearchParams({
-        server: server,
-        type: type,
-        id: id,
-        r: Math.random().toString(), // Prevent caching
-    });
-    const separator = api.includes("?") ? "&" : "?";
-    const apiUrl = `${api}${separator}${query.toString()}`;
-    
-    try {
-        const res = await fetch(apiUrl);
-        if (!res.ok) throw new Error("meting api error");
-        const list = await res.json();
-        
-        return list.map((song: any, index: number) => {
-            let title = song.title ?? song.name ?? i18n(Key.musicUnknownTrack);
-            let author = song.author ?? song.artist ?? i18n(Key.musicUnknownArtist);
-            let cover = song.pic ?? song.cover ?? "";
-            let dur = song.duration ?? 0;
-            if (dur > 10000) dur = Math.floor(dur / 1000);
-            if (!Number.isFinite(dur) || dur <= 0) dur = 0;
-            return {
-                id: song.id ?? `meting-${index}`,
-                title,
-                author,
-                cover,
-                url: song.url ?? "",
-                lrc: song.lrc ?? "",
-                duration: dur,
-            };
-        });
-    } catch (e) {
-        console.error("Failed to fetch meting playlist", e);
-        throw e;
-    }
 }
 
 /**

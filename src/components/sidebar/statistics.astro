@@ -6,6 +6,16 @@ import StatsCharts from "./statistics.svelte";
 const posts = await getSortedPostsList();
 const categories = await getCategoryList();
 const tags = await getTagList();
+// 图表只需要发布日期；避免把完整文章对象重复序列化进三个响应式侧栏。
+const publishedDates = posts
+    .map((post) => post.data.published)
+    .filter(Boolean)
+    .map((date) => new Date(date).toISOString().slice(0, 10));
+const chartCategories = categories.map(({ name, count }) => ({ name, count }));
+const chartTags = [...tags]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8)
+    .map(({ name, count }) => ({ name, count }));
 
 interface Props {
     class?: string;
@@ -16,4 +26,12 @@ interface Props {
 const { class: className, style, side } = Astro.props;
 ---
 
-<StatsCharts client:visible {posts} {categories} {tags} class={className} style={style} {side} />
+<StatsCharts
+    client:visible
+    {publishedDates}
+    categories={chartCategories}
+    tags={chartTags}
+    class={className}
+    style={style}
+    {side}
+/>

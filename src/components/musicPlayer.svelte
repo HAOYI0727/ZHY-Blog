@@ -11,7 +11,6 @@ import {
     getAssetPath, 
     parseLRC, 
     fetchLyrics, 
-    fetchMetingPlaylist as fetchMetingPlaylistUtil,
     fadeInAudio 
 } from "@/utils/music";
 import { i18n } from "@i18n/translation";
@@ -19,16 +18,6 @@ import Key from "@i18n/i18nKey";
 import "@styles/musicplayer.css";
 
 
-// 音乐播放器模式，可选 "local" 或 "meting"
-let mode = $state(musicPlayerConfig.mode ?? "meting");
-// Meting API 地址，从配置中获取或使用默认值
-let meting_api = musicPlayerConfig.meting?.meting_api ?? "https://meting.spr-aachen.com/api";
-// Meting API 的数据源，从配置中获取或使用默认值
-let meting_server = musicPlayerConfig.meting?.server ?? "netease";
-// Meting API 的类型，从配置中获取或使用默认值
-let meting_type = musicPlayerConfig.meting?.type ?? "playlist";
-// Meting API 的 ID，从配置中获取或使用默认值
-let meting_id = musicPlayerConfig.meting?.id ?? "2161912966";
 // 是否启用自动播放，从配置中获取或使用默认值
 let isAutoplayEnabled = $state(musicPlayerConfig.autoplay ?? false);
 
@@ -206,57 +195,6 @@ function showErrorMessage(message: string) {
     setTimeout(() => {
         showError = false;
     }, 3000);
-}
-
-async function fetchMetingPlaylist() {
-    if (!meting_api || !meting_id) return;
-    isLoading = true;
-    try {
-        playlist = await fetchMetingPlaylistUtil(
-            meting_api,
-            meting_server,
-            meting_type,
-            meting_id
-        );
-        if (playlist.length > 0) {
-            // 使用 setTimeout 确保 Svelte 响应式变量已更新
-            setTimeout(() => {
-                restoreLastSong();
-            }, 0);
-        }
-        isLoading = false;
-    } catch (e) {
-        showErrorMessage(i18n(Key.musicMetingFailed));
-        isLoading = false;
-    }
-}
-
-async function toggleMode() {
-    if (!musicPlayerConfig.enable) return;
-    mode = mode === "meting" ? "local" : "meting";
-    showPlaylist = false;
-    isLoading = false;
-    isPlaying = false;
-    currentIndex = 0;
-    playlist = [];
-    if (audio) {
-        audio.pause();
-        audio.currentTime = 0;
-    }
-    currentTime = 0;
-    duration = 0;
-    if (mode === "meting") {
-        await fetchMetingPlaylist();
-    } else {
-        playlist = [...(musicPlayerConfig.local?.playlist ?? [])];
-        if (playlist.length > 0) {
-            setTimeout(() => {
-                restoreLastSong();
-            }, 0);
-        } else {
-            showErrorMessage(i18n(Key.musicEmptyPlaylist));
-        }
-    }
 }
 
 function togglePlay() {
@@ -610,18 +548,14 @@ onMount(() => {
     if (!musicPlayerConfig.enable) {
         return;
     }
-    if (mode === "meting") {
-        fetchMetingPlaylist();
+    // 播放器只读取站点内的本地播放列表，不保留任何云端/API 分支。
+    playlist = [...(musicPlayerConfig.local?.playlist ?? [])];
+    if (playlist.length > 0) {
+        setTimeout(() => {
+            restoreLastSong();
+        }, 0);
     } else {
-        // 使用本地播放列表，不发送任何API请求
-        playlist = [...(musicPlayerConfig.local?.playlist ?? [])];
-        if (playlist.length > 0) {
-            setTimeout(() => {
-                restoreLastSong();
-            }, 0);
-        } else {
-            showErrorMessage(i18n(Key.musicEmptyPlaylist));
-        }
+        showErrorMessage(i18n(Key.musicEmptyPlaylist));
     }
 });
 
@@ -669,18 +603,6 @@ onDestroy(() => {
             <div class="playlist-header flex items-center justify-between p-4 border-b border-(--line-divider)">
                 <h3 class="text-lg font-semibold text-90">{i18n(Key.playlist)}</h3>
                 <div class="flex items-center gap-1">
-                    {#if mode === "meting"}
-                        <button type="button" aria-label={i18n(Key.musicRefresh)} class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center"
-                                onclick={fetchMetingPlaylist}
-                                disabled={isLoading}
-                                title={i18n(Key.musicRefresh)}>
-                            {#if isLoading}
-                                <Icon icon="eos-icons:loading" class="text-lg" />
-                            {:else}
-                                <Icon icon="material-symbols:refresh" class="text-lg" />
-                            {/if}
-                        </button>
-                    {/if}
                     <button type="button" aria-label={i18n(Key.musicClosePlaylist)} class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center" onclick={togglePlaylist}>
                         <Icon icon="material-symbols:close" class="text-lg" />
                     </button>
@@ -774,11 +696,10 @@ onDestroy(() => {
                 </div>
             </div>
             <div class="flex items-center gap-1">
-                <button type="button" aria-label={mode === "meting" ? i18n(Key.musicSwitchToLocal) : i18n(Key.musicSwitchToMeting)} class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center"
-                        onclick={toggleMode}
-                        title={mode === "meting" ? i18n(Key.musicSwitchToLocal) : i18n(Key.musicSwitchToMeting)}>
-                    <Icon icon={mode === "meting" ? "material-symbols:cloud" : "material-symbols:folder"} class="text-lg" />
-                </button>
+                <span class="inline-flex h-8 items-center gap-1 rounded-lg px-2 text-xs text-50" title="仅使用站点本地音乐">
+                    <Icon icon="material-symbols:folder" class="text-base text-(--primary)" />
+                    本地
+                </span>
                 <button type="button" aria-label={i18n(Key.playlist)} class="btn-plain w-8 h-8 rounded-lg flex items-center justify-center"
                         class:text-(--primary)={showPlaylist}
                         onclick={togglePlaylist}

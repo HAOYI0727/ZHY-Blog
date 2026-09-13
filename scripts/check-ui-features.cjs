@@ -63,9 +63,16 @@ if (requireFile(homeHtmlPath, "首页继续阅读入口")) {
     if (!homeHtml.includes('id="progress-bar-wrapper"')) fail("全局阅读进度条未输出");
     if (!homeHtml.includes('id="welcome-gateway"')) fail("首页缺少沉浸式欢迎入口");
     if (!homeHtml.includes('id="welcome-enter"')) fail("欢迎入口缺少进入网站按钮");
-    if ((homeHtml.match(/class="welcome-latest group"/g) || []).length !== 3) fail("欢迎页应展示三篇最新文章");
+    if (homeHtml.includes('class="welcome-latest')) fail("欢迎页不应继续展示最新灵感卡片");
     if ((homeHtml.match(/class="welcome-topic"/g) || []).length < 4) fail("欢迎页缺少全部分类入口");
-    if ((homeHtml.match(/class="welcome-feature"/g) || []).length !== 4) fail("欢迎页快捷导航不完整");
+    if ((homeHtml.match(/class="welcome-portal-major"/g) || []).length !== 4) fail("欢迎页应展示四个重点入口");
+    if ((homeHtml.match(/class="welcome-portal-minor"/g) || []).length !== 4) fail("欢迎页应展示四个次级入口");
+    for (const route of ["/posts/", "/archive/", "/albums/", "/diary/", "/projects/", "/skills/", "/timeline/", "/about/"]) {
+        if (!homeHtml.includes(`href="${route}"`)) fail(`欢迎页缺少 ${route} 入口`);
+    }
+    if (homeHtml.includes('<h1 id="welcome-title"')) fail("欢迎页标语不应占用一级标题语义");
+    if (!homeHtml.includes('<p id="welcome-title"')) fail("欢迎页缺少非标题语义的主标语");
+    if (!homeHtml.includes('href="/?view=home" data-enter-home-directly')) fail("顶部主页图标未直达主页内容");
     if (!homeHtml.includes('class="welcome-topic-bubbles"')) fail("欢迎页分类未使用气泡布局");
     if (!homeHtml.includes('class="welcome-scanline')) fail("欢迎页缺少科技扫描光效果");
     if (homeHtml.includes("data-featured")) fail("欢迎页最新文章卡片尺寸不统一");
@@ -89,6 +96,7 @@ if (requireFile(representativePostPath, "文章全屏壁纸页")) {
     if (!postHtml.includes('class="related-posts card-base')) fail("文章页缺少相关文章推荐");
     if (!postHtml.includes("data-reading-status")) fail("文章页缺少剩余阅读时间状态");
     if (!postHtml.includes('href="/?view=home"')) fail("文章返回按钮未直达主页内容");
+    if (!postHtml.includes("<post-engagement")) fail("文章页缺少浏览、点赞与热度组件");
     if ((postHtml.match(/class="collection-card group/g) || []).length < 3) {
         fail("文章页相关文章推荐不足三篇");
     }
@@ -116,9 +124,10 @@ const sourceContracts = [
     [
         join(projectRoot, "src", "components", "WelcomeGateway.astro"),
         [
-            ["syncWithRoute", "欢迎页随首页路由重复展示"],
-            ["consumeDirectHomeIntent", "文章返回主页时跳过欢迎页一次"],
-            ['window.swup.hooks.on("page:view", syncWithRoute)', "无刷新返回首页时重开欢迎页"],
+            ["syncWithRoute", "欢迎导航与首页路由同步"],
+            ["consumeViewIntent", "欢迎导航与主页意图处理"],
+            ['navigationEntry?.type === "reload"', "刷新时直接进入主页"],
+            ['window.swup.hooks.on("page:view", syncWithRoute)', "无刷新导航状态同步"],
             ["data-welcome-link", "欢迎页内容导航"],
             ["allCategories.map", "欢迎页完整分类气泡"],
             ["is-opening", "欢迎页进入主页揭幕动画"],
@@ -158,6 +167,29 @@ const sourceContracts = [
         [
             ["mobile-nav-open", "移动导航背景滚动锁定"],
             ["backdrop-blur-[2px]", "移动导航遮罩"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "styles", "navbar.css"),
+        [
+            ["#navbar .nav-link-text", "移动端常显导航文字"],
+            ["#navbar .navbar-buttons > :not(:first-child)", "移动端隐藏次要外观工具"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "components", "sidebar", "statistics.svelte"),
+        [
+            ["buildActivity(timeScale)", "移动端完整统计图"],
+            ["radarChart(labels.categories", "分类雷达图"],
+            ["radarChart(labels.tags", "标签雷达图"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "utils", "directory.ts"),
+        [
+            ["const rootOrder", "目录顶层顺序"],
+            ["rootMap.posts", "目录文章入口"],
+            ["rootMap.timeline", "目录时间线入口"],
         ],
     ],
     [
@@ -235,6 +267,40 @@ const sourceContracts = [
         ],
     ],
     [
+        join(projectRoot, "src", "pages", "posts", "index.astro"),
+        [
+            ['data-post-view-button="month"', "文章页默认年月浏览模式"],
+            ['data-post-view-button="topic"', "文章页分类标签浏览模式"],
+            ["setupPostBrowseSwitcher", "文章浏览模式切换逻辑"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "components", "post", "PostEngagement.astro"),
+        [
+            ["/api/engagement/", "文章互动服务端接口"],
+            ["requestStats", "文章互动远端同步"],
+            ["blog-post-engagement-v1", "文章互动本地缓存"],
+            ["data-post-like", "文章点赞交互"],
+            ["data-post-heat", "文章热度展示"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "pages", "api", "engagement.ts"),
+        [
+            ["export const prerender = false", "文章互动动态接口"],
+            ["UPSTASH_REDIS_REST_URL", "文章互动持久数据库配置"],
+            ["HINCRBY", "文章互动原子计数"],
+            ['storage: "persistent"', "文章互动持久化响应"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "components", "musicPlayer.svelte"),
+        [
+            ["musicPlayerConfig.local?.playlist", "音乐播放器仅加载本地列表"],
+            ["仅使用站点本地音乐", "音乐播放器本地模式提示"],
+        ],
+    ],
+    [
         join(projectRoot, "src", "styles", "transition.css"),
         [
             ["内容默认必须可见", "首屏内容可见性安全策略"],
@@ -275,6 +341,9 @@ const musicPlayer = config?.musicPlayer;
 if (!musicPlayer?.enable) {
     fail("musicPlayer.enable 必须保持为 true");
 } else {
+    if (musicPlayer.mode !== "local") fail("音乐播放器必须使用 local 模式");
+    if (musicPlayer.meting) fail("音乐播放器配置不应保留云端 Meting 接口");
+
     const playlist = musicPlayer.local?.playlist || [];
     if (playlist.length === 0) {
         fail("本地音乐播放列表为空");
@@ -288,6 +357,14 @@ if (!musicPlayer?.enable) {
             requireFile(assetPath, `音乐 #${track.id} 的 ${field} 资源`);
         }
     }
+}
+
+const musicPlayerSource = readFileSync(
+    join(projectRoot, "src", "components", "musicPlayer.svelte"),
+    "utf8",
+);
+if (/fetchMetingPlaylist|metingApi|metingServer|metingType|metingId/.test(musicPlayerSource)) {
+    fail("音乐播放器源码不应保留云端接口分支");
 }
 
 if (process.exitCode) {

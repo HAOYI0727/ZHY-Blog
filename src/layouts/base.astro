@@ -134,10 +134,11 @@ const bannerOffset =
     bannerOffsetByPosition[siteConfig.wallpaper.position || "center"];
 
 const { enabled: analyticsEnabled, code: analyticsCode } = getAnalyticsConfig();
+const loadingOverlayEnabled = siteConfig.loadingOverlay?.enable ?? true;
 ---
 
 <!DOCTYPE html>
-<html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px] is-loading"
+<html lang={siteLang} class:list={["bg-(--page-bg) text-[14px] md:text-[16px]", { "is-loading": loadingOverlayEnabled }]}
 >
     <head>
         <meta charset="UTF-8" />
@@ -266,7 +267,7 @@ const { enabled: analyticsEnabled, code: analyticsCode } = getAnalyticsConfig();
         <!-- Analytics -->
         {analyticsEnabled && analyticsCode && <Fragment set:html={analyticsCode} />}
         <!-- Music Player - 仅在启用时加载 -->
-        {musicPlayerConfig.enable && <MusicPlayer client:load />}
+        {musicPlayerConfig.enable && <MusicPlayer client:idle />}
         <!-- Pio 看板娘组件 - 如果启用了侧边栏，可能需要调整 z-index -->
         {pioConfig.enable && <Pio client:visible />}
         <!-- increase the page height during page transition to prevent the scrolling animation from jumping -->
@@ -355,8 +356,6 @@ import { initTheme } from "@utils/theme";
 import { initHue } from "@utils/hue";
 import { initMarkdownActions } from "@/utils/markdown";
 import { initFancybox, cleanupFancybox } from "@utils/fancybox";
-import { loadAndInitTranslate } from "@utils/language";
-import { setupParticleEffects } from "@/utils/particle";
 import { initReadingContinuity } from "@utils/readingContinuity";
 import { initPostShare } from "@utils/postShare";
 
@@ -397,7 +396,9 @@ const setup = () => {
         }
         // Change banner height immediately when a link is clicked
         const bodyElement = document.querySelector('body')
-        const isHomePage = pathsEqual(visit.to.url, url('/'))
+        const nextUrl = new URL(visit.to.url, window.location.origin)
+        const nextPathname = nextUrl.pathname
+        const isHomePage = pathsEqual(nextPathname, url('/'))
         if (isHomePage) {
             bodyElement!.classList.add('is-home');
         } else {
@@ -419,7 +420,7 @@ const setup = () => {
         }
         // Handle animation logic for persistent sidebar components
         const currentPath = window.location.pathname;
-        const nextPath = visit.to.url;
+        const nextPath = nextPathname;
         pausedElementIds.clear();
         const width = window.innerWidth;
         const deviceType = width >= BREAKPOINT_LG ? 'desktop' : (width >= BREAKPOINT_MD ? 'tablet' : 'mobile');
@@ -567,11 +568,35 @@ initReadingContinuity();
 // Bind article share controls on direct loads and after every Swup navigation.
 initPostShare();
 
-// Initialize translate.js
-loadAndInitTranslate();
+// 翻译库体积较大：仅在用户选择过非默认语言或真正点击翻译时加载。
+window.loadTranslateScript = async () => {
+    const { loadAndInitTranslate } = await import("@utils/language");
+    await loadAndInitTranslate();
+};
+if (localStorage.getItem("selected-language")) {
+    const restoreTranslation = () => window.loadTranslateScript?.();
+    const requestIdle = (window as any).requestIdleCallback;
+    if (typeof requestIdle === "function") {
+        requestIdle(restoreTranslation, { timeout: 2500 });
+    } else {
+        window.setTimeout(restoreTranslation, 1200);
+    }
+}
 
-// Initialize particle effects
-setupParticleEffects();
+// 装饰性粒子在页面空闲后再启动；触摸设备和减少动态效果偏好下不占用帧预算。
+const canRunAmbientEffects = window.matchMedia("(min-width: 768px) and (pointer: fine) and (prefers-reduced-motion: no-preference)").matches;
+if (canRunAmbientEffects) {
+    const startParticles = async () => {
+        const { setupParticleEffects } = await import("@utils/particle");
+        setupParticleEffects();
+    };
+    const requestIdle = (window as any).requestIdleCallback;
+    if (typeof requestIdle === "function") {
+        requestIdle(startParticles, { timeout: 3000 });
+    } else {
+        window.setTimeout(startParticles, 1600);
+    }
+}
 
 // Remove is-loading class and trigger initial-animation after page load.
 // The reveal path is idempotent and includes a watchdog so content can never stay hidden.
@@ -592,6 +617,10 @@ if (typeof window !== 'undefined') {
     const onPageLoaded = () => {
         if (pageRevealed) return;
         pageRevealed = true;
+        if (!document.documentElement.classList.contains('is-loading')) {
+            finishReveal();
+            return;
+        }
         const overlay = document.getElementById('loading-overlay');
         const enableBanner = document.body.classList.contains('enable-banner');
 

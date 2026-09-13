@@ -2,11 +2,12 @@
 import { Icon } from "astro-icon/components";
 
 import { profileConfig, siteConfig } from "@/config";
+import { sortedAlbums } from "@utils/albums";
+import { sortedMoments } from "@utils/diary";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
-import { formatDateToYYYYMMDD } from "@utils/date";
 import { getCategoryList, getSortedPostsList } from "@utils/post";
-import { getCategoryUrl, getPostUrl, pathsEqual, url } from "@utils/url";
+import { getCategoryUrl, pathsEqual, url } from "@utils/url";
 
 const wallpaperSource = siteConfig.wallpaper.src;
 const desktopImages = typeof wallpaperSource === "string"
@@ -20,42 +21,102 @@ const mobileImages = typeof wallpaperSource === "object" && !Array.isArray(wallp
 
 const allPosts = await getSortedPostsList();
 const categories = await getCategoryList();
-const latestPosts = allPosts.slice(0, 3);
+const visibleAlbumCount = sortedAlbums.filter((album) => album.visible).length;
 const allCategories = categories.slice().sort((a, b) => b.count - a.count);
 const maxCategoryCount = Math.max(...allCategories.map((category) => category.count), 1);
 const publishedYears = allPosts.map((post) => post.data.published.getFullYear());
 const yearRange = publishedYears.length
     ? `${Math.min(...publishedYears)}—${Math.max(...publishedYears)}`
     : "—";
+const primaryPortals = [
+    {
+        href: "/posts/",
+        icon: "material-symbols:article-outline-rounded",
+        label: i18n(I18nKey.posts),
+        description: i18n(I18nKey.postsDescription),
+        meta: `${allPosts.length} ${i18n(I18nKey.postsCount)}`,
+        tone: "violet",
+    },
+    {
+        href: "/archive/",
+        icon: "material-symbols:calendar-month-outline-rounded",
+        label: i18n(I18nKey.archive),
+        description: i18n(I18nKey.archiveDescription),
+        meta: yearRange,
+        tone: "purple",
+    },
+    {
+        href: "/albums/",
+        icon: "material-symbols:photo-library-outline-rounded",
+        label: i18n(I18nKey.albums),
+        description: i18n(I18nKey.albumsSubtitle),
+        meta: `${visibleAlbumCount} ${i18n(I18nKey.albumsCount)}`,
+        tone: "cyan",
+    },
+    {
+        href: "/diary/",
+        icon: "material-symbols:menu-book-outline-rounded",
+        label: i18n(I18nKey.diary),
+        description: i18n(I18nKey.diarySubtitle),
+        meta: `${sortedMoments.length} ${i18n(I18nKey.diaryCount)}`,
+        tone: "blue",
+    },
+];
+const secondaryPortals = [
+    {
+        href: "/projects/",
+        icon: "material-symbols:work",
+        label: i18n(I18nKey.projects),
+        description: i18n(I18nKey.projectsSubtitle),
+        tone: "blue",
+    },
+    {
+        href: "/skills/",
+        icon: "material-symbols:psychology-outline-rounded",
+        label: i18n(I18nKey.skills),
+        description: i18n(I18nKey.skillsSubtitle),
+        tone: "violet",
+    },
+    {
+        href: "/timeline/",
+        icon: "material-symbols:timeline",
+        label: i18n(I18nKey.timeline),
+        description: i18n(I18nKey.timelineSubtitle),
+        tone: "indigo",
+    },
+    {
+        href: "/about/",
+        icon: "material-symbols:person-outline-rounded",
+        label: i18n(I18nKey.about),
+        description: `${i18n(I18nKey.welcomeMeetAuthor)} ${profileConfig.name}`,
+        tone: "cyan",
+    },
+];
 const homePath = url("/");
 const isHomePage = pathsEqual(Astro.url.pathname, homePath);
-const slides = desktopImages.slice(0, 3).map((desktop, index) => ({
+// 欢迎导航只复用网站当前的首张壁纸，避免重复解码整组轮播图拖慢首屏。
+const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
     desktop,
     mobile: mobileImages[index % Math.max(mobileImages.length, 1)] || desktop,
-}));
-const sparkles = Array.from({ length: 24 }, (_, index) => ({
-    x: (index * 37 + 11) % 100,
-    y: (index * 61 + 7) % 100,
-    size: 2 + (index % 4),
-    delay: (index % 8) * -0.55,
-    duration: 3.8 + (index % 5) * 0.8,
 }));
 ---
 
 <!--
-    文章页的“返回首页”使用 ?view=home 表达直达主页意图。
-    这段内联脚本在欢迎页节点创建前运行，避免完整页面跳转时短暂闪现欢迎页。
+    刷新和所有“主页”入口都应直接显示主页。
+    这段内联脚本在欢迎页节点创建前运行，避免 Safari 刷新时闪现导航层。
 -->
 <script is:inline>
     (() => {
         const directHomeQuery = new URL(window.location.href).searchParams.get("view") === "home";
-        if (directHomeQuery) document.documentElement.classList.add("welcome-direct-home");
+        const navigationEntry = performance.getEntriesByType("navigation")[0];
+        const isReload = navigationEntry && navigationEntry.type === "reload";
+        if (directHomeQuery || isReload) document.documentElement.classList.add("welcome-direct-home");
     })();
 </script>
 
 <section
     id="welcome-gateway"
-    class="welcome-gateway fixed inset-0 z-[1000] isolate flex min-h-[100svh] items-center justify-center overflow-x-hidden overflow-y-auto px-3 py-3 text-white sm:px-5 sm:py-5"
+    class="welcome-gateway fixed inset-0 z-[1000] isolate flex min-h-[100svh] items-start justify-center overflow-x-hidden overflow-y-auto px-3 py-3 sm:px-5 sm:py-5 lg:items-center"
     role="dialog"
     aria-modal="true"
     aria-labelledby="welcome-title"
@@ -71,16 +132,6 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         ))}
     </div>
     <div class="welcome-dreamscape fixed inset-0 -z-30" aria-hidden="true"></div>
-    <div class="welcome-aurora welcome-aurora-one fixed -z-20" aria-hidden="true"></div>
-    <div class="welcome-aurora welcome-aurora-two fixed -z-20" aria-hidden="true"></div>
-    <div class="welcome-aurora welcome-aurora-three fixed -z-20" aria-hidden="true"></div>
-    <div class="welcome-sparkles fixed inset-0 -z-10" aria-hidden="true">
-        {sparkles.map((sparkle) => (
-            <i
-                style={`--sparkle-x:${sparkle.x}%;--sparkle-y:${sparkle.y}%;--sparkle-size:${sparkle.size}px;--sparkle-delay:${sparkle.delay}s;--sparkle-duration:${sparkle.duration}s;`}
-            ></i>
-        ))}
-    </div>
 
     <div class="welcome-shell-wrap mx-auto my-auto w-full max-w-[92rem] rounded-[2rem] sm:rounded-[2.6rem]">
         <div class="welcome-shell relative overflow-hidden rounded-[calc(2rem-1px)] sm:rounded-[calc(2.6rem-1px)]">
@@ -132,10 +183,10 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
                             <i></i>
                         </div>
 
-                        <h1 id="welcome-title" class="welcome-title">
+                        <p id="welcome-title" class="welcome-title">
                             <span>{i18n(I18nKey.welcomeHeadlineLead)}</span>
                             <span class="welcome-title-gradient">{i18n(I18nKey.welcomeHeadlineAccent)}</span>
-                        </h1>
+                        </p>
 
                         <p class="welcome-lead">
                             {i18n(I18nKey.welcomeIntro)}
@@ -194,76 +245,48 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
                 </section>
 
                 <aside class="welcome-explore border-t border-white/15 bg-white/[0.035] p-5 sm:p-7 lg:border-l lg:border-t-0 lg:p-8" aria-label={i18n(I18nKey.welcomeContentGuide)}>
-                    <div class="welcome-section-head">
-                        <div>
-                            <span>LIVE KNOWLEDGE STREAM</span>
-                            <h2>{i18n(I18nKey.welcomeLatestIdeas)}</h2>
-                        </div>
-                        <a href={url("/posts/")} data-welcome-link>
-                            {i18n(I18nKey.welcomeViewAll)} <Icon name="material-symbols:arrow-right-alt-rounded" />
-                        </a>
-                    </div>
-
-                    <div class="welcome-latest-grid">
-                        {latestPosts.map((post, index) => (
-                            <a
-                                href={getPostUrl(post)}
-                                data-welcome-link
-                                class="welcome-latest group"
-                            >
-                                <div class="welcome-cover">
-                                    {post.data.cover ? (
-                                        <img
-                                            src={post.data.cover}
-                                            alt=""
-                                            loading={isHomePage && index === 0 ? "eager" : "lazy"}
-                                            decoding="async"
-                                        />
-                                    ) : (
-                                        <Icon name="material-symbols:article-outline-rounded" />
-                                    )}
-                                    <span class="welcome-cover-overlay"></span>
-                                    <span class="welcome-order">0{index + 1}</span>
-                                </div>
-                                <div class="welcome-latest-copy">
-                                    <time datetime={post.data.published.toISOString()}>{formatDateToYYYYMMDD(post.data.published)}</time>
-                                    <h3>{post.data.title}</h3>
-                                    <p>{post.data.description || i18n(I18nKey.welcomeOpenArticle)}</p>
-                                </div>
-                                <span class="welcome-card-arrow"><Icon name="material-symbols:arrow-outward-rounded" /></span>
-                            </a>
-                        ))}
-                    </div>
-
                     <div class="welcome-path-head">
                         <div>
                             <span class="welcome-mini-label">{i18n(I18nKey.welcomeQuickPortal)}</span>
-                            <strong>{i18n(I18nKey.welcomeChoosePath)}</strong>
+                            <h2>{i18n(I18nKey.welcomeChoosePath)}</h2>
                         </div>
                         <Icon name="material-symbols:alt-route-rounded" />
                     </div>
+                    <p class="welcome-path-intro">从深度文章到生活切片，按你此刻的兴趣进入这座持续生长的个人知识宇宙。</p>
 
-                    <nav class="welcome-features" aria-label={i18n(I18nKey.quickNavigation)}>
-                        <a href={url("/archive/")} data-welcome-link class="welcome-feature" data-tone="purple">
-                            <i><Icon name="material-symbols:calendar-month-outline-rounded" /></i>
-                            <span><strong>{i18n(I18nKey.archive)}</strong><small>{i18n(I18nKey.welcomeArchiveDescription)}</small></span>
-                            <b>01</b>
-                        </a>
-                        <a href={url("/projects/")} data-welcome-link class="welcome-feature" data-tone="blue">
-                            <i><Icon name="material-symbols:work" /></i>
-                            <span><strong>{i18n(I18nKey.projects)}</strong><small>{i18n(I18nKey.welcomeProjectsDescription)}</small></span>
-                            <b>02</b>
-                        </a>
-                        <a href={url("/timeline/")} data-welcome-link class="welcome-feature" data-tone="indigo">
-                            <i><Icon name="material-symbols:timeline" /></i>
-                            <span><strong>{i18n(I18nKey.timeline)}</strong><small>{i18n(I18nKey.welcomeTimelineDescription)}</small></span>
-                            <b>03</b>
-                        </a>
-                        <a href={url("/about/")} data-welcome-link class="welcome-feature" data-tone="cyan">
-                            <i><Icon name="material-symbols:person-outline-rounded" /></i>
-                            <span><strong>{i18n(I18nKey.about)}</strong><small>{i18n(I18nKey.welcomeMeetAuthor)} {profileConfig.name}</small></span>
-                            <b>04</b>
-                        </a>
+                    <nav class="welcome-portals" aria-label={i18n(I18nKey.quickNavigation)}>
+                        <div class="welcome-primary-portals">
+                            {primaryPortals.map((portal, index) => (
+                                <a href={url(portal.href)} data-welcome-link class="welcome-portal-major" data-tone={portal.tone}>
+                                    <span class="welcome-portal-index">0{index + 1}</span>
+                                    <i class="welcome-portal-icon"><Icon name={portal.icon} /></i>
+                                    <span class="welcome-portal-copy">
+                                        <strong>{portal.label}</strong>
+                                        <small>{portal.description}</small>
+                                    </span>
+                                    <span class="welcome-portal-meta">{portal.meta}</span>
+                                    <i class="welcome-portal-arrow"><Icon name="material-symbols:arrow-outward-rounded" /></i>
+                                </a>
+                            ))}
+                        </div>
+
+                        <div class="welcome-secondary-label">
+                            <span>MORE TO DISCOVER</span>
+                            <i aria-hidden="true"></i>
+                        </div>
+
+                        <div class="welcome-secondary-portals">
+                            {secondaryPortals.map((portal, index) => (
+                                <a href={url(portal.href)} data-welcome-link class="welcome-portal-minor" data-tone={portal.tone}>
+                                    <i><Icon name={portal.icon} /></i>
+                                    <span>
+                                        <strong>{portal.label}</strong>
+                                        <small>{portal.description}</small>
+                                    </span>
+                                    <b>0{index + 5}</b>
+                                </a>
+                            ))}
+                        </div>
                     </nav>
 
                     <div class="welcome-search-tip">
@@ -283,7 +306,6 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         if (!gateway || gateway.dataset.initialized === "true") return;
         gateway.dataset.initialized = "true";
         let closeTimer = 0;
-        let pointerFrame = 0;
 
         const normalizePath = (path: string) => path.replace(/^\/+|\/+$/g, "").toLowerCase();
         const isHomePath = () => normalizePath(window.location.pathname) === normalizePath(gateway.dataset.homePath || "/");
@@ -298,11 +320,11 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
                 gateway.hidden = true;
                 gateway.classList.remove("is-leaving", "is-opening");
                 document.body.classList.remove("welcome-open");
-                window.setTimeout(() => document.documentElement.classList.remove("welcome-revealing"), 220);
+                window.setTimeout(() => document.documentElement.classList.remove("welcome-revealing"), 680);
                 if (moveFocus) document.getElementById("swup-container")?.focus({ preventScroll: true });
             };
             if (immediate) finish();
-            else closeTimer = window.setTimeout(finish, usePortalReveal ? 920 : 520);
+            else closeTimer = window.setTimeout(finish, usePortalReveal ? 440 : 320);
         };
 
         const showGateway = () => {
@@ -312,18 +334,18 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
             document.documentElement.classList.remove("welcome-revealing");
             gateway.scrollTop = 0;
             document.body.classList.add("welcome-open");
-            window.setTimeout(() => document.getElementById("welcome-enter")?.focus({ preventScroll: true }), 70);
+            window.setTimeout(() => document.getElementById("welcome-enter")?.focus({ preventScroll: true }), 40);
         };
 
-        const consumeDirectHomeIntent = () => {
+        const consumeViewIntent = () => {
             const currentUrl = new URL(window.location.href);
-            const shouldEnterHome = currentUrl.searchParams.get("view") === "home";
-            if (!shouldEnterHome) return false;
+            const view = currentUrl.searchParams.get("view");
+            if (view !== "home" && view !== "welcome") return view;
 
             currentUrl.searchParams.delete("view");
             const cleanUrl = `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
             window.history.replaceState(window.history.state, "", cleanUrl);
-            return true;
+            return view;
         };
 
         const syncWithRoute = () => {
@@ -331,7 +353,10 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
                 hideGateway(false, true);
                 return;
             }
-            if (consumeDirectHomeIntent()) {
+            const viewIntent = consumeViewIntent();
+            const navigationEntry = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+            const isReload = navigationEntry?.type === "reload";
+            if (viewIntent === "home" || (isReload && viewIntent !== "welcome")) {
                 hideGateway(true, true);
                 document.documentElement.classList.remove("welcome-direct-home");
                 return;
@@ -351,18 +376,6 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         gateway.querySelectorAll<HTMLAnchorElement>("[data-welcome-link]").forEach((link) => {
             link.addEventListener("click", () => hideGateway(false));
         });
-
-        gateway.addEventListener("pointermove", (event) => {
-            window.cancelAnimationFrame(pointerFrame);
-            pointerFrame = window.requestAnimationFrame(() => {
-                const x = event.clientX / window.innerWidth - 0.5;
-                const y = event.clientY / window.innerHeight - 0.5;
-                gateway.style.setProperty("--pointer-x", `${event.clientX}px`);
-                gateway.style.setProperty("--pointer-y", `${event.clientY}px`);
-                gateway.style.setProperty("--parallax-x", `${x * 14}px`);
-                gateway.style.setProperty("--parallax-y", `${y * 10}px`);
-            });
-        }, { passive: true });
 
         gateway.addEventListener("keydown", (event) => {
             if (event.key === "Escape") hideGateway(true);
@@ -400,62 +413,77 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
     :global(html.welcome-direct-home) .welcome-gateway { display: none !important; }
 
     .welcome-gateway {
-        --pointer-x: 50vw;
-        --pointer-y: 45vh;
-        --parallax-x: 0px;
-        --parallax-y: 0px;
         --exit-x: 50vw;
         --exit-y: 72vh;
+        --welcome-fg: 30 32 68;
+        --welcome-surface: 244 247 255;
+        --welcome-border: 105 111 201;
+        --welcome-sky: 104 168 245;
+        --welcome-mint: 139 137 235;
+        --welcome-sunset: 180 132 226;
         --tech-primary: oklch(0.72 0.18 var(--hue));
         --tech-cyan: oklch(0.82 0.13 calc(var(--hue) - 65));
         --tech-violet: oklch(0.73 0.18 calc(var(--hue) + 28));
         opacity: 1;
-        clip-path: circle(150% at 50% 50%);
-        background: #172344;
-        transition: clip-path 0.92s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.62s ease, visibility 0.52s ease;
-        will-change: clip-path, opacity;
+        background: transparent;
+        color: rgb(var(--welcome-fg));
+        transition: opacity 0.42s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.42s ease;
+        will-change: opacity;
     }
 
-    .welcome-gateway.is-leaving { visibility: hidden; opacity: 0; }
+    :global(html.dark) .welcome-gateway {
+        --welcome-fg: 242 241 255;
+        --welcome-surface: 13 17 52;
+        --welcome-border: 123 127 220;
+        --welcome-sky: 55 105 201;
+        --welcome-mint: 92 78 190;
+        --welcome-sunset: 129 74 177;
+    }
+
+    .welcome-gateway.is-leaving { opacity: 0; pointer-events: none; }
     .welcome-gateway.is-opening {
-        clip-path: circle(0 at var(--exit-x) var(--exit-y));
-        opacity: 0.18;
+        opacity: 0;
         pointer-events: none;
     }
 
     .welcome-gateway.is-opening .welcome-shell-wrap {
         opacity: 0;
-        transform: translateY(-1.4rem) scale(0.955);
-        transition: opacity 0.38s ease, transform 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+        transform: translateY(-0.2rem) scale(1.012);
+        transition: opacity 0.36s ease, transform 0.44s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    .welcome-gateway.is-opening .welcome-slides span { transform: scale(1.13); }
-
     :global(html.welcome-revealing #banner-wrapper) {
-        animation: welcome-banner-reveal 1.08s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation: welcome-banner-reveal 0.58s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
     :global(html.welcome-revealing #top-row) {
-        animation: welcome-navbar-reveal 0.82s 0.16s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation: welcome-navbar-reveal 0.46s 0.05s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
     .welcome-slides span {
         position: absolute;
-        inset: -2%;
-        background-image: linear-gradient(112deg, rgb(15 31 69 / 31%), rgb(55 37 99 / 23%)), var(--slide-mobile);
+        inset: 0;
+        background-image: var(--slide-mobile);
         background-position: center;
         background-size: cover;
         opacity: 0;
-        transform: scale(1.06);
-        animation: welcome-slideshow 18s infinite, welcome-kenburns 18s ease-in-out infinite;
-        animation-delay: calc(var(--slide-index) * 6s);
     }
+
+    .welcome-slides span:first-child { opacity: 1; }
+    .welcome-slides span:not(:first-child) { display: none; }
 
     .welcome-dreamscape {
         background:
-            linear-gradient(135deg, rgb(29 57 113 / 17%), rgb(71 46 119 / 15%)),
-            radial-gradient(circle at var(--pointer-x) var(--pointer-y), oklch(0.7 0.12 var(--hue) / 14%), transparent 27rem);
-        backdrop-filter: saturate(0.98);
+            radial-gradient(circle at 14% 12%, rgb(113 183 255 / 30%), transparent 38%),
+            radial-gradient(circle at 88% 84%, rgb(193 145 242 / 27%), transparent 40%),
+            linear-gradient(125deg, rgb(225 239 255 / 42%), rgb(241 229 255 / 34%));
+    }
+
+    :global(html.dark) .welcome-dreamscape {
+        background:
+            radial-gradient(circle at 14% 12%, rgb(47 91 190 / 34%), transparent 38%),
+            radial-gradient(circle at 88% 84%, rgb(111 55 163 / 34%), transparent 42%),
+            linear-gradient(125deg, rgb(4 15 53 / 66%), rgb(44 15 68 / 58%));
     }
 
     .welcome-aurora {
@@ -471,7 +499,7 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         top: 10%;
         height: 28rem;
         width: 28rem;
-        background: rgb(88 101 255 / 65%);
+        background: rgb(70 118 232 / 62%);
         transform: translate(var(--parallax-x), var(--parallax-y));
         animation: welcome-float-a 10s ease-in-out infinite;
     }
@@ -481,7 +509,7 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         right: 3%;
         height: 32rem;
         width: 32rem;
-        background: oklch(0.68 0.18 calc(var(--hue) + 24) / 52%);
+        background: rgb(144 83 214 / 52%);
         transform: translate(calc(var(--parallax-x) * -1), calc(var(--parallax-y) * -1));
         animation: welcome-float-b 12s ease-in-out infinite;
     }
@@ -491,7 +519,7 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         top: -10rem;
         height: 24rem;
         width: 24rem;
-        background: rgb(54 223 255 / 48%);
+        background: rgb(108 162 255 / 42%);
         animation: welcome-float-c 13s ease-in-out infinite;
     }
 
@@ -512,37 +540,31 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         position: relative;
         padding: 1px;
         overflow: hidden;
-        background: linear-gradient(125deg, rgb(255 255 255 / 62%), var(--tech-primary) 34%, var(--tech-cyan) 68%, var(--tech-violet));
-        box-shadow: 0 2.2rem 8rem rgb(7 18 65 / 43%), 0 0 3rem rgb(112 94 255 / 15%);
-        animation: welcome-shell-rise 0.82s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        background: linear-gradient(125deg, rgb(var(--welcome-sky) / 52%), rgb(var(--welcome-mint) / 32%) 48%, rgb(var(--welcome-sunset) / 50%));
+        box-shadow: 0 1.5rem 5rem rgb(34 31 92 / 22%), 0 0 3.5rem rgb(var(--welcome-sunset) / 14%);
     }
 
     .welcome-shell-wrap::before {
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        height: 65rem;
-        width: 65rem;
-        content: "";
-        background: conic-gradient(transparent 15%, rgb(255 255 255 / 78%), transparent 36%, var(--tech-cyan), transparent 60%, var(--tech-primary), transparent 82%);
-        transform: translate(-50%, -50%);
-        animation: welcome-border-spin 11s linear infinite;
+        display: none;
     }
 
     .welcome-shell {
-        background: linear-gradient(135deg, rgb(35 54 108 / 55%), rgb(54 39 100 / 50%));
-        box-shadow: inset 0 1px 0 rgb(255 255 255 / 17%);
-        backdrop-filter: blur(21px) saturate(1.08);
+        background:
+            linear-gradient(132deg, rgb(var(--welcome-surface) / 68%), rgb(239 232 255 / 56%)),
+            linear-gradient(120deg, rgb(var(--welcome-sky) / 14%), transparent 48%, rgb(var(--welcome-sunset) / 15%));
+        box-shadow: inset 0 1px 0 rgb(var(--welcome-border) / 12%);
+        backdrop-filter: blur(18px) saturate(1.06);
+        -webkit-backdrop-filter: blur(18px) saturate(1.06);
+    }
+
+    :global(html.dark) .welcome-shell {
+        background:
+            linear-gradient(132deg, rgb(var(--welcome-surface) / 78%), rgb(39 18 70 / 70%)),
+            linear-gradient(120deg, rgb(var(--welcome-sky) / 16%), transparent 48%, rgb(var(--welcome-sunset) / 17%));
     }
 
     .welcome-scanline {
-        z-index: 20;
-        top: -0.2rem;
-        height: 1px;
-        opacity: 0.34;
-        background: linear-gradient(90deg, transparent, var(--tech-cyan) 24% 76%, transparent);
-        box-shadow: 0 0 1rem var(--tech-cyan);
-        animation: welcome-scan 8s linear infinite;
+        display: none;
     }
 
     .welcome-corner {
@@ -561,18 +583,13 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
 
     .welcome-glass-shine {
         background:
-            linear-gradient(120deg, rgb(255 255 255 / 12%), transparent 19%, transparent 75%, rgb(146 109 255 / 9%)),
-            radial-gradient(circle at var(--pointer-x) var(--pointer-y), rgb(255 255 255 / 10%), transparent 17rem);
+            radial-gradient(circle at 10% 18%, rgb(var(--welcome-sky) / 12%), transparent 28%),
+            radial-gradient(circle at 92% 84%, rgb(var(--welcome-sunset) / 10%), transparent 30%),
+            linear-gradient(120deg, rgb(255 255 255 / 10%), transparent 24%, transparent 76%, rgb(255 255 255 / 6%));
     }
 
     .welcome-inner-glow {
-        left: -5rem;
-        top: 15%;
-        height: 21rem;
-        width: 21rem;
-        border-radius: 50%;
-        background: rgb(93 117 255 / 18%);
-        filter: blur(45px);
+        display: none;
     }
 
     .welcome-avatar { position: relative; flex: none; }
@@ -784,77 +801,59 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
     .welcome-secondary > span { border-radius: 999px; background: rgb(255 255 255 / 10%); padding: 0.12rem 0.4rem; color: rgb(255 255 255 / 46%); font-size: 0.6rem; }
     .welcome-secondary:hover { border-color: rgb(255 255 255 / 34%); background: rgb(255 255 255 / 12%); transform: translateY(-0.15rem); }
 
-    .welcome-section-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; }
-    .welcome-section-head > div > span { color: rgb(255 255 255 / 40%); font-size: 0.55rem; font-weight: 600; letter-spacing: 0.16em; }
-    .welcome-section-head h2 { margin-top: 0.15rem; font-size: 1.45rem; font-weight: 650; }
-    .welcome-section-head > a { display: inline-flex; align-items: center; gap: 0.3rem; color: rgb(255 255 255 / 50%); font-size: 0.69rem; transition: color 0.2s ease; }
-    .welcome-section-head > a:hover { color: #c8b6ff; }
-
-    .welcome-latest-grid { display: grid; grid-template-columns: 1fr; gap: 0.55rem; }
-
-    .welcome-latest {
-        position: relative;
-        display: grid;
-        min-width: 0;
-        grid-template-columns: 6.15rem minmax(0, 1fr);
-        align-items: center;
-        gap: 0.65rem;
-        min-height: 6.1rem;
-        overflow: hidden;
-        border: 1px solid rgb(255 255 255 / 13%);
-        border-radius: 1rem;
-        background: linear-gradient(145deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 3%));
-        padding: 0.5rem;
-        color: white;
-        box-shadow: inset 0 1px 0 rgb(255 255 255 / 7%);
-        transition: transform 0.24s ease, border-color 0.24s ease, background-color 0.24s ease;
-    }
-
-    .welcome-latest:hover { border-color: rgb(173 183 255 / 42%); background: rgb(255 255 255 / 10%); transform: translateY(-0.16rem); }
-    .welcome-cover { position: relative; display: grid; height: 5rem; place-items: center; overflow: hidden; border-radius: 0.72rem; background: linear-gradient(135deg, #4855af, #5c9dca); }
-    .welcome-cover img { height: 100%; width: 100%; object-fit: cover; transition: filter 0.5s ease, transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1); }
-    .welcome-cover-overlay { position: absolute; inset: 0; background: linear-gradient(145deg, transparent 35%, rgb(17 11 48 / 60%)); }
-    .welcome-latest:hover img { filter: saturate(1.18); transform: scale(1.055); }
-    .welcome-order { position: absolute; left: 0.45rem; top: 0.4rem; border-radius: 999px; background: rgb(12 10 42 / 45%); padding: 0.12rem 0.38rem; color: rgb(255 255 255 / 72%); font-size: 0.56rem; backdrop-filter: blur(0.5rem); }
-    .welcome-latest-copy { min-width: 0; padding-right: 2.15rem; }
-    .welcome-latest time { color: rgb(255 255 255 / 38%); font-size: 0.57rem; letter-spacing: 0.08em; }
-    .welcome-latest h3 { display: -webkit-box; margin-top: 0.28rem; overflow: hidden; font-size: 0.78rem; font-weight: 650; line-height: 1.33; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-    .welcome-latest p { display: -webkit-box; margin-top: 0.2rem; overflow: hidden; color: rgb(255 255 255 / 38%); font-size: 0.6rem; line-height: 1.3; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
-    .welcome-card-arrow { position: absolute; right: 0.65rem; top: 50%; display: grid; height: 1.75rem; width: 1.75rem; place-items: center; border: 1px solid rgb(255 255 255 / 18%); border-radius: 50%; background: rgb(255 255 255 / 7%); color: rgb(255 255 255 / 55%); transform: translateY(-50%); transition: background-color 0.2s ease, color 0.2s ease, transform 0.25s ease; }
-    .welcome-latest:hover .welcome-card-arrow { background: white; color: #507be5; transform: translateY(-50%) rotate(45deg); }
-
-    .welcome-path-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1.05rem 0 0.55rem; }
+    .welcome-explore { display: flex; min-width: 0; flex-direction: column; justify-content: center; }
+    .welcome-path-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
     .welcome-path-head > div { display: flex; flex-direction: column; }
-    .welcome-path-head strong { margin-top: 0.12rem; font-size: 0.84rem; }
-    .welcome-path-head > :global(svg) { color: rgb(178 184 255 / 55%); font-size: 1.4rem; }
-    .welcome-features { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+    .welcome-path-head h2 { margin-top: 0.22rem; font-size: clamp(1.55rem, 2.2vw, 2rem); font-weight: 680; letter-spacing: -0.025em; }
+    .welcome-path-head > :global(svg) { color: rgb(178 184 255 / 65%); font-size: 1.8rem; }
+    .welcome-path-intro { max-width: 34rem; margin-top: 0.65rem; color: rgb(255 255 255 / 50%); font-size: 0.75rem; line-height: 1.65; }
+    .welcome-portals { margin-top: 1.15rem; }
+    .welcome-primary-portals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
 
-    .welcome-feature {
+    .welcome-portal-major {
         position: relative;
         display: grid;
         min-width: 0;
-        grid-template-columns: auto 1fr;
-        align-items: center;
-        gap: 0.65rem;
+        min-height: 9.25rem;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-rows: auto 1fr auto;
+        gap: 0.8rem;
         overflow: hidden;
-        border: 1px solid rgb(255 255 255 / 13%);
-        border-radius: 0.9rem;
-        background: linear-gradient(135deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 3%));
-        padding: 0.62rem;
+        border: 1px solid rgb(255 255 255 / 15%);
+        border-radius: 1.15rem;
+        background: linear-gradient(145deg, rgb(255 255 255 / 12%), rgb(255 255 255 / 4%));
+        padding: 1rem;
         color: white;
-        transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 9%), 0 0.8rem 2rem rgb(8 14 55 / 12%);
+        transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     }
+    .welcome-portal-major::after { position: absolute; right: -2.5rem; bottom: -3rem; height: 7rem; width: 7rem; content: ""; border-radius: 50%; background: var(--portal-glow, rgb(120 110 255 / 18%)); filter: blur(1rem); pointer-events: none; }
+    .welcome-portal-index { grid-column: 1 / -1; color: rgb(255 255 255 / 23%); font-size: 0.58rem; letter-spacing: 0.14em; }
+    .welcome-portal-icon { display: grid; height: 3rem; width: 3rem; place-items: center; border-radius: 0.85rem; background: var(--portal-bg); color: var(--portal-color); font-size: 1.45rem; box-shadow: inset 0 1px 0 rgb(255 255 255 / 24%); }
+    .welcome-portal-copy { display: flex; min-width: 0; flex-direction: column; align-self: center; }
+    .welcome-portal-copy strong { font-size: 1rem; }
+    .welcome-portal-copy small { display: -webkit-box; margin-top: 0.2rem; overflow: hidden; color: rgb(255 255 255 / 43%); font-size: 0.62rem; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+    .welcome-portal-meta { align-self: end; color: rgb(255 255 255 / 42%); font-size: 0.59rem; letter-spacing: 0.04em; }
+    .welcome-portal-arrow { z-index: 1; display: grid; height: 2rem; width: 2rem; place-items: center; align-self: end; border: 1px solid rgb(255 255 255 / 15%); border-radius: 50%; color: rgb(255 255 255 / 53%); transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease; }
+    .welcome-portal-major:hover { border-color: rgb(204 197 255 / 38%); background-color: rgb(255 255 255 / 10%); box-shadow: inset 0 1px 0 rgb(255 255 255 / 15%), 0 1rem 2.6rem rgb(8 14 55 / 20%); transform: translateY(-0.16rem); }
+    .welcome-portal-major:hover .welcome-portal-arrow { background: white; color: #5b62d9; transform: rotate(45deg); }
 
-    .welcome-feature > i { display: grid; height: 2.35rem; width: 2.35rem; place-items: center; border-radius: 0.7rem; font-size: 1.15rem; box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%); }
-    .welcome-feature > span { display: flex; min-width: 0; flex-direction: column; }
-    .welcome-feature strong { font-size: 0.74rem; }
-    .welcome-feature small { margin-top: 0.08rem; overflow: hidden; color: rgb(255 255 255 / 38%); font-size: 0.58rem; text-overflow: ellipsis; white-space: nowrap; }
-    .welcome-feature b { position: absolute; right: 0.45rem; top: 0.32rem; color: rgb(255 255 255 / 16%); font-size: 0.5rem; font-weight: 500; }
-    .welcome-feature[data-tone="purple"] > i { background: linear-gradient(135deg, rgb(137 102 255 / 58%), rgb(179 106 241 / 35%)); color: #ded2ff; }
-    .welcome-feature[data-tone="blue"] > i { background: linear-gradient(135deg, rgb(66 142 255 / 58%), rgb(69 210 255 / 32%)); color: #c8efff; }
-    .welcome-feature[data-tone="indigo"] > i { background: linear-gradient(135deg, rgb(93 104 240 / 58%), rgb(117 152 255 / 32%)); color: #d9e1ff; }
-    .welcome-feature[data-tone="cyan"] > i { background: linear-gradient(135deg, rgb(47 196 207 / 55%), rgb(91 236 192 / 30%)); color: #c6fff0; }
-    .welcome-feature:hover { border-color: rgb(198 188 255 / 35%); background: rgb(255 255 255 / 11%); transform: translateY(-0.13rem) scale(1.01); }
+    :is(.welcome-portal-major, .welcome-portal-minor)[data-tone="violet"] { --portal-bg: linear-gradient(135deg, rgb(126 91 255 / 68%), rgb(190 104 245 / 38%)); --portal-color: #eee3ff; --portal-glow: rgb(154 105 255 / 24%); }
+    :is(.welcome-portal-major, .welcome-portal-minor)[data-tone="purple"] { --portal-bg: linear-gradient(135deg, rgb(137 102 255 / 62%), rgb(179 106 241 / 34%)); --portal-color: #ded2ff; --portal-glow: rgb(179 106 241 / 22%); }
+    :is(.welcome-portal-major, .welcome-portal-minor)[data-tone="blue"] { --portal-bg: linear-gradient(135deg, rgb(66 142 255 / 62%), rgb(69 210 255 / 31%)); --portal-color: #c8efff; --portal-glow: rgb(69 176 255 / 22%); }
+    :is(.welcome-portal-major, .welcome-portal-minor)[data-tone="indigo"] { --portal-bg: linear-gradient(135deg, rgb(93 104 240 / 62%), rgb(117 152 255 / 31%)); --portal-color: #d9e1ff; --portal-glow: rgb(93 104 240 / 22%); }
+    :is(.welcome-portal-major, .welcome-portal-minor)[data-tone="cyan"] { --portal-bg: linear-gradient(135deg, rgb(47 196 207 / 58%), rgb(91 236 192 / 28%)); --portal-color: #c6fff0; --portal-glow: rgb(47 196 207 / 20%); }
+
+    .welcome-secondary-label { display: flex; align-items: center; gap: 0.65rem; margin: 1rem 0 0.55rem; color: rgb(255 255 255 / 29%); font-size: 0.52rem; font-weight: 600; letter-spacing: 0.16em; }
+    .welcome-secondary-label i { height: 1px; flex: 1; background: linear-gradient(90deg, rgb(255 255 255 / 14%), transparent); }
+    .welcome-secondary-portals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; }
+    .welcome-portal-minor { position: relative; display: grid; min-width: 0; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 0.65rem; overflow: hidden; border: 1px solid rgb(255 255 255 / 12%); border-radius: 0.9rem; background: rgb(255 255 255 / 5%); padding: 0.62rem; color: white; transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease; }
+    .welcome-portal-minor > i { display: grid; height: 2.3rem; width: 2.3rem; place-items: center; border-radius: 0.7rem; background: var(--portal-bg); color: var(--portal-color); font-size: 1.1rem; }
+    .welcome-portal-minor > span { display: flex; min-width: 0; flex-direction: column; }
+    .welcome-portal-minor strong { font-size: 0.72rem; }
+    .welcome-portal-minor small { margin-top: 0.08rem; overflow: hidden; color: rgb(255 255 255 / 34%); font-size: 0.55rem; text-overflow: ellipsis; white-space: nowrap; }
+    .welcome-portal-minor b { position: absolute; right: 0.4rem; top: 0.25rem; color: rgb(255 255 255 / 13%); font-size: 0.48rem; font-weight: 500; }
+    .welcome-portal-minor:hover { border-color: rgb(198 188 255 / 33%); background: rgb(255 255 255 / 10%); transform: translateY(-0.1rem); }
 
     .welcome-search-tip {
         display: grid;
@@ -875,13 +874,138 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
     .welcome-search-tip > :global(svg) { color: rgb(255 255 255 / 22%); font-size: 1.15rem; }
     kbd { border: 1px solid rgb(255 255 255 / 17%); border-radius: 0.25rem; background: rgb(255 255 255 / 7%); padding: 0.08rem 0.25rem; color: rgb(255 255 255 / 68%); }
 
-    :is(.welcome-skip, .welcome-primary, .welcome-secondary, .welcome-topic, .welcome-latest, .welcome-feature):focus-visible {
+    :is(.welcome-skip, .welcome-primary, .welcome-secondary, .welcome-topic, .welcome-portal-major, .welcome-portal-minor):focus-visible {
         outline: 2px solid #bfe9ff;
         outline-offset: 3px;
     }
 
+    /*
+     * 欢迎导航的明暗对比只由当前主题决定：浅色主题使用亮玻璃与深色文字，
+     * 暗色主题使用暗玻璃与浅色文字。壁纸仍保持与主页完全一致。
+     */
+    .welcome-gateway :is(p, h2, dt, dd, small, strong, b, span, a, button) {
+        color: rgb(var(--welcome-fg) / 92%);
+    }
+
+    .welcome-gateway :is(.welcome-mini-label, .welcome-lead, .welcome-path-intro, .welcome-portal-copy small, .welcome-portal-minor small, .welcome-search-tip small, .welcome-stats dt, .welcome-stats span, .welcome-portal-meta, .welcome-secondary-label, .welcome-live) {
+        color: rgb(var(--welcome-fg) / 62%);
+    }
+
+    .welcome-topbar,
+    .welcome-explore,
+    .welcome-topics {
+        border-color: rgb(var(--welcome-border) / 18%);
+    }
+
+    .welcome-skip,
+    .welcome-secondary,
+    .welcome-stats > div,
+    .welcome-portal-major,
+    .welcome-portal-minor,
+    .welcome-search-tip {
+        border-color: rgb(var(--welcome-border) / 18%);
+        background:
+            linear-gradient(140deg, rgb(var(--welcome-surface) / 54%), rgb(var(--welcome-sky) / 8%) 55%, rgb(var(--welcome-sunset) / 8%));
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%);
+    }
+
+    .welcome-skip:hover,
+    .welcome-secondary:hover,
+    .welcome-portal-major:hover,
+    .welcome-portal-minor:hover {
+        border-color: rgb(var(--welcome-sky) / 58%);
+        background:
+            linear-gradient(140deg, rgb(var(--welcome-surface) / 68%), rgb(var(--welcome-sky) / 15%) 58%, rgb(var(--welcome-sunset) / 12%));
+    }
+
+    .welcome-primary {
+        border-color: rgb(var(--welcome-border) / 20%);
+        background: linear-gradient(105deg, rgb(var(--welcome-sky)), rgb(var(--welcome-mint)) 62%, rgb(var(--welcome-sunset)) 135%);
+        box-shadow: 0 0.8rem 2.2rem rgb(var(--welcome-sky) / 25%);
+    }
+
+    .welcome-primary > span :is(small, strong) {
+        color: white;
+    }
+
+    .welcome-primary > i {
+        background: rgb(255 255 255 / 92%);
+        color: rgb(15 92 111);
+    }
+
+    .welcome-title-gradient {
+        background: linear-gradient(100deg, rgb(var(--welcome-sky)) 4%, rgb(var(--welcome-mint)) 54%, rgb(var(--welcome-sunset)) 100%);
+        color: transparent !important;
+        -webkit-background-clip: text;
+        background-clip: text;
+        animation: none;
+    }
+
+    .welcome-badge,
+    .welcome-floating-orb,
+    .welcome-search-tip > span {
+        border-color: rgb(var(--welcome-border) / 18%);
+        background: linear-gradient(135deg, rgb(var(--welcome-sky) / 14%), rgb(var(--welcome-mint) / 10%), rgb(var(--welcome-sunset) / 8%));
+        color: rgb(var(--welcome-fg) / 82%);
+    }
+
+    .welcome-portal-index,
+    .welcome-portal-minor b,
+    .welcome-search-tip > :global(svg) {
+        color: rgb(var(--welcome-fg) / 34%);
+    }
+
+    .welcome-portal-arrow {
+        border-color: rgb(var(--welcome-border) / 18%);
+        color: rgb(var(--welcome-fg) / 70%);
+    }
+
+    .welcome-topic {
+        border-color: rgb(var(--welcome-sky) / 34%);
+        background:
+            radial-gradient(circle at 30% 24%, rgb(255 255 255 / 32%), transparent 30%),
+            linear-gradient(145deg, rgb(var(--welcome-sky) / 21%), rgb(var(--welcome-mint) / 13%) 56%, rgb(var(--welcome-sunset) / 12%));
+        color: rgb(var(--welcome-fg) / 88%);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 24%), 0 0.65rem 1.6rem rgb(var(--welcome-sky) / 14%);
+    }
+
+    .welcome-topic:nth-child(3n + 2) {
+        background:
+            radial-gradient(circle at 30% 24%, rgb(255 255 255 / 30%), transparent 30%),
+            linear-gradient(145deg, rgb(var(--welcome-mint) / 22%), rgb(var(--welcome-sunset) / 12%));
+    }
+
+    .welcome-topic:nth-child(3n) {
+        background:
+            radial-gradient(circle at 30% 24%, rgb(255 255 255 / 30%), transparent 30%),
+            linear-gradient(145deg, rgb(var(--welcome-sunset) / 21%), rgb(var(--welcome-sky) / 12%));
+    }
+
+    .welcome-topic:hover {
+        border-color: rgb(var(--welcome-mint) / 74%);
+        background-color: rgb(var(--welcome-mint) / 18%);
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 30%), 0 0 1.8rem rgb(var(--welcome-sky) / 24%);
+    }
+
+    .welcome-shell-wrap,
+    .welcome-topic,
+    .welcome-primary,
+    .welcome-floating-orb {
+        animation: none;
+    }
+
     @media (min-width: 768px) {
-        .welcome-slides span { background-image: linear-gradient(112deg, rgb(15 31 69 / 31%), rgb(55 37 99 / 23%)), var(--slide-desktop); }
+        .welcome-slides span { background-image: var(--slide-desktop); }
+    }
+
+    @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+        .welcome-slides span {
+            display: block;
+            opacity: 1;
+            transform: none;
+            animation: none;
+        }
+        .welcome-shell-wrap::before { animation: none; }
     }
 
     @media (max-width: 1023px) {
@@ -889,6 +1013,8 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         .welcome-hero { min-height: 40rem; }
         .welcome-floating-orb-a { right: 7%; }
         .welcome-explore { background: rgb(45 48 103 / 20%); }
+        .welcome-aurora { animation: none; filter: none; }
+        .welcome-sparkles { display: none; }
     }
 
     @media (max-width: 639px) {
@@ -904,13 +1030,17 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         .welcome-primary,
         .welcome-secondary { width: 100%; }
         .welcome-secondary { justify-content: center; }
-        .welcome-latest-grid { grid-template-columns: 1fr; }
-        .welcome-latest { grid-template-columns: 5.4rem minmax(0, 1fr); min-height: 5.7rem; padding: 0.5rem; }
-        .welcome-cover { height: 4.65rem; min-height: 0; border-radius: 0.72rem; }
-        .welcome-card-arrow { display: none; }
-        .welcome-latest-copy { padding-right: 0.15rem; }
-        .welcome-feature { padding: 0.55rem; }
-        .welcome-feature > i { height: 2.15rem; width: 2.15rem; }
+        .welcome-primary-portals { grid-template-columns: 1fr; }
+        .welcome-portal-major { min-height: 7.3rem; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-rows: 1fr auto; padding: 0.85rem; }
+        .welcome-portal-index { position: absolute; right: 0.65rem; top: 0.45rem; }
+        .welcome-portal-icon { grid-row: 1 / -1; align-self: center; }
+        .welcome-portal-copy { padding-right: 1.2rem; }
+        .welcome-portal-meta { grid-column: 2; }
+        .welcome-portal-arrow { grid-column: 3; grid-row: 1 / -1; align-self: center; }
+        .welcome-secondary-portals { grid-template-columns: 1fr 1fr; }
+        .welcome-portal-minor { grid-template-columns: 1fr; gap: 0.45rem; }
+        .welcome-portal-minor small { display: none; }
+        .welcome-search-tip > :global(svg) { display: none; }
     }
 
     @media (max-height: 780px) and (min-width: 1024px) {
@@ -924,10 +1054,11 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         .welcome-topic-bubbles { min-height: 4.6rem; }
         .welcome-topic,
         .welcome-topic:nth-child(n) { height: 4.1rem; width: 4.1rem; }
-        .welcome-latest { min-height: 5.2rem; }
-        .welcome-cover { height: 4.25rem; }
         .welcome-explore { padding-top: 1.1rem; padding-bottom: 1.1rem; }
-        .welcome-path-head { margin-top: 0.7rem; }
+        .welcome-portals { margin-top: 0.75rem; }
+        .welcome-portal-major { min-height: 7.8rem; padding: 0.8rem; }
+        .welcome-secondary-label { margin-top: 0.65rem; }
+        .welcome-portal-minor { padding-top: 0.5rem; padding-bottom: 0.5rem; }
         .welcome-search-tip { margin-top: 0.5rem; }
     }
 
@@ -949,8 +1080,8 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
     }
 
     @keyframes welcome-banner-reveal {
-        from { filter: blur(0.75rem) saturate(1.35); opacity: 0.45; transform: scale(1.055); }
-        to { filter: blur(0) saturate(1); opacity: 1; transform: scale(1); }
+        from { opacity: 0.58; transform: scale(1.018); }
+        to { opacity: 1; transform: scale(1); }
     }
 
     @keyframes welcome-navbar-reveal {
@@ -986,7 +1117,7 @@ const sparkles = Array.from({ length: 24 }, (_, index) => ({
         .welcome-topic { animation: none; }
         .welcome-gateway,
         .welcome-primary,
-        .welcome-latest,
-        .welcome-feature { transition-duration: 0.01ms; }
+        .welcome-portal-major,
+        .welcome-portal-minor { transition-duration: 0.01ms; }
     }
 </style>

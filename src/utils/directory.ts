@@ -24,6 +24,14 @@ export async function getDirectoryTree(): Promise<DirectoryNode[]> {
         skills: i18n(I18nKey.skills),
         timeline: i18n(I18nKey.timeline),
     };
+    const rootOrder = [
+        rootMap.posts,
+        rootMap.albums,
+        rootMap.diary,
+        rootMap.projects,
+        rootMap.skills,
+        rootMap.timeline,
+    ];
 
     const tree: Record<string, any> = {};
 
@@ -93,13 +101,13 @@ export async function getDirectoryTree(): Promise<DirectoryNode[]> {
         addNode(basePathParts, item.title || item.id, `/timeline/`);
     }
 
-    function toArray(obj: Record<string, any>): DirectoryNode[] {
+    function toArray(obj: Record<string, any>, depth = 0): DirectoryNode[] {
         const arr = Object.values(obj).map(node => {
             if (node.type === 'folder') {
                 return {
                     name: node.name,
                     type: 'folder',
-                    children: toArray(node.children)
+                    children: toArray(node.children, depth + 1)
                 } as DirectoryNode;
             }
             return {
@@ -109,8 +117,17 @@ export async function getDirectoryTree(): Promise<DirectoryNode[]> {
             } as DirectoryNode;
         });
         
-        // Sort: folders first, then files, both alphabetically
+        // 顶层保持内容入口的产品顺序；各入口内部仍按“文件夹优先、名称排序”。
         arr.sort((a, b) => {
+            if (depth === 0) {
+                const aIndex = rootOrder.indexOf(a.name);
+                const bIndex = rootOrder.indexOf(b.name);
+                if (aIndex !== bIndex) {
+                    if (aIndex === -1) return 1;
+                    if (bIndex === -1) return -1;
+                    return aIndex - bIndex;
+                }
+            }
             if (a.type !== b.type) {
                 return a.type === 'folder' ? -1 : 1;
             }

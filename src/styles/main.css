@@ -33,6 +33,18 @@
     color utility to any element that depends on these defaults.
 */
 @layer base {
+    html,
+    body {
+        color: var(--text-color);
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+        color: inherit;
+    }
+
     *,
     ::after,
     ::before,

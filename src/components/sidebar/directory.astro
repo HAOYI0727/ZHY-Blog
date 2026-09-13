@@ -4,7 +4,7 @@ import { widgetManager, getComponentConfig } from "@utils/widget";
 import { i18n } from "@i18n/translation";
 import I18nKey from "@i18n/i18nKey";
 import WidgetLayout from "./widgetLayout.astro";
-import DirectoryTree from "./directoryTree.svelte";
+import DirectoryList from "./directoryList.astro";
 
 
 const directoryTree = await getDirectoryTree();
@@ -24,6 +24,7 @@ interface Props {
     side?: string;
 }
 const { class: className, style, side = "default" } = Astro.props;
+const currentPath = Astro.url.pathname;
 ---
 
 <WidgetLayout
@@ -35,6 +36,6 @@ const { class: className, style, side = "default" } = Astro.props;
     style={style}
 >
     <div class="directory-container">
-        <DirectoryTree client:idle tree={directoryTree} />
+        <DirectoryList nodes={directoryTree} {currentPath} />
     </div>
 </WidgetLayout>

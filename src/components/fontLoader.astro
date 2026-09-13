@@ -31,7 +31,9 @@ const finalFontFamily = customFontFamily ? `${customFontFamily}, ${fallbacks}` :
         return (
             <>
                 <link rel="preload" href={fontSrc} as="style" />
-                <link rel="stylesheet" href={fontSrc} />
+                <!-- 非阻塞加载远程字体；系统字体会先立即绘制，字体到达后再平滑替换。 -->
+                <link rel="stylesheet" href={fontSrc} media="print" onload="this.removeAttribute('media')" />
+                <noscript><link rel="stylesheet" href={fontSrc} /></noscript>
             </>
         );
     } else if (font.src) {

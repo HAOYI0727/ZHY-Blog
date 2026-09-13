@@ -110,6 +110,7 @@ const serializedGroups = JSON.stringify(clientGroups).replace(/</g, "\\u003c");
         display: flex;
         flex-direction: column;
         gap: 1.2rem;
+        color: var(--text-color);
     }
 
     .close-btn {
@@ -326,6 +327,7 @@ const serializedGroups = JSON.stringify(clientGroups).replace(/</g, "\\u003c");
     }
     .dark .tag-link {
         background: rgba(255, 255, 255, 0.06);
+        color: var(--text-color);
     }
     .dark .tag-link:hover {
         background: var(--primary);

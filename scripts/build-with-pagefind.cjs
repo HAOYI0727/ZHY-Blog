@@ -53,7 +53,7 @@ function getPagefindOutputDir(platform) {
 // Main function
 function main() {
     const platform = detectPlatform();
-    const outputDir = getPagefindOutputDir(platform);
+    let outputDir = getPagefindOutputDir(platform);
 
     console.log(`🚀 Detected deployment platform: ${platform}`);
     console.log(`📁 Pagefind output directory: ${outputDir}`);
@@ -62,6 +62,14 @@ function main() {
         // Run Astro build
         console.log('🔨 Running Astro build...');
         runLocalBinary('astro', ['build']);
+
+        // 启用服务端 API 后，Astro 会把预渲染页面放在 dist/client。
+        // 本地构建也应在真实的静态输出目录中生成并检查搜索索引。
+        const serverStaticDir = join(outputDir, 'client');
+        if (!existsSync(join(outputDir, 'index.html')) && existsSync(join(serverStaticDir, 'index.html'))) {
+            outputDir = serverStaticDir;
+            console.log(`📁 Resolved server-rendered static directory: ${outputDir}`);
+        }
 
         // Check if output directory exists
         if (!existsSync(outputDir)) {

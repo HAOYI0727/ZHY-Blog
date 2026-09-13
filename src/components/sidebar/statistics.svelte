@@ -1,630 +1,136 @@
-<script context="module" lang="ts">
-    let isGlobalInitialized = false;
-    let cachedEcharts: any = null;
-</script>
-
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import dayjs from 'dayjs';
-
-    import { BREAKPOINT_LG } from "@constants/breakpoints";
     import { i18n } from "@i18n/translation";
     import I18nKey from "@i18n/i18nKey";
-    import Icon from "@components/common/icon.svelte";
 
+    type TimeScale = "year" | "month" | "day";
+    type CountItem = { name: string; count: number };
+    type ActivityPoint = { label: string; fullLabel: string; count: number };
 
     let {
-        posts = [],
-        categories = [],
-        tags = [],
-        class: className = "",
-        style = "",
-        side = "default",
+        publishedDates = [], categories = [], tags = [],
+        class: className = "", style = "", side = "default",
     }: {
-        posts?: any[],
-        categories?: any[],
-        tags?: any[],
-        class?: string,
-        style?: string,
-        side?: string,
+        publishedDates?: string[]; categories?: CountItem[]; tags?: CountItem[];
+        class?: string; style?: string; side?: string;
     } = $props();
 
     const labels = {
-        year: i18n(I18nKey.year),
-        month: i18n(I18nKey.month),
-        day: i18n(I18nKey.day),
-        posts: i18n(I18nKey.posts),
-        activities: "Activities",
-        categories: i18n(I18nKey.categories),
-        tags: i18n(I18nKey.tags),
+        year: i18n(I18nKey.year), month: i18n(I18nKey.month), day: i18n(I18nKey.day),
+        posts: i18n(I18nKey.posts), activities: "Activities",
+        categories: i18n(I18nKey.categories), tags: i18n(I18nKey.tags),
         statistics: i18n(I18nKey.statistics),
     };
+    let timeScale = $state<TimeScale>("year");
+    const pad = (value: number) => String(value).padStart(2, "0");
+    const localDay = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    const localMonth = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
 
-    let container = $state<HTMLDivElement>();
-    let heatmapContainer = $state<HTMLDivElement>();
-    let categoriesContainer = $state<HTMLDivElement>();
-    let tagsContainer = $state<HTMLDivElement>();
-    let echarts: any = $state();
-    let heatmapChart: any = $state();
-    let categoriesChart: any = $state();
-    let tagsChart: any = $state();
-    let isHeatmapLoading = $state(!isGlobalInitialized);
-    let isCategoriesLoading = $state(!isGlobalInitialized);
-    let isTagsLoading = $state(!isGlobalInitialized);
-
-    let timeScale: 'year' | 'month' | 'day' = $state('year');
-    let lastScale = $state<'year' | 'month' | 'day'>('year');
-    let isDark = $state(false);
-    let isDesktop = $state(true);
-
-    const updateIsDesktop = () => {
-        if (typeof window !== 'undefined') {
-            isDesktop = window.innerWidth >= BREAKPOINT_LG;
-        }
-    };
-
-    const getThemeColors = () => {
-        const isDarkNow = document.documentElement.classList.contains('dark');
-        return {
-            text: isDarkNow ? '#e5e7eb' : '#374151',
-            primary: isDarkNow ? '#60a5fa' : '#3b82f6', // Use standard hex for primary to avoid oklch issues in ECharts
-            grid: isDarkNow ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-            areaStart: isDarkNow ? 'rgba(96, 165, 250, 0.5)' : 'rgba(59, 130, 246, 0.5)',
-            areaEnd: isDarkNow ? 'rgba(96, 165, 250, 0)' : 'rgba(59, 130, 246, 0)',
-        };
-    };
-
-    const getChartsFontFamily = () => {
-        const fallback = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif";
-        if (typeof window === 'undefined') return fallback;
-        const target = container ?? document.body ?? document.documentElement;
-        const fontFamily = window.getComputedStyle(target).fontFamily;
-        return fontFamily && fontFamily !== 'inherit' ? fontFamily : fallback;
-    };
-
-    const loadECharts = async () => {
-        if (typeof window === 'undefined') return;
-        isDark = document.documentElement.classList.contains('dark');
-
-        if (cachedEcharts) {
-            echarts = cachedEcharts;
-            return;
-        }
-
-        // 动态导入 ECharts 及其组件，启用 Tree Shaking
-        const echartsCore = await import('echarts/core');
-        const { LineChart, RadarChart } = await import('echarts/charts');
-        const {
-            TitleComponent,
-            TooltipComponent,
-            GridComponent,
-            LegendComponent
-        } = await import('echarts/components');
-        const { SVGRenderer } = await import('echarts/renderers');
-
-        // 注册组件
-        echartsCore.use([
-            LineChart,
-            RadarChart,
-            TitleComponent,
-            TooltipComponent,
-            GridComponent,
-            LegendComponent,
-            SVGRenderer
-        ]);
-
-        echarts = echartsCore;
-        cachedEcharts = echartsCore;
-    };
-
-    let isInitialized = $state(false);
-
-    const initCharts = async () => {
-        if (isInitialized) return;
-        isInitialized = true;
-        // 依次初始化图表
-        await initActivityChart();
-        if (isDesktop) {
-            await initCategoriesChart();
-            await initTagsChart();
-        }
-        isGlobalInitialized = true;
-    };
-
-    const initActivityChart = async (isUpdate = false) => {
-        if (!heatmapContainer || !echarts) return;
-        if (!isUpdate && !isGlobalInitialized) isHeatmapLoading = true;
-
-        // 模拟加载延迟以测试效果
-        //if (!isUpdate) await new Promise(resolve => setTimeout(resolve, 300));
-
-        // 尝试获取现有实例以支持 Swup 持久化
-        const existingChart = echarts.getInstanceByDom(heatmapContainer);
-        const isNew = !existingChart;
-        if (existingChart) {
-            heatmapChart = existingChart;
-        } else {
-            heatmapChart = echarts.init(heatmapContainer, isDark ? 'dark' : null, { renderer: 'svg' });
-        }
-
-        const colors = getThemeColors();
-        const fontFamily = getChartsFontFamily();
-
-        const now = dayjs();
-        let data: any[] = [];
-        let xAxisData: string[] = [];
-
-        if (timeScale === 'year') {
-            // Show from the oldest post's year to current year, at least 5 years
-            const oldestYear = posts.length > 0
-                ? Math.min(...posts.map(p => dayjs(p.data.published).year()))
-                : now.year();
-            const currentYear = now.year();
-            const startYear = Math.min(oldestYear, currentYear - 4);
-
-            for (let year = startYear; year <= currentYear; year++) {
-                const yearStr = year.toString();
-                xAxisData.push(yearStr);
-                const count = posts.filter(p => dayjs(p.data.published).year() === year).length;
-                data.push(count);
-            }
-        } else if (timeScale === 'month') {
-            // Last 12 months
-            for (let i = 11; i >= 0; i--) {
-                const month = now.subtract(i, 'month');
-                const monthStr = month.format('YYYY-MM');
-                xAxisData.push(month.format('MMM'));
-                const count = posts.filter(p => dayjs(p.data.published).format('YYYY-MM') === monthStr).length;
-                data.push(count);
-            }
-        } else {
-            // Last 30 days
-            for (let i = 29; i >= 0; i--) {
-                const day = now.subtract(i, 'day');
-                const dayStr = day.format('YYYY-MM-DD');
-                xAxisData.push(day.format('DD'));
-                const count = posts.filter(p => dayjs(p.data.published).format('YYYY-MM-DD') === dayStr).length;
-                data.push(count);
-            }
-        }
-
-        const option = {
-            backgroundColor: 'transparent',
-            textStyle: { fontFamily },
-            animation: (isNew && !isGlobalInitialized) || isUpdate,
-            animationDuration: isNew ? 2000 : 500,
-            animationEasing: 'cubicOut',
-            title: {
-                text: labels.activities,
-                left: 'left',
-                textStyle: { fontFamily, fontSize: 14, color: colors.text, fontWeight: 'bold' }
-            },
-            tooltip: {
-                trigger: 'axis',
-                confine: true,
-                formatter: (params: any) => `${params[0].name}: ${params[0].value} ${labels.posts}`
-            },
-            grid: { left: '10%', right: '5%', bottom: '15%', top: '25%', containLabel: true },
-            xAxis: {
-                type: 'category',
-                data: xAxisData,
-                axisLine: { lineStyle: { color: colors.grid } },
-                axisLabel: { fontFamily, color: colors.text, fontSize: 10 }
-            },
-            yAxis: {
-                type: 'value',
-                minInterval: 1,
-                axisLine: { show: false },
-                axisLabel: { fontFamily, color: colors.text, fontSize: 10 },
-                splitLine: { lineStyle: { color: colors.grid, type: 'dashed' } }
-            },
-            series: [{
-                data: data,
-                type: 'line',
-                smooth: true,
-                symbol: 'circle',
-                symbolSize: 6,
-                itemStyle: { color: colors.primary },
-                lineStyle: { width: 3, color: colors.primary },
-                areaStyle: {
-                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        { offset: 0, color: colors.areaStart },
-                        { offset: 1, color: colors.areaEnd }
-                    ])
-                }
-            }]
-        };
-
-        heatmapChart.setOption(option);
-        if (!isUpdate) isHeatmapLoading = false;
-    };
-
-    const initCategoriesChart = async (isUpdate = false) => {
-        if (!categoriesContainer || !echarts) return;
-        if (!isUpdate && !isGlobalInitialized) isCategoriesLoading = true;
-        if (!isUpdate && !isGlobalInitialized) await new Promise(resolve => setTimeout(resolve, 300));
-
-        const colors = getThemeColors();
-        const fontFamily = getChartsFontFamily();
-
-        const existingCategoriesChart = echarts.getInstanceByDom(categoriesContainer);
-        if (existingCategoriesChart) {
-            categoriesChart = existingCategoriesChart;
-        } else {
-            categoriesChart = echarts.init(categoriesContainer, isDark ? 'dark' : null, { renderer: 'svg' });
-        }
-
-        const indicator = categories.map(c => ({ name: c.name, max: Math.max(...categories.map(x => x.count), 5) }));
-        const data = categories.map(c => c.count);
-
-        categoriesChart.setOption({
-            backgroundColor: 'transparent',
-            textStyle: { fontFamily },
-            animation: !isGlobalInitialized || isUpdate,
-            animationDuration: 2000,
-            animationEasing: 'exponentialOut',
-            tooltip: {
-                show: true,
-                trigger: 'item',
-                confine: true
-            },
-            title: {
-                text: labels.categories,
-                left: 'left',
-                textStyle: { fontFamily, fontSize: 14, color: colors.text, fontWeight: 'bold' }
-            },
-            radar: {
-                indicator: indicator,
-                radius: '60%',
-                center: ['50%', '60%'],
-                axisName: { fontFamily, color: colors.text, fontSize: 10 },
-                splitLine: { lineStyle: { color: colors.grid } },
-                splitArea: { show: false }
-            },
-            series: [{
-                type: 'radar',
-                data: [{ value: data, name: labels.categories }],
-                areaStyle: { color: 'rgba(255, 123, 0, 0.6)' },
-                lineStyle: { color: 'rgba(255, 123, 0, 0.9)' },
-                itemStyle: { color: 'rgba(255, 123, 0, 0.9)' },
-                emphasis: {
-                    areaStyle: { color: 'rgba(255, 123, 0, 0.9)' }
-                }
-            }]
-        });
-        if (!isUpdate) isCategoriesLoading = false;
-    };
-
-    const initTagsChart = async (isUpdate = false) => {
-        if (!tagsContainer || !echarts) return;
-        if (!isUpdate && !isGlobalInitialized) isTagsLoading = true;
-        if (!isUpdate && !isGlobalInitialized) await new Promise(resolve => setTimeout(resolve, 300));
-
-        const colors = getThemeColors();
-        const fontFamily = getChartsFontFamily();
-
-        const existingTagsChart = echarts.getInstanceByDom(tagsContainer);
-        if (existingTagsChart) {
-            tagsChart = existingTagsChart;
-        } else {
-            tagsChart = echarts.init(tagsContainer, isDark ? 'dark' : null, { renderer: 'svg' });
-        }
-
-        const sortedTags = [...tags].sort((a, b) => b.count - a.count).slice(0, 8);
-        const indicator = sortedTags.map(t => ({ name: t.name, max: Math.max(...sortedTags.map(x => x.count), 5) }));
-        const data = sortedTags.map(t => t.count);
-
-        tagsChart.setOption({
-            backgroundColor: 'transparent',
-            textStyle: { fontFamily },
-            animation: !isGlobalInitialized || isUpdate,
-            animationDuration: 2000,
-            animationEasing: 'exponentialOut',
-            tooltip: {
-                show: true,
-                trigger: 'item',
-                confine: true
-            },
-            title: {
-                text: labels.tags,
-                left: 'left',
-                textStyle: { fontFamily, fontSize: 14, color: colors.text, fontWeight: 'bold' }
-            },
-            radar: {
-                indicator: indicator,
-                radius: '60%',
-                center: ['50%', '60%'],
-                axisName: { fontFamily, color: colors.text, fontSize: 10 },
-                splitLine: { lineStyle: { color: colors.grid } },
-                splitArea: { show: false }
-            },
-            series: [{
-                type: 'radar',
-                data: [{ value: data, name: labels.tags }],
-                areaStyle: { color: 'rgba(16, 185, 129, 0.6)' },
-                lineStyle: { color: 'rgba(16, 185, 129, 0.9)' },
-                itemStyle: { color: 'rgba(16, 185, 129, 0.9)' },
-                emphasis: {
-                    areaStyle: { color: 'rgba(16, 185, 129, 0.9)' }
-                }
-            }]
-        });
-        if (!isUpdate) isTagsLoading = false;
-    };
-
-    const initRadarCharts = () => {
-        initCategoriesChart(true);
-        initTagsChart(true);
-    };
-
-    onMount(() => {
-        updateIsDesktop();
-
-        let visibilityObserver: IntersectionObserver;
-
-        const runInit = async () => {
-            await loadECharts();
-
-            // 检查是否处于初始加载动画阶段
-            const hasInitialAnimation = document.documentElement.classList.contains('show-initial-animation') ||
-                                       document.documentElement.classList.contains('is-loading');
-
-            if (hasInitialAnimation) {
-                // 查找带有动画类的侧边栏容器
-                const sidebar = container?.closest('.onload-animation-up');
-
-                const startInit = () => {
-                    if (!isInitialized) initCharts();
-                };
-
-                if (sidebar) {
-                    // 监听侧边栏淡入动画开始
-                    sidebar.addEventListener('animationstart', (e) => {
-                        if ((e as AnimationEvent).animationName === 'fade-in-up') {
-                            startInit();
-                        }
-                    }, { once: true });
-                }
-
-                // 使用 MutationObserver 监听 html 的 class 变化，作为更可靠的保底机制
-                const htmlObserver = new MutationObserver(() => {
-                    const isStillLoading = document.documentElement.classList.contains('is-loading');
-
-                    // 一旦 loading 结束（进入动画播放阶段），就开始绘制图表
-                    if (!isStillLoading) {
-                        startInit();
-                        htmlObserver.disconnect();
-                    }
-                });
-                htmlObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-
-                // 较长的保底时间（3秒），防止所有监听机制意外失效
-                setTimeout(() => {
-                    startInit();
-                    htmlObserver.disconnect();
-                }, 3000);
-
-            } else {
-                // 无动画状态，直接加载
-                initCharts();
-            }
-        };
-
-        if (container) {
-            visibilityObserver = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting) {
-                    visibilityObserver.disconnect();
-                    runInit();
-                }
+    function buildActivity(scale: TimeScale): ActivityPoint[] {
+        const dates = publishedDates.map((value) => new Date(value)).filter((date) => !Number.isNaN(date.getTime()));
+        const now = new Date();
+        if (scale === "year") {
+            const oldest = dates.length ? Math.min(...dates.map((date) => date.getFullYear())) : now.getFullYear();
+            const start = Math.min(oldest, now.getFullYear() - 4);
+            return Array.from({ length: now.getFullYear() - start + 1 }, (_, index) => {
+                const year = start + index;
+                return { label: String(year), fullLabel: String(year), count: dates.filter((date) => date.getFullYear() === year).length };
             });
-            visibilityObserver.observe(container);
         }
-
-        const handleResize = () => {
-            const wasDesktop = isDesktop;
-            updateIsDesktop();
-            
-            heatmapChart?.resize();
-            
-            if (isDesktop) {
-                if (wasDesktop) {
-                    categoriesChart?.resize();
-                    tagsChart?.resize();
-                } else {
-                    // 从移动端切换到桌面端，需要初始化雷达图，延迟一帧确保 DOM 已更新（{#if isDesktop} 生效）
-                    setTimeout(() => {
-                        initRadarCharts();
-                    }, 0);
-                }
-            }
-        };
-
-        const observer = new MutationObserver(() => {
-            const newIsDark = document.documentElement.classList.contains('dark');
-            if (newIsDark !== isDark) {
-                isDark = newIsDark;
-                if (isInitialized) {
-                    initActivityChart(true);
-                    if (isDesktop) initRadarCharts();
-                }
-            }
+        if (scale === "month") {
+            return Array.from({ length: 12 }, (_, index) => {
+                const date = new Date(now.getFullYear(), now.getMonth() - (11 - index), 1);
+                const key = localMonth(date);
+                return { label: date.toLocaleDateString(undefined, { month: "short" }), fullLabel: key, count: dates.filter((item) => localMonth(item) === key).length };
+            });
+        }
+        return Array.from({ length: 30 }, (_, index) => {
+            const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (29 - index));
+            const key = localDay(date);
+            return { label: pad(date.getDate()), fullLabel: key, count: dates.filter((item) => localDay(item) === key).length };
         });
-        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    }
 
-        window.addEventListener('resize', handleResize);
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            observer.disconnect();
-            if (visibilityObserver) visibilityObserver.disconnect();
-        };
-    });
+    function activityGeometry(points: ActivityPoint[]) {
+        const left = 24, right = 292, top = 34, bottom = 132;
+        const max = Math.max(...points.map((point) => point.count), 1);
+        const coords = points.map((point, index) => ({
+            ...point,
+            x: points.length === 1 ? left : left + (index / (points.length - 1)) * (right - left),
+            y: bottom - (point.count / max) * (bottom - top),
+            showLabel: points.length <= 12 || index % 5 === 0 || index === points.length - 1,
+        }));
+        const line = coords.map((point) => `${point.x},${point.y}`).join(" ");
+        const area = coords.length ? `M ${coords[0].x} ${bottom} L ${coords.map((point) => `${point.x} ${point.y}`).join(" L ")} L ${coords.at(-1)?.x ?? right} ${bottom} Z` : "";
+        return { coords, line, area, top, bottom, left, right };
+    }
 
-    $effect(() => {
-        if (timeScale && echarts && isInitialized) {
-            if (timeScale !== lastScale) {
-                lastScale = timeScale;
-                initActivityChart(true);
-            }
-        }
-    });
+    function radarGeometry(items: CountItem[]) {
+        const data = [...items].sort((a, b) => b.count - a.count).slice(0, 8);
+        const cx = 150, cy = 91, radius = 54;
+        const max = Math.max(...data.map((item) => item.count), 5);
+        const points = data.map((item, index) => {
+            const angle = -Math.PI / 2 + (Math.PI * 2 * index) / data.length;
+            return {
+                ...item,
+                x: cx + Math.cos(angle) * radius * (item.count / max),
+                y: cy + Math.sin(angle) * radius * (item.count / max),
+                axisX: cx + Math.cos(angle) * radius,
+                axisY: cy + Math.sin(angle) * radius,
+            };
+        });
+        const rings = [0.25, 0.5, 0.75, 1].map((ratio) => data.map((_, index) => {
+            const angle = -Math.PI / 2 + (Math.PI * 2 * index) / data.length;
+            return `${cx + Math.cos(angle) * radius * ratio},${cy + Math.sin(angle) * radius * ratio}`;
+        }).join(" "));
+        return { points, rings, polygon: points.map((point) => `${point.x},${point.y}`).join(" "), cx, cy };
+    }
+
+    let activity = $derived(activityGeometry(buildActivity(timeScale)));
+    let categoryRadar = $derived(radarGeometry(categories));
+    let tagRadar = $derived(radarGeometry(tags));
 </script>
 
-<div id={`statistics-${side}`} data-swup-persist={`statistics-${side}`} bind:this={container} class={"pb-4 card-base " + className} {style}>
-    <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2
-        before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
-        before:absolute before:left-[-16px] before:top-[5.5px]">{labels.statistics}</div>
-    <div class="px-4 overflow-hidden relative min-h-[180px]">
-        <div class="stats-charts">
-            <div class="chart-section heatmap-section">
-                {#if isHeatmapLoading}
-                    <div class="absolute inset-0 flex items-center justify-center z-10 bg-(--card-bg)/50 backdrop-blur-[1px]">
-                        <div class="text-(--primary) flex items-center justify-center">
-                            <Icon icon="material-symbols:progress-activity" class="animate-spin" style="font-size: 2.4rem;" />
-                        </div>
-                    </div>
-                {/if}
-                <div class="section-header">
-                    <div class="dropdown-wrapper">
-                        <button class="time-scale-select flex items-center gap-1">
-                            {labels[timeScale]}
-                            <span class="dropdown-icon flex items-center">
-                                <Icon icon="material-symbols:keyboard-arrow-down-rounded" />
-                            </span>
-                        </button>
-                        <div class="dropdown-menu-custom">
-                            <button class="dropdown-item-custom" class:active={timeScale === 'year'} onclick={() => timeScale = 'year'}>{labels.year}</button>
-                            <button class="dropdown-item-custom" class:active={timeScale === 'month'} onclick={() => timeScale = 'month'}>{labels.month}</button>
-                            <button class="dropdown-item-custom" class:active={timeScale === 'day'} onclick={() => timeScale = 'day'}>{labels.day}</button>
-                        </div>
-                    </div>
-                </div>
-                <div bind:this={heatmapContainer} class="heatmap-container transition-opacity duration-600" class:opacity-0={isHeatmapLoading}></div>
-            </div>
+{#snippet lineChart()}
+    <svg class="chart-svg" viewBox="0 0 310 158" role="img" aria-label={labels.activities}>
+        <defs><linearGradient id={`activity-fill-${side}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--primary)" stop-opacity="0.36"/><stop offset="1" stop-color="var(--primary)" stop-opacity="0.02"/></linearGradient></defs>
+        <text class="chart-title" x="8" y="16">{labels.activities}</text>
+        {#each [0, 0.5, 1] as ratio}<line class="grid-line" x1={activity.left} x2={activity.right} y1={activity.top + (activity.bottom - activity.top) * ratio} y2={activity.top + (activity.bottom - activity.top) * ratio}/>{/each}
+        {#if activity.area}<path d={activity.area} fill={`url(#activity-fill-${side})`}/>{/if}
+        <polyline class="activity-line" points={activity.line}/>
+        {#each activity.coords as point}
+            <circle class="activity-dot" cx={point.x} cy={point.y} r="3"><title>{point.fullLabel}: {point.count} {labels.posts}</title></circle>
+            {#if point.showLabel}<text class="axis-label" x={point.x} y="150" text-anchor="middle">{point.label}</text>{/if}
+        {/each}
+    </svg>
+{/snippet}
 
-            {#if isDesktop}
-                <div class="chart-section radar-section">
-                    {#if isCategoriesLoading}
-                        <div class="absolute inset-0 flex items-center justify-center z-10 bg-(--card-bg)/50 backdrop-blur-[1px]">
-                            <div class="text-(--primary) flex items-center justify-center">
-                                <Icon icon="material-symbols:progress-activity" class="animate-spin" style="font-size: 2.4rem;" />
-                            </div>
-                        </div>
-                    {/if}
-                    <div bind:this={categoriesContainer} class="radar-container transition-opacity duration-600" class:opacity-0={isCategoriesLoading}></div>
-                </div>
+{#snippet radarChart(title: string, radar: ReturnType<typeof radarGeometry>, tone: "orange" | "green")}
+    <svg class="chart-svg" viewBox="0 0 310 158" role="img" aria-label={title}>
+        <text class="chart-title" x="8" y="16">{title}</text>
+        {#each radar.rings as ring}<polygon class="radar-ring" points={ring}/>{/each}
+        {#each radar.points as point}
+            <line class="radar-axis" x1={radar.cx} y1={radar.cy} x2={point.axisX} y2={point.axisY}/>
+            <text class="radar-label" x={radar.cx + (point.axisX - radar.cx) * 1.2} y={radar.cy + (point.axisY - radar.cy) * 1.14} text-anchor={point.axisX < radar.cx - 5 ? "end" : point.axisX > radar.cx + 5 ? "start" : "middle"}>{point.name}</text>
+        {/each}
+        {#if radar.points.length}
+            <polygon class="radar-data" class:radar-orange={tone === "orange"} class:radar-green={tone === "green"} points={radar.polygon}/>
+            {#each radar.points as point}<circle class="radar-dot" class:dot-orange={tone === "orange"} class:dot-green={tone === "green"} cx={point.x} cy={point.y} r="2.8"><title>{point.name}: {point.count}</title></circle>{/each}
+        {/if}
+    </svg>
+{/snippet}
 
-                <div class="chart-section radar-section">
-                    {#if isTagsLoading}
-                        <div class="absolute inset-0 flex items-center justify-center z-10 bg-(--card-bg)/50 backdrop-blur-[1px]">
-                            <div class="text-(--primary) flex items-center justify-center">
-                                <Icon icon="material-symbols:progress-activity" class="animate-spin" style="font-size: 2.4rem;" />
-                            </div>
-                        </div>
-                    {/if}
-                    <div bind:this={tagsContainer} class="radar-container transition-opacity duration-600" class:opacity-0={isTagsLoading}></div>
-                </div>
-            {/if}
-        </div>
+<div id={`statistics-${side}`} data-swup-persist={`statistics-${side}`} class={`pb-4 card-base ${className}`} {style}>
+    <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 before:w-1 before:h-4 before:rounded-md before:bg-(--primary) before:absolute before:left-[-16px] before:top-[5.5px]">{labels.statistics}</div>
+    <div class="stats-charts px-3">
+        <section class="chart-section">
+            <label class="scale-control"><span class="sr-only">{labels.activities}</span><select bind:value={timeScale} aria-label={labels.activities}><option value="year">{labels.year}</option><option value="month">{labels.month}</option><option value="day">{labels.day}</option></select></label>
+            {@render lineChart()}
+        </section>
+        <section class="chart-section">{@render radarChart(labels.categories, categoryRadar, "orange")}</section>
+        <section class="chart-section">{@render radarChart(labels.tags, tagRadar, "green")}</section>
     </div>
 </div>
 
 <style>
-    .stats-charts {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        width: 100%;
-    }
-    .chart-section {
-        width: 100%;
-        position: relative;
-    }
-    .heatmap-section {
-        position: relative;
-    }
-    .section-header {
-        position: absolute;
-        right: 0;
-        top: 0;
-        z-index: 10;
-    }
-    .time-scale-select {
-        display: flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        background: var(--btn-regular-bg);
-        color: var(--btn-content);
-        border: 1px solid var(--line-color);
-        cursor: pointer;
-        opacity: 0.7;
-        transition: all 0.2s;
-        outline: none;
-    }
-    .time-scale-select:hover {
-        opacity: 1;
-        border-color: var(--primary);
-    }
-    .dropdown-wrapper {
-        position: relative;
-        display: inline-block;
-    }
-    .dropdown-wrapper:hover .dropdown-menu-custom {
-        opacity: 1;
-        visibility: visible;
-        translate: 0 0;
-    }
-    .dropdown-menu-custom {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        margin-top: 4px;
-        background: var(--card-bg);
-        border: 1px solid var(--line-color);
-        border-radius: 4px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        opacity: 0;
-        visibility: hidden;
-        translate: 0 -10px;
-        transition: all 0.2s;
-        z-index: 50;
-        min-width: 80px;
-        overflow: hidden;
-    }
-    .dropdown-item-custom {
-        width: 100%;
-        text-align: left;
-        padding: 6px 12px;
-        font-size: 0.7rem;
-        color: var(--btn-content);
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .dropdown-item-custom:hover {
-        background: var(--btn-plain-bg-hover);
-        color: var(--primary);
-    }
-    .dropdown-item-custom.active {
-        color: var(--primary);
-        font-weight: bold;
-        background: var(--btn-plain-bg-hover);
-    }
-    .dropdown-icon {
-        font-size: 0.9rem;
-        transition: rotate 0.2s;
-    }
-    .dropdown-wrapper:hover .dropdown-icon {
-        rotate: 180deg;
-    }
-    .heatmap-container {
-        height: 180px;
-        width: 100%;
-    }
-    .radar-container {
-        height: 250px;
-        width: 100%;
-    }
+    .stats-charts{display:flex;flex-direction:column;gap:.6rem;width:100%}.chart-section{position:relative;width:100%;min-height:158px;content-visibility:auto;contain-intrinsic-size:158px}.chart-svg{display:block;width:100%;height:auto;min-height:158px;overflow:visible;color:var(--primary)}.chart-title{fill:currentColor;font-size:13px;font-weight:700}.grid-line,.radar-ring,.radar-axis{stroke:color-mix(in srgb,currentColor 16%,transparent);stroke-width:1;fill:none}.activity-line{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}.activity-dot{fill:var(--card-bg);stroke:currentColor;stroke-width:2}.axis-label,.radar-label{fill:color-mix(in srgb,currentColor 72%,transparent);font-size:8px}.radar-data{stroke-width:2;stroke-linejoin:round}.radar-orange{fill:rgb(249 115 22/.28);stroke:rgb(249 115 22/.88)}.radar-green{fill:rgb(16 185 129/.28);stroke:rgb(16 185 129/.88)}.radar-dot{stroke-width:1.4}.dot-orange{fill:rgb(249 115 22);stroke:var(--card-bg)}.dot-green{fill:rgb(16 185 129);stroke:var(--card-bg)}.scale-control{position:absolute;z-index:2;right:.25rem;top:0}.scale-control select{min-height:28px;border:1px solid var(--line-divider);border-radius:.45rem;background:var(--btn-regular-bg);color:var(--btn-content);padding:2px 22px 2px 8px;font-size:.7rem;cursor:pointer}@media(prefers-reduced-motion:no-preference){.activity-line,.radar-data{animation:chart-enter 360ms ease-out both}@keyframes chart-enter{from{opacity:0}to{opacity:1}}}
 </style>

@@ -511,19 +511,8 @@ export type MusicPlayerTrack = {
 export type MusicPlayerConfig = {
     // 启用音乐播放器功能
     enable: boolean;
-    // 默认模式
-    mode: "meting" | "local";
-    // meting 模式专属配置
-    meting: {
-        // Meting API 地址
-        meting_api: string;
-        // 音乐平台
-        server: "netease" | "tencent" | "kugou" | "baidu" | "kuwo";
-        // 类型
-        type: "playlist" | "album" | "artist" | "song" | "search";
-        // 资源 ID
-        id: string;
-    };
+    // 播放器固定使用站点本地资源
+    mode: "local";
     // local 模式专属配置
     local: {
         // 播放列表

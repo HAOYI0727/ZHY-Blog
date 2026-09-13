@@ -1,0 +1,229 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface Props {
+    postId: string;
+}
+
+const { postId } = Astro.props;
+---
+
+<post-engagement class="post-engagement" data-post-id={postId} data-endpoint="/api/engagement/" title="浏览与点赞数据将在站点服务端持久保存">
+    <div class="post-engagement__metric" aria-label="文章浏览量">
+        <Icon name="material-symbols:visibility-outline-rounded" />
+        <span>浏览</span>
+        <strong data-post-views>0</strong>
+    </div>
+    <button type="button" class="post-engagement__like" data-post-like aria-pressed="false" aria-label="点赞这篇文章">
+        <Icon name="material-symbols:favorite-outline-rounded" class="post-engagement__like-off" />
+        <Icon name="material-symbols:favorite-rounded" class="post-engagement__like-on" />
+        <span>点赞</span>
+        <strong data-post-likes>0</strong>
+    </button>
+    <div class="post-engagement__metric post-engagement__heat" aria-label="文章热度">
+        <Icon name="material-symbols:local-fire-department-outline-rounded" />
+        <span>热度</span>
+        <strong data-post-heat>0</strong>
+    </div>
+</post-engagement>
+
+<style>
+    .post-engagement {
+        display: flex;
+        width: fit-content;
+        max-width: 100%;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin: -0.25rem 0 1.15rem;
+        color: var(--text-color);
+    }
+
+    .post-engagement__metric,
+    .post-engagement__like {
+        display: inline-flex;
+        min-height: 2.35rem;
+        align-items: center;
+        gap: 0.38rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider));
+        border-radius: 999px;
+        background: var(--btn-regular-bg);
+        padding: 0.4rem 0.72rem;
+        color: var(--text-secondary);
+        font: inherit;
+        font-size: 0.75rem;
+        line-height: 1;
+    }
+
+    .post-engagement__metric :global(svg),
+    .post-engagement__like :global(svg) {
+        flex: none;
+        color: var(--primary);
+        font-size: 1.08rem;
+    }
+
+    .post-engagement strong {
+        color: var(--text-color);
+        font-size: 0.76rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .post-engagement__like {
+        cursor: pointer;
+        transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
+    }
+
+    .post-engagement__like:hover {
+        border-color: color-mix(in srgb, #ef5b78 55%, var(--primary));
+        background: color-mix(in srgb, #ef5b78 12%, var(--btn-regular-bg));
+        color: var(--text-color);
+        transform: translateY(-1px);
+    }
+
+    .post-engagement__like:disabled {
+        cursor: wait;
+        opacity: 0.68;
+        transform: none;
+    }
+
+    .post-engagement__like[aria-pressed="true"] {
+        border-color: color-mix(in srgb, #ef5b78 72%, transparent);
+        background: color-mix(in srgb, #ef5b78 16%, var(--btn-regular-bg));
+        color: var(--text-color);
+    }
+
+    .post-engagement__like-on { display: none; }
+    .post-engagement__like[aria-pressed="true"] .post-engagement__like-off { display: none; }
+    .post-engagement__like[aria-pressed="true"] .post-engagement__like-on { display: inline-block; color: #ef5b78; }
+    .post-engagement__heat :global(svg) { color: #ef8b3a; }
+</style>
+
+<script>
+    type PostStat = { views: number; likes: number; heat: number; liked: boolean };
+    type PostStats = Record<string, PostStat>;
+    type ServerStat = { views: number; likes: number; heat: number; storage?: string };
+
+    const STORAGE_KEY = "blog-post-engagement-v1";
+    const SESSION_PREFIX = "blog-post-viewed:";
+
+    const readStats = (): PostStats => {
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") as PostStats;
+        } catch {
+            return {};
+        }
+    };
+
+    const writeStats = (stats: PostStats) => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+        } catch {
+            // 隐私模式或存储空间不可用时仍保持当前页面可用。
+        }
+    };
+
+    class PostEngagement extends HTMLElement {
+        connectedCallback() {
+            if (this.dataset.ready === "true") return;
+            this.dataset.ready = "true";
+
+            const postId = this.dataset.postId;
+            if (!postId) return;
+            const endpoint = this.dataset.endpoint || "/api/engagement/";
+
+            const allStats = readStats();
+            const stat = allStats[postId] || { views: 0, likes: 0, heat: 0, liked: false };
+            const sessionKey = `${SESSION_PREFIX}${postId}`;
+
+            const likeButton = this.querySelector<HTMLButtonElement>("[data-post-like]");
+            const viewsNode = this.querySelector<HTMLElement>("[data-post-views]");
+            const likesNode = this.querySelector<HTMLElement>("[data-post-likes]");
+            const heatNode = this.querySelector<HTMLElement>("[data-post-heat]");
+            const formatter = new Intl.NumberFormat(document.documentElement.lang || "zh-CN", { notation: "compact", maximumFractionDigits: 1 });
+            if (likeButton) likeButton.disabled = true;
+
+            const render = () => {
+                if (viewsNode) viewsNode.textContent = formatter.format(stat.views);
+                if (likesNode) likesNode.textContent = formatter.format(stat.likes);
+                if (heatNode) heatNode.textContent = formatter.format(stat.heat);
+                likeButton?.setAttribute("aria-pressed", String(stat.liked));
+                likeButton?.setAttribute("aria-label", stat.liked ? "取消点赞" : "点赞这篇文章");
+            };
+
+            const saveLocalSnapshot = () => {
+                allStats[postId] = stat;
+                writeStats(allStats);
+            };
+
+            const applyServerStat = (serverStat: ServerStat) => {
+                stat.views = Math.max(0, Number(serverStat.views) || 0);
+                stat.likes = Math.max(0, Number(serverStat.likes) || 0);
+                stat.heat = Math.max(0, Number(serverStat.heat) || stat.views + stat.likes * 6);
+                this.dataset.storage = serverStat.storage || "persistent";
+                saveLocalSnapshot();
+                render();
+            };
+
+            const requestStats = async (action?: "view" | "like" | "unlike") => {
+                const response = await fetch(action ? endpoint : `${endpoint}?post=${encodeURIComponent(postId)}`, {
+                    method: action ? "POST" : "GET",
+                    headers: action ? { "content-type": "application/json" } : undefined,
+                    body: action ? JSON.stringify({ post: postId, action }) : undefined,
+                    cache: "no-store",
+                });
+                if (!response.ok) throw new Error("Engagement service unavailable");
+                applyServerStat(await response.json() as ServerStat);
+            };
+
+            let shouldCountView = true;
+            try {
+                shouldCountView = !sessionStorage.getItem(sessionKey);
+                if (shouldCountView) sessionStorage.setItem(sessionKey, "1");
+            } catch {
+                // 无痕模式下允许服务端正常累计浏览。
+            }
+
+            requestStats(shouldCountView ? "view" : undefined).catch(() => {
+                // 本地开发未配置持久数据库时保留可用降级；上线后服务端数据始终优先。
+                this.dataset.storage = "browser-fallback";
+                if (shouldCountView) stat.views += 1;
+                stat.heat = stat.views + stat.likes * 6;
+                saveLocalSnapshot();
+                render();
+            }).finally(() => {
+                if (likeButton) likeButton.disabled = false;
+            });
+
+            likeButton?.addEventListener("click", async () => {
+                if (likeButton.disabled) return;
+                const previousLiked = stat.liked;
+                const previousLikes = stat.likes;
+                stat.liked = !stat.liked;
+                stat.likes = Math.max(0, stat.likes + (stat.liked ? 1 : -1));
+                stat.heat = stat.views + stat.likes * 6;
+                saveLocalSnapshot();
+                render();
+
+                likeButton.disabled = true;
+                try {
+                    await requestStats(stat.liked ? "like" : "unlike");
+                } catch {
+                    // 避免网络失败时本地数字与服务端持久数据不一致。
+                    stat.liked = previousLiked;
+                    stat.likes = previousLikes;
+                    stat.heat = stat.views + stat.likes * 6;
+                    saveLocalSnapshot();
+                    render();
+                } finally {
+                    likeButton.disabled = false;
+                }
+            });
+
+            render();
+        }
+    }
+
+    if (!customElements.get("post-engagement")) {
+        customElements.define("post-engagement", PostEngagement);
+    }
+</script>

@@ -1,324 +1,141 @@
 # ZHY's Blog
 
-这是 Zhang Haoyi 的个人知识博客，在线地址为 [twilight.spr-aachen.com](https://twilight.spr-aachen.com/)。项目基于 Astro 5、Svelte 5、Tailwind CSS 4 和 Twilight 主题构建，用于整理 AI Agent、LLM、深度学习、机器学习与课程学习笔记，也承载项目、技能、日记、相册和个人时间线等内容。
+> [!note]
+> 
+> 这是 ZHY 的个人博客与知识空间，主要用于整理人工智能、机器学习、深度学习、AI Agent、课程学习和软件开发相关内容，也记录个人项目、技能、日记、相册与成长经历。
+> 
+> 网站支持电脑、平板和手机访问，并提供全文搜索、文章分类、阅读进度、点赞与热度、主题切换、本地音乐和多语言阅读等功能。
+> 
+> 网站入口：[ZHY's Blog](https://www.hustzhy.cn/)
 
-## 功能概览
+## 网站导航
 
-- Markdown / MDX 内容集合，支持草稿、置顶、分类、标签、封面、阅读时间和上一篇/下一篇。
-- KaTeX 数学公式、Mermaid 图表、Callout、自动标题锚点和 Expressive Code 代码高亮。
-- 科技感欢迎导航页，汇总站点简介、全部分类气泡、最新文章和主要功能入口。
-- Pagefind 静态全文搜索，支持快捷键、键盘选择和搜索状态反馈，生产构建后自动生成索引。
-- RSS、Atom、Sitemap、robots.txt、Open Graph 元信息及可选的文章 OG 图片。
-- 响应式双侧栏、文章目录、主题色、明暗模式、壁纸模式与 Swup 页面过渡。
-- 阅读进度、跨会话继续阅读、预计剩余时间、相关文章推荐和可复制的章节锚点。
-- QQ、微信二维码、复制链接与系统原生分享；操作结果在当前页面以弹窗或 Toast 反馈。
-- 客户端多语言翻译，提供 14 种目标语言，并维护简体中文、繁体中文、英语和日语本地界面表。
-- 项目、技能、时间线、日记、相册、友链和 Bangumi 页面。
-- 本地 / Meting 音乐播放器、Waline / Twikoo 评论、Umami 统计与可选看板娘。
-- GitHub Pages、Vercel、Cloudflare Pages、Netlify、EdgeOne 和 Docker 部署配置。
-- 可选 Decap CMS 管理后台（当前 OAuth 集成默认关闭）。
-
-## 当前体验优化
-
-### 欢迎页与主页
-
-- 每次正常进入首页都会展示欢迎导航页，而不是仅在首次访问时显示。
-- 欢迎页沿用主页壁纸和蓝紫色科技视觉，叠加半透明面板、扫描光、星点与柔和动态效果。
-- 全部文章分类以气泡形式展示，气泡大小会参考分类文章数量；点击后直接进入对应分类的文章卡片页。
-- “最新灵感”固定展示三张等尺寸文章卡片，并提供归档、项目、时间线、关于和全文搜索提示。
-- 点击“进入我的博客”会播放揭幕式过渡动画；系统启用“减少动态效果”时会自动降低动画强度。
-- 主页使用 Banner 模式时，Banner 下方仍延续同一张壁纸，不会突然变成纯黑背景。
-
-### 文章与分类浏览
-
-- 文章详情页默认使用全屏壁纸并隐藏首屏 Banner，使正文阅读空间更加连贯。
-- 文章页顶部“返回首页”通过一次性 `?view=home` 意图直接进入主页正文；地址栏会立即恢复为 `/`，之后正常访问首页仍会显示欢迎页。
-- 分类入口统一指向 `/category/[slug]/`，分类页采用响应式三列文章卡片，而不是传统 Archive 列表。
-- 多级分类支持面包屑、父级返回、直接子分类入口和空状态提示。
-- `/posts/` 按年月显示等比例归档卡片，月份和日期会依据站点语言自动格式化。
-
-### 阅读、搜索与分享
-
-- 全局阅读进度条按文章正文区域计算，不会把评论和页尾内容错误计入进度。
-- 浏览器会在本地保存最近阅读的文章和位置，首页与文章归档页可从“继续阅读”卡片恢复。
-- 文章元信息会动态显示剩余阅读时间，正文末尾会根据分类与标签推荐相关文章。
-- 二级及以下标题带有可复制章节链接，便于引用和分享具体段落。
-- 搜索支持 `Ctrl/⌘ + K` 或 `/` 打开、方向键选择、`Enter` 访问、`Esc` 关闭，并对加载中、无结果和不可用状态提供反馈。
-- QQ 分享会打开小型分享窗口；微信分享使用当前页小弹窗展示二维码；复制链接与系统分享会显示即时反馈，不会切换整个页面。
-- 移动端导航和侧栏提供遮罩、独立滚动、键盘关闭与焦点状态，长目录不会覆盖统计卡片。
-
-## 技术栈
-
-| 层级 | 实现 |
+| 页面 | 主要内容 |
 | --- | --- |
-| 框架 | Astro 5、TypeScript |
-| 交互组件 | Svelte 5 |
-| 样式 | Tailwind CSS 4、PostCSS、Stylus |
-| 内容 | Astro Content Collections、Markdown / MDX、JSON |
-| 内容增强 | KaTeX、Mermaid、Expressive Code、rehype / remark 插件 |
-| 搜索 | Pagefind |
-| 图片 | Astro Assets、Sharp |
-| 部署 | GitHub Pages、Vercel、Cloudflare、Netlify、EdgeOne、Docker + Nginx |
+| **主页** | 查看最新文章、站点目录、分类、标签和统计信息 |
+| **文章** | 按年月或分类标签浏览全部文章 |
+| **归档** | 集中查看文章列表，并通过标签筛选内容 |
+| **项目展示** | 浏览个人开发项目与实践成果 |
+| **技能展示** | 查看技能方向、熟悉程度和相关经历 |
+| **时间线** | 了解学习、成长和项目经历 |
+| **日记** | 阅读生活记录与随笔 |
+| **相册** | 浏览课程、生活和风景照片 |
+| **关于** | 了解博客作者与联系方式 |
 
 ## 快速开始
 
-### 环境要求
-
-- Node.js LTS（推荐 20 或更高的 LTS 版本）
-- pnpm 9.14.4；版本以 `package.json#packageManager` 为准
-
-```bash
-corepack enable
-pnpm install --frozen-lockfile
-pnpm dev
-```
-
-开发服务器启动后访问终端显示的本地地址。开发模式不会加载 Pagefind 索引；需要验证全文搜索时请先执行生产构建，再预览构建产物。
-
-```bash
-pnpm build
-pnpm preview
-```
-
-## 常用命令
-
-| 命令 | 作用 |
-| --- | --- |
-| `pnpm dev` | 生成本地图标数据并启动 Astro 开发服务器 |
-| `pnpm build` | 生成图标、构建站点、创建 Pagefind 索引并检查关键 UI 功能契约 |
-| `pnpm preview` | 本地预览生产构建 |
-| `pnpm check` | 执行 Astro 类型/模板检查和 Stylus 编译检查 |
-| `pnpm check:features` | 检查已有构建目录中的导航、翻译、分类、文章和交互功能标记 |
-| `pnpm type-check` | 执行 Astro 类型与模板诊断 |
-| `pnpm check-stylus` | 单独检查 `.styl` 和组件内联 Stylus |
-| `pnpm new-post -- path/title` | 在 `src/content/posts` 下创建文章模板 |
-
-## 项目结构
-
-```text
-.
-├── public/                     # 原样复制的图片、音乐、favicon、看板娘资源
-├── scripts/                    # 图标生成、文章创建、构建与样式检查脚本
-├── src/
-│   ├── components/             # Astro / Svelte UI 组件
-│   │   ├── WelcomeGateway.astro     # 首页欢迎导航与进入动画
-│   │   ├── ContinueReading.astro    # 跨会话继续阅读入口
-│   │   └── PostCollectionGrid.astro # 分类/月度文章卡片网格
-│   ├── constants/              # 路由、图标与布局常量
-│   ├── content/                # 文章与各展示页的数据源
-│   │   ├── posts/              # Markdown / MDX 文章
-│   │   ├── albums/             # 相册 JSON 与图片
-│   │   ├── diary/              # 日记 JSON 与图片
-│   │   ├── friends/            # 友链 JSON
-│   │   ├── projects/           # 项目 JSON
-│   │   ├── skills/             # 技能 JSON
-│   │   └── timeline/           # 时间线 JSON
-│   ├── i18n/                   # 翻译键、语言配置与四套本地界面翻译
-│   ├── layouts/                # 基础布局与网格布局
-│   ├── pages/                  # Astro 文件路由和 Feed / OG 接口
-│   ├── plugins/                # Markdown、代码块、翻译等扩展
-│   ├── styles/                 # 全局 CSS 与 Stylus
-│   ├── types/                  # 配置类型
-│   └── utils/                  # 内容、URL、壁纸、分享与阅读连续性等工具
-├── astro.config.mjs            # Astro、Markdown 插件及部署适配器
-├── src/content.config.ts       # 文章 Content Collection Schema
-├── twilight.config.yaml        # 站点的主要业务与视觉配置
-├── pagefind.yml                # 搜索索引配置
-├── .decap.yml                  # Decap CMS 内容模型
-└── vercel.json                 # Vercel 构建、缓存与安全响应头
-```
-
-## 主要路由
-
-| 路由 | 内容 |
-| --- | --- |
-| `/`、`/[page]/` | 欢迎导航与分页文章首页 |
-| `/posts/`、`/posts/[slug]/` | 文章列表与详情 |
-| `/posts/[year]/[month]/` | 月度归档 |
-| `/archive/` | 总归档 |
-| `/category/[slug]/` | 分类文章卡片与多级分类导航 |
-| `/projects/`、`/skills/`、`/timeline/` | 个人展示页 |
-| `/diary/`、`/diary/[slug]/` | 日记列表与详情 |
-| `/albums/`、`/albums/[id]/` | 相册列表与详情 |
-| `/friends/`、`/about/`、`/anime/` | 友链、关于与 Bangumi 页面 |
-| `/rss.xml`、`/atom.xml` | 订阅源 |
-| `/admin/` | Decap CMS 管理入口 |
-
-## 站点配置
-
-大多数定制项集中在 `twilight.config.yaml`：
-
-- `site`：域名、标题、语言、字体、主题、壁纸、favicon、翻译与 OG 图片。
-- `navbar`：顶级导航、下拉菜单及自定义链接。
-- `sidebar`：左右侧栏组件、位置、可见路由与折叠阈值。
-- `profile`、`footer`、`announcement`：个人资料、页脚和公告。
-- `post`：文章卡片、代码主题、许可证和评论服务。
-- `analytics`：Umami 统计。
-- `particle`、`musicPlayer`、`pio`：粒子、音乐播放器和看板娘。
-
-修改域名时务必同步更新 `site.siteURL`；RSS、Atom、Sitemap、robots.txt、canonical/OG URL 都依赖它。Decap CMS 启用时，还需要同步检查 `.decap.yml` 中的仓库、域名和 OAuth 地址。
-
-### 翻译配置
-
-翻译功能当前已经启用，源语言为简体中文：
-
-```yaml
-site:
-  lang: "zh_hans"
-  translate:
-    enable: true
-    service: "client.edge"
-    showSelectTag: false
-    autoDiscriminate: true
-```
+### 1. 进入主页
 
-顶部导航栏使用自定义语言选择器，因此 `showSelectTag` 保持为 `false`，避免翻译插件再注入一套重复下拉框。支持语言统一定义在 `src/i18n/language.ts`；本地界面翻译位于 `src/i18n/languages/`，目前包含：
+首次打开网站时，可以通过欢迎导航页快速了解网站内容：
 
-- `zh_hans.ts`：简体中文，也是当前站点源语言。
-- `zh_hant.ts`：繁体中文。
-- `en.ts`：英语。
-- `ja.ts`：日语。
+- 点击“进入我的博客”进入主页。
+- 点击文章、归档、相册等卡片，可以直接前往对应页面。
+- 点击分类气泡，可以查看该分类下的全部文章。
+- 如果暂时不需要导航页，可以点击右上角的跳过按钮。
 
-新增界面文案时，应先在 `src/i18n/i18nKey.ts` 增加翻译键，再同时补齐以上四个语言文件。`Translation` 类型要求每张本地语言表覆盖全部键，`pnpm check` 会在遗漏时报告错误。其余目标语言由客户端翻译服务处理。
+从导航页进入主页时会播放柔和的过渡动画。刷新首页时会直接显示主页内容，不会重复停留在导航页。
 
-## 写文章
+### 2. 查找感兴趣的文章
 
-可以使用脚本创建文章：
+进入“文章”页面后，可以选择两种浏览方式：
 
-```bash
-pnpm new-post -- AI_Agent/My_New_Post
-```
+- **按年月**：默认方式，适合按照发布时间回顾文章。
+- **按分类标签**：适合查找某个主题下的相关文章。
 
-文章位于 `src/content/posts`，路径会参与最终 slug。基础 Frontmatter 示例：
+网站侧栏还会显示常用分类和标签。点击任意分类或标签，即可进入对应的文章集合。
 
-```yaml
----
-title: 文章标题
-published: 2026-09-03
-updated: 2026-09-03
-description: 用于文章卡片、搜索和 SEO 的摘要
-cover: /assets/images/posts/example.png
-coverInContent: false
-category: AI_Agent
-tags: [Agent, LLM]
-lang: zh-CN
-pinned: false
-draft: false
-comment: true
----
-```
+如果已经知道关键词，可以点击顶部的搜索按钮进行全文搜索。电脑端也支持以下快捷键：
 
-完整字段由 `src/content.config.ts` 定义：
+- **Ctrl + K** 或 **Command + K**：打开搜索。
+- **/**：快速进入搜索。
+- **↑**、**↓**：在搜索结果中移动。
+- **Enter**：打开选中的结果。
+- **Esc**：关闭搜索窗口。
 
-- 基础信息：`title`、`description`、`published`、`updated`、`author`、`lang`。
-- 组织信息：`category`、`tags`、`directoryTitle`、`pinned`、`routeName`。
-- 展示信息：`cover`、`coverInContent`、`draft`、`comment`。
-- 来源与许可：`sourceLink`、`licenseName`、`licenseUrl`。
-- 页面保护：`encrypted`、`password`。这是前端保护，不应当用于发布真正敏感的内容。
+### 3. 阅读文章
 
-生产环境会过滤 `draft: true` 的文章。RSS/Atom 也会排除加密文章；Atom 额外明确过滤草稿。
+文章页面提供多种辅助阅读功能：
 
-### 图片路径
+- 文章顶部显示发布日期、分类、标签、字数和预计阅读时间。
+- 阅读进度会根据正文位置实时更新。
+- 文章目录可以快速跳转到指定章节。
+- 点击章节标题旁的链接按钮，可以复制该章节的直达链接。
+- 正文末尾会推荐相关主题文章，方便继续阅读。
+- 返回首页按钮会直接回到主页内容。
 
-- 公共资源放在 `public/`，正文中使用以 `/` 开头的路径，例如 `/assets/images/posts/example.png`。
-- 与文章同目录的图片可使用 `./example.png`，构建时会交给 Astro Assets 处理。
-- 文件名大小写在 Linux 部署环境中严格区分。
-- 相册图片通常与相册 JSON 同目录，并使用 `./photo.JPG`。
+网站会在当前浏览器中保存最近阅读的文章和大致位置。再次访问时，可以通过“继续阅读”卡片回到上次阅读的内容。
 
-### Markdown 扩展
+### 4. 点赞、查看热度和分享
 
-项目支持数学公式、Mermaid、GitHub / Music 自定义卡片、提示块、标题锚点、代码行号、代码折叠和复制按钮。代码围栏的语言名应使用 Shiki 支持的小写标识，例如 `python`、`bash`、`text`。
+每篇文章都会显示：
 
-## 其他内容数据
+- **浏览量**：文章被访问的次数。
+- **点赞数**：读者对文章的点赞数量。
+- **热度**：结合浏览和点赞情况计算的综合指标。
 
-展示页使用 JSON 自动聚合，新增文件即可参与构建：
+正式网站连接数据服务后，这些数字会持续保存，不会因为刷新页面或网站重新部署而清空。同一页面在短时间内反复刷新不会重复增加浏览量。
 
-- `projects/*.json`：标题、描述、技术栈、状态、源码/演示地址和日期。
-- `skills/*.json`：名称、图标、分类、等级、经验和颜色。
-- `timeline/*.json`：事件类型、起止日期、技能、成果和链接。
-- `diary/**/*.json`：标题、正文、日期和图片列表。
-- `albums/**/*.json`：标题、封面、日期、布局、列数和照片列表。文件名默认作为相册 ID；如文件名重复，应设置唯一的 `id`。
-- `friends/*.json`：名称、头像、简介、站点地址和标签。
+文章底部还支持 QQ 分享、微信二维码分享、复制链接和系统分享。部分设备不支持系统分享时，可以直接使用复制链接。
 
-## 搜索、评论与统计
+## 显示与阅读设置
 
-### Pagefind
+顶部工具栏可以根据个人习惯调整网站外观：
 
-`pnpm build` 先执行 Astro 构建，再对最终目录运行 Pagefind，最后执行 `scripts/check-ui-features.cjs` 验证关键界面功能。默认构建产物是 `dist/`；Vercel 环境使用 `.vercel/output/static/`。搜索只索引带 `data-pagefind-body` 的页面，因此索引页数少于生成页数属于正常现象。
+- **亮色模式**：使用浅色背景和深色文字。
+- **暗色模式**：使用深色背景和浅色文字。
+- **跟随系统**：自动匹配设备当前的显示模式。
+- **主题颜色**：调整网站的主要强调色。
+- **壁纸模式**：切换不同的背景显示方式。
+- **语言切换**：将页面内容切换为其他支持的语言。
 
-### 评论
+网站会根据亮暗主题自动调整文字、按钮和面板颜色，以保持清晰的阅读对比度。
 
-当前启用 Waline，配置位于 `twilight.config.yaml > post.comment`。切换到 Twikoo 时设置 `provider: twikoo` 并填写相应服务配置。评论服务端必须允许正式站点域名。
+## 侧栏与目录
 
-### Umami
+电脑端页面通常包含左右侧栏：
 
-在 `analytics.enabled` 为 `true` 时启用。密钥与 Tracking Code 可以写入部署平台环境变量：
+- 左侧用于浏览网站目录、文章分类和标签。
+- 文章页面可展开完整文章目录。
+- 右侧用于展示个人信息、活动统计和内容分布。
 
-```dotenv
-UMAMI_API_KEY=
-UMAMI_TRACKING_CODE=
-```
+侧栏可以独立滚动，因此即使目录较长，也不会遮挡其他内容。
 
-## Decap CMS
+在手机和平板上，侧栏会收纳到菜单中。点击页面上的菜单或目录按钮即可打开，再次点击遮罩区域或按 **Esc** 可以关闭。
 
-管理入口会生成在 `/admin/`，但 `astro.config.mjs` 中的 OAuth 集成当前为 `enable: false`。启用前需要：
+## 本地音乐
 
-1. 在 GitHub 创建 OAuth App。
-2. 复制 `.env.example` 为 `.env` 并填写凭据。
-3. 校验 `.decap.yml` 中的 `repo`、`branch`、`site_domain` 和 `base_url`。
-4. 将 `decapCmsOauth()` 的 `enable` 改为 `true`。
+页面底部提供音乐播放器，音乐与封面均来自网站本地资源，不依赖第三方音乐接口。
 
-不要提交 `.env`。如果真实 OAuth Secret 曾进入 Git 历史，应立即在 GitHub 中撤销并重新生成；仅从最新提交删除文件并不能使旧 Secret 失效。
+可以展开播放器进行播放、暂停、切换歌曲和查看歌词。播放器保持收起时不会影响文章阅读。
 
-## 部署
+## 其他内容
 
-### GitHub Pages
+除了技术文章，网站还包含：
 
-`.github/workflows/deploy.yml` 会在 `main` 分支推送时运行 `pnpm build` 并发布 Pages。Astro 在 `GITHUB_ACTIONS` 环境下不启用服务端适配器，产出纯静态站点。
+- 项目作品和实践成果。
+- 技能与学习方向展示。
+- 个人成长时间线。
+- 日记、生活记录和观影随笔。
+- 课程、生活与风景相册。
+- 友链和个人兴趣页面。
 
-### Vercel
+可以通过顶部导航、欢迎页入口或左侧目录进入这些页面。
 
-导入仓库即可使用 `vercel.json`：安装命令为 `pnpm install`，构建命令为 `pnpm build`。该配置还为通用页面添加基础安全响应头，并为静态资源添加长期缓存。
+## 移动端使用
 
-### Cloudflare Pages / Netlify / EdgeOne
+网站已适配手机和平板：
 
-`astro.config.mjs` 会根据 `CF_PAGES`、`NETLIFY` 或 `EDGEONE` 环境变量选择适配器。各平台的构建命令均为 `pnpm build`，输出目录通常为 `dist`。
+- 顶部导航会自动简化。
+- 菜单、目录和搜索面板支持触屏操作。
+- 文章卡片与正文会根据屏幕宽度重新排列。
+- 点赞、分享、主题切换和音乐播放均可正常使用。
 
-### Docker
+为了获得更舒适的阅读体验，建议在长文章中使用文章目录和阅读进度功能。
 
-```bash
-docker compose up --build -d
-```
+## 内容订阅
 
-服务仅绑定到本机 `127.0.0.1:8070`，适合再由宿主机 Nginx、Caddy 或其他反向代理对外提供 HTTPS。Docker 镜像使用多阶段构建，最终由 Nginx 提供静态文件。
+网站提供 RSS 和 Atom 订阅入口。使用支持 RSS/Atom 的阅读器添加订阅后，可以及时查看新发布的文章。
 
-## 环境变量
+## 反馈
 
-参见 `.env.example`。当前代码识别以下变量：
-
-| 变量 | 用途 |
-| --- | --- |
-| `OAUTH_GITHUB_CLIENT_ID` | Decap CMS GitHub OAuth Client ID |
-| `OAUTH_GITHUB_CLIENT_SECRET` | Decap CMS GitHub OAuth Secret |
-| `UMAMI_API_KEY` | Umami API 密钥 |
-| `UMAMI_TRACKING_CODE` | Umami 注入代码 |
-| `GITHUB_ACTIONS` / `CF_PAGES` / `NETLIFY` / `EDGEONE` / `VERCEL` | 自动选择构建适配器与搜索索引目录 |
-
-## 质量检查与注意事项
-
-提交前建议执行：
-
-```bash
-pnpm check
-pnpm build
-```
-
-- 相册与文章图片数量较多，首次生产构建需要进行 Sharp 图片优化，耗时和磁盘占用会明显高于普通博客。
-- 翻译功能当前已开启。翻译插件包含动态执行逻辑，因此 Vite 构建时会提示 `eval` 风险；升级或替换插件后应重新测试语言切换、Swup 无刷新导航和源语言恢复。
-- 翻译、Meting、评论、Google Fonts、Iconify 回退、二维码分享与部分友链头像依赖外部网络；网络不可用时，博客正文、导航和本地搜索索引仍应保持可访问。
-- 本地音乐的 `url` / `lrc` 必须能在 `public/` 下找到；没有歌词时请将 `lrc` 留空，避免产生 404 请求。
-- `dist/`、`.astro/`、`.vercel/` 和 `node_modules/` 均为生成目录，不应提交。
-
-## License
-
-代码沿用 Twilight 项目的 [MIT License](./LICENSE)。文章、图片、音频等内容资产不因代码许可证而自动获得相同授权；转载或复用前请联系内容作者。
+如果发现内容错误、链接失效、功能异常或显示问题，可以通过作者的 [GitHub](https://github.com/HAOYI0727) 联系或提交反馈。

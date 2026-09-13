@@ -18,6 +18,7 @@ import Markdown from "@components/common/markdown.astro";
 import ImageWrapper from "@components/common/imageWrapper.astro";
 import PasswordProtection from "@components/common/passwordProtection.astro";
 import PostMetadata from "@components/post/postMeta.astro";
+import PostEngagement from "@components/post/PostEngagement.astro";
 import Comment from "@components/comment.astro";
 import RelatedPosts from "@components/post/RelatedPosts.astro";
 import GridLayout from "@layouts/grid.astro";
@@ -232,6 +233,7 @@ const postDesc = entry.data.description || postTitle;
                     category={entry.data.category}
                     postUrl={getPostUrl(entry)}
                 />
+                <PostEngagement postId={postUrl} />
                 {
                     (!entry.data.cover || (entry.data.cover && !entry.data.coverInContent)) && (
                         <div class="mt-4 border-(--line-divider) border-dashed border-b mb-5" />

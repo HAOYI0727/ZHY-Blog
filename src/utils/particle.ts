@@ -195,6 +195,16 @@ export class ParticleManager {
     private animationId: number | null = null;
     private img: HTMLImageElement | null = null;
     private isRunning = false;
+    private lastFrameTime = 0;
+    private readonly resizeHandler = () => this.handleResize();
+    private readonly visibilityHandler = () => {
+        if (document.hidden) {
+            if (this.animationId !== null) cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        } else if (this.isRunning && this.animationId === null) {
+            this.startAnimation();
+        }
+    };
     // 构造函数
     constructor(config: ParticleConfig) {
         this.config = config;
@@ -219,10 +229,10 @@ export class ParticleManager {
         this.createCanvas();
         // 创建粒子列表
         this.createParticleList();
-        // 启动动画循环
-        this.startAnimation();
         // 标记为运行中
         this.isRunning = true;
+        // 启动动画循环
+        this.startAnimation();
     }
     // 创建画布
     private createCanvas(): void {
@@ -239,7 +249,8 @@ export class ParticleManager {
         this.ctx = this.canvas.getContext("2d");
         // 监听窗口大小变化
         if (typeof window !== "undefined") {
-            window.addEventListener("resize", this.handleResize.bind(this));
+            window.addEventListener("resize", this.resizeHandler, { passive: true });
+            document.addEventListener("visibilitychange", this.visibilityHandler);
         }
     }
     // 创建粒子列表
@@ -282,12 +293,20 @@ export class ParticleManager {
     }
     // 开始动画
     private startAnimation(): void {
-        if (!this.ctx || !this.canvas || !this.particleList) return;
-        const animate = () => {
+        if (!this.ctx || !this.canvas || !this.particleList || this.animationId !== null) return;
+        const frameInterval = 1000 / 30;
+        const animate = (timestamp: number) => {
             if (!this.ctx || !this.canvas || !this.particleList) return;
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.particleList.update();
-            this.particleList.draw(this.ctx);
+            if (document.hidden) {
+                this.animationId = null;
+                return;
+            }
+            if (timestamp - this.lastFrameTime >= frameInterval) {
+                this.lastFrameTime = timestamp;
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.particleList.update();
+                this.particleList.draw(this.ctx);
+            }
             this.animationId = requestAnimationFrame(animate);
         };
         this.animationId = requestAnimationFrame(animate);
@@ -306,12 +325,14 @@ export class ParticleManager {
             this.animationId = null;
         }
         if (this.canvas && typeof document !== "undefined") {
-            document.body.removeChild(this.canvas);
+            this.canvas.remove();
             this.canvas = null;
         }
         if (typeof window !== "undefined") {
-            window.removeEventListener("resize", this.handleResize.bind(this));
+            window.removeEventListener("resize", this.resizeHandler);
+            document.removeEventListener("visibilitychange", this.visibilityHandler);
         }
+        this.lastFrameTime = 0;
         this.isRunning = false;
     }
     // 切换粒子特效
