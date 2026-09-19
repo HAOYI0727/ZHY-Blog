@@ -115,21 +115,21 @@ class TypewriterEffect {
     }
 }
 
-// 初始化所有打字机效果
-document.addEventListener('DOMContentLoaded', () => {
+// 初始化所有打字机效果；每个节点只初始化一次，避免 Swup 切页后重复计时器。
+const initTypewriters = () => {
     const typewriterElements = document.querySelectorAll('.typewriter');
     typewriterElements.forEach((element) => {
+        if ((element as HTMLElement).dataset.typewriterReady === 'true') return;
+        (element as HTMLElement).dataset.typewriterReady = 'true';
         new TypewriterEffect(element as HTMLElement);
     });
+};
+
+initTypewriters();
+document.addEventListener('astro:page-load', () => {
+    requestAnimationFrame(initTypewriters);
 });
 
-// 支持页面切换时重新初始化
-document.addEventListener('swup:contentReplaced', () => {
-    const typewriterElements = document.querySelectorAll('.typewriter');
-    typewriterElements.forEach((element) => {
-        new TypewriterEffect(element as HTMLElement);
-    });
-});
 </script>
 
 <style>

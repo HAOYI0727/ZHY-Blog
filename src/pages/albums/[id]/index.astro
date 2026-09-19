@@ -89,10 +89,16 @@ if (!album) {
 </GridLayout>
 
 <script define:vars={{ albumId: `/albums/${album.id}/` }}>
-    const storageKey = `album-viewed:${albumId}`;
-    const viewsNode = document.querySelector("[data-album-views] strong");
-    const updateViews = (views: number) => { if (viewsNode) viewsNode.textContent = new Intl.NumberFormat().format(Math.max(0, views)); };
-    const loadAlbumViews = async () => {
+    const setupAlbumViews = () => {
+        const viewsNode = document.querySelector("[data-album-views] strong");
+        const viewsContainer = document.querySelector("[data-album-views]");
+        if (!viewsNode || !viewsContainer || viewsContainer.dataset.ready === "true") return;
+        viewsContainer.dataset.ready = "true";
+        const storageKey = `album-viewed:${albumId}`;
+        const updateViews = (views) => { viewsNode.textContent = new Intl.NumberFormat().format(Math.max(0, views)); };
+        loadAlbumViews(storageKey, updateViews);
+    };
+    const loadAlbumViews = async (storageKey, updateViews) => {
         let viewed = false;
         try { viewed = sessionStorage.getItem(storageKey) === "1"; } catch {}
         try {
@@ -109,7 +115,9 @@ if (!album) {
             if (!viewed) { try { sessionStorage.setItem(storageKey, "1"); } catch {} }
         } catch {}
     };
-    loadAlbumViews();
+    const scheduleAlbumViews = () => requestAnimationFrame(() => window.setTimeout(setupAlbumViews, 0));
+    scheduleAlbumViews();
+    document.addEventListener("astro:page-load", scheduleAlbumViews);
 </script>
 
 <style>

@@ -70,9 +70,10 @@ const id = `profile-${side}`;
         import { initAnalyticsStats } from "@utils/analytics";
         import "@/plugins/umami-share";
 
-        initAnalyticsStats(".site-stats-container", ".site-stats-display", "umami", false);
-        document.addEventListener('astro:page-load', () => {
+        const scheduleSiteStats = () => requestAnimationFrame(() => window.setTimeout(() => {
             initAnalyticsStats(".site-stats-container", ".site-stats-display", "umami", false);
-        });
+        }, 0));
+        scheduleSiteStats();
+        document.addEventListener('astro:page-load', scheduleSiteStats);
     </script>
 )}

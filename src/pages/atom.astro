@@ -105,7 +105,8 @@ const recentPosts = posts.slice(0, 6);
         // Copy button functionality
         const init = () => {
             const copyBtn = document.getElementById('copy-atom-btn');
-            if (copyBtn) {
+            if (copyBtn && copyBtn.dataset.copyBound !== 'true') {
+                copyBtn.dataset.copyBound = 'true';
                 copyBtn.addEventListener('click', async function() {
                     const url = this.getAttribute('data-url');
                     if (!url) return;

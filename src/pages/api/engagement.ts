@@ -96,7 +96,8 @@ const withHeat = (counts: Counts) => ({ ...counts, heat: counts.views + counts.l
 export const GET: APIRoute = async ({ url }) => {
     const postIds = (url.searchParams.get("posts") || "")
         .split(",")
-            .map((postId) => normalizeEngagementId(decodeURIComponent(postId)))
+            // URLSearchParams 已经完成了解码；再次 decodeURIComponent 会让畸形输入直接抛出异常。
+            .map((postId) => normalizeEngagementId(postId))
         .filter((postId): postId is string => Boolean(postId));
 
     if (postIds.length > 0) {

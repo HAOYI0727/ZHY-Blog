@@ -41,6 +41,17 @@ const topicGroups = Array.from(topicMap.values())
 
 const heatCandidates = allPosts.slice().sort((a, b) => new Date(b.data.published).getTime() - new Date(a.data.published).getTime());
 const heatCardGradient = (index: number) => `linear-gradient(135deg, oklch(0.68 0.16 ${205 + index * 17}), oklch(0.45 0.16 ${255 + index * 13}))`;
+
+type MonthGroup = { key: string; year: number; month: number; posts: typeof allPosts };
+const monthMap = new Map<string, MonthGroup>();
+for (const post of allPosts) {
+  const date = new Date(post.data.published);
+  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  const group = monthMap.get(key) || { key, year: date.getFullYear(), month: date.getMonth() + 1, posts: [] };
+  group.posts.push(post);
+  monthMap.set(key, group);
+}
+const monthGroups = Array.from(monthMap.values()).sort((a, b) => b.key.localeCompare(a.key));
 ---
 
 <GridLayout title={pageTitle} description={pageDescription}>
@@ -59,7 +70,25 @@ const heatCardGradient = (index: number) => `linear-gradient(135deg, oklch(0.68 
       <div class="post-browse-switch" role="tablist" aria-label="文章浏览方式">
         <button type="button" role="tab" aria-selected="true" aria-controls="post-view-topic" data-post-view-button="topic"><span class="i-material-symbols:category-outline-rounded"></span>按主题</button>
         <button type="button" role="tab" aria-selected="false" aria-controls="post-view-heat" data-post-view-button="heat"><span class="i-material-symbols:local-fire-department-outline-rounded"></span>按热度</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="post-view-month" data-post-view-button="month"><span class="i-material-symbols:calendar-month-outline-rounded"></span>按年月</button>
       </div>
+
+      <section id="post-view-month" data-post-view="month" role="tabpanel" aria-label="按年月浏览文章" hidden>
+        <div class="month-browser-list">
+          {monthGroups.map((group) => (
+            <article class="month-browser-card">
+              <header class="month-browser-header">
+                <div><span class="month-browser-number">{String(group.month).padStart(2, "0")}</span><h2>{group.year}年{group.month}月</h2></div>
+                <span>{group.posts.length} 篇</span>
+              </header>
+              <div class="month-browser-posts">
+                {group.posts.map((post) => <a href={getPostUrl(post)}><time datetime={new Date(post.data.published).toISOString()}>{new Date(post.data.published).toLocaleDateString("zh-CN", { month: "2-digit", day: "2-digit" })}</time><span>{post.data.title}</span><span class="i-material-symbols:arrow-outward-rounded"></span></a>)}
+              </div>
+            </article>
+          ))}
+        </div>
+        <p class="posts-footnote">按发布时间倒序排列</p>
+      </section>
 
       <section id="post-view-topic" data-post-view="topic" role="tabpanel" aria-label="按主题浏览文章">
         <div class="topic-browser-grid">
@@ -139,6 +168,19 @@ const heatCardGradient = (index: number) => `linear-gradient(135deg, oklch(0.68 
   .post-browse-switch button span { position:relative; z-index:1; display:grid; width:1.45rem; height:1.45rem; place-items:center; border-radius:.45rem; background:color-mix(in srgb, currentColor 10%, transparent); font-size:1.05rem; transition:background 180ms ease, transform 180ms ease; }
   .post-browse-switch button[aria-selected="true"] { border-color:color-mix(in srgb, var(--primary) 28%, transparent); background:linear-gradient(135deg, color-mix(in srgb, var(--primary) 17%, var(--card-bg)), var(--card-bg)); color:var(--primary); box-shadow:0 .35rem 1rem color-mix(in srgb, var(--primary) 16%, transparent), inset 0 1px 0 rgb(255 255 255 / 16%); }
   .post-browse-switch button[aria-selected="true"] span { background:color-mix(in srgb, var(--primary) 15%, transparent); transform:scale(1.06); }
+  .month-browser-list { display:grid; gap:1rem; }
+  .month-browser-card { overflow:hidden; border:1px solid var(--line-divider); border-radius:1.05rem; background:color-mix(in srgb, var(--card-bg) 88%, transparent); }
+  .month-browser-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.85rem 1rem .75rem; border-bottom:1px solid var(--line-divider); background:linear-gradient(90deg, color-mix(in srgb, var(--primary) 9%, transparent), transparent 55%); }
+  .month-browser-header > div { display:flex; align-items:center; gap:.65rem; }
+  .month-browser-number { display:grid; width:2rem; height:2rem; place-items:center; border-radius:.65rem; background:color-mix(in srgb, var(--primary) 13%, var(--btn-regular-bg)); color:var(--primary); font-size:.72rem; font-weight:800; }
+  .month-browser-header h2 { margin:0; color:var(--text-color); font-size:1.05rem; }
+  .month-browser-header > span { color:var(--text-tertiary); font-size:.72rem; }
+  .month-browser-posts { padding:.3rem .7rem .5rem; }
+  .month-browser-posts a { display:grid; grid-template-columns:3.3rem minmax(0,1fr) auto; align-items:center; gap:.7rem; min-height:2.55rem; border-radius:.65rem; color:var(--text-secondary); transition:background 150ms ease, color 150ms ease, transform 150ms ease; }
+  .month-browser-posts a:hover { background:color-mix(in srgb, var(--primary) 8%, transparent); color:var(--text-color); transform:translateX(3px); }
+  .month-browser-posts time { color:var(--text-tertiary); font-size:.72rem; font-variant-numeric:tabular-nums; text-align:right; }
+  .month-browser-posts a > span:nth-child(2) { overflow:hidden; font-size:.86rem; font-weight:650; text-overflow:ellipsis; white-space:nowrap; }
+  .month-browser-posts a > span:last-child { color:var(--text-tertiary); font-size:1rem; }
   .topic-browser-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.1rem; }
   .topic-browser-card { overflow:hidden; border:1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider)); border-radius:1.2rem; background:color-mix(in srgb, var(--card-bg) 92%, transparent); box-shadow:inset 0 1px 0 rgb(255 255 255 / 8%); }
   .topic-browser-cover { position:relative; aspect-ratio:1; overflow:hidden; background:var(--btn-regular-bg); }
@@ -197,13 +239,15 @@ const heatCardGradient = (index: number) => `linear-gradient(135deg, oklch(0.68 
 </style>
 
 <script>
-  const setupPostBrowse = () => {
+  const setupPostBrowseSwitcher = () => {
     const root = document.querySelector<HTMLElement>("#swup-container");
-    if (!root || root.dataset.postBrowseReady === "true") return;
+    const switcher = root?.querySelector<HTMLElement>(".post-browse-switch");
+    if (!root || !switcher || switcher.dataset.postBrowseReady === "true") return;
     const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-post-view-button]"));
     const panels = Array.from(root.querySelectorAll<HTMLElement>("[data-post-view]"));
     if (!buttons.length || !panels.length) return;
-    root.dataset.postBrowseReady = "true";
+    // 标记当前页面的切换器，而不是可被 Swup 复用的外层容器。
+    switcher.dataset.postBrowseReady = "true";
     const selectView = (view: string) => { buttons.forEach((button) => button.setAttribute("aria-selected", String(button.dataset.postViewButton === view))); panels.forEach((panel) => { panel.hidden = panel.dataset.postView !== view; }); };
     buttons.forEach((button) => button.addEventListener("click", () => selectView(button.dataset.postViewButton || "topic")));
     selectView("topic");
@@ -236,6 +280,21 @@ const heatCardGradient = (index: number) => `linear-gradient(135deg, oklch(0.68 
     renderHeat({});
     fetch(`/api/engagement/?posts=${encodeURIComponent(ids.join(","))}`, { credentials: "same-origin" }).then((response) => response.ok ? response.json() : Promise.reject(new Error("engagement unavailable"))).then((payload) => renderHeat(payload.posts || {})).catch(() => undefined);
   };
-  setupPostBrowse();
-  document.addEventListener("astro:page-load", setupPostBrowse);
+  // Swup 可能在新容器插入前执行页面脚本；延后一帧，确保切页后的 DOM 已经可用。
+  const schedulePostBrowseSwitcher = () => {
+    requestAnimationFrame(() => window.setTimeout(setupPostBrowseSwitcher, 0));
+  };
+  schedulePostBrowseSwitcher();
+
+  const browseWindow = window as typeof window & { __twilightPostBrowseSwitcherBound?: boolean };
+  if (!browseWindow.__twilightPostBrowseSwitcherBound) {
+    browseWindow.__twilightPostBrowseSwitcherBound = true;
+    document.addEventListener("astro:page-load", schedulePostBrowseSwitcher);
+    const bindSwupHook = () => {
+      if (!window.swup?.hooks) return;
+      window.swup.hooks.on("page:view", schedulePostBrowseSwitcher);
+    };
+    if (window.swup?.hooks) bindSwupHook();
+    else document.addEventListener("swup:enable", bindSwupHook, { once: true });
+  }
 </script>

@@ -130,9 +130,10 @@ const { enabled: analyticsEnabled, platform, baseUrl, apiKey, websiteId } = getA
         import { initAnalyticsStats } from "@utils/analytics";
         import "@/plugins/umami-share";
 
-        initAnalyticsStats(".page-views-container", ".page-views-display", "umami", true);
-        document.addEventListener('astro:page-load', () => {
+        const schedulePageStats = () => requestAnimationFrame(() => window.setTimeout(() => {
             initAnalyticsStats(".page-views-container", ".page-views-display", "umami", true);
-        });
+        }, 0));
+        schedulePageStats();
+        document.addEventListener('astro:page-load', schedulePageStats);
     </script>
 )}
