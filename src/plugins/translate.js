@@ -10185,13 +10185,12 @@ var translate = {
             try {
                 jsObject = JSON.parse(jsString);
             } catch (e) {
-                try {
-                    jsObject = eval('(' + jsString + ')');
-                } catch (e) {
-                    translate.log(e)
-                    failureFunction(e);
-                    return;
-                }
+                // Only accept valid JSON. Evaluating arbitrary input here can
+                // execute code during a translation request and also prevents
+                // Vite from safely tree-shaking this vendor module.
+                translate.log(e)
+                failureFunction(e);
+                return;
             }
             translate.js.transObject(jsObject, targetLanguage, successFunction, failureFunction);
         },

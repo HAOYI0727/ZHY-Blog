@@ -205,9 +205,9 @@ $$
 
 $$
 \begin{aligned}
-\text{参数量} &= 256 \times 1 \times 1 \times 64 & \text{(1×1降维)} \\
-&+ 64 \times 3 \times 3 \times 64 & \text{(3×3特征提取)} \\
-&+ 64 \times 1 \times 1 \times 256 & \text{(1×1升维)} \\
+\text{参数量} &= 256 \times 1 \times 1 \times 64 & \text{(1\times1降维)} \\
+&+ 64 \times 3 \times 3 \times 64 & \text{(3\times3特征提取)} \\
+&+ 64 \times 1 \times 1 \times 256 & \text{(1\times1升维)} \\
 &= 16,384 + 36,864 + 16,384 = 69,632
 \end{aligned}
 $$

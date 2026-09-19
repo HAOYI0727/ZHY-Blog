@@ -85,7 +85,7 @@ draft: false
 
 （1）含义：**面向精度的评估指标**
 
-（2）**核心公式**：$BLEU=BP × exp \left(\frac{1}{N} \sum_{n=1}^{N} log \left(p_{n}\right)\right)$ 
+（2）**核心公式**：$BLEU=BP \times exp \left(\frac{1}{N} \sum_{n=1}^{N} log \left(p_{n}\right)\right)$
 
 > 其中：
 > - $BP=min \left(1, exp \left(1-\frac{n_{ref }}{n_{pred }}\right)\right)$ ：Brevity Penalty，即简短惩罚项——避免LLM通过**生成过短文本**提高精确率，若 $n_{pred}<n_{ref}$ ，BP<1，惩罚模型输出
@@ -219,7 +219,7 @@ response = client.responses.parse(
 
 传统工作流： $\text{LLM Output} \to \text{Human ratings}$ 
 
-现代工作流： $\text{LLM Output} \to \text{LLM-as-a-Judge（初评）} \to \text{Human ratings（校准）} \to \text{Final Evaluation Result}$ 
+现代工作流：LLM Output → LLM-as-a-Judge（初评）→ Human ratings（校准）→ Final Evaluation Result
 
 ### 3.9. 评估维度
 
@@ -245,7 +245,7 @@ response = client.responses.parse(
 
 - 步骤3：**Score factual authenticity（事实真实性评分$score_i$ ）**：对每个独立事实进行**真实性打分**（X表示错误，√表示正确，量化为0/1）——$score_i=1$ ：事实正确；$score_i=0$ ：事实错误（幻觉）
 
-- 步骤4：**Weighted summation（加权求和）**：$score =\sum_{i=1}^{n} \alpha_{i} × score _{i}$ （其中 $n$ 是拆解后的独立事实数量）；通过权重体现事实的重要性，最终分数为**事实性量化结果**，分数越高，事实性越强。
+- 步骤4：**Weighted summation（加权求和）**：$score =\sum_{i=1}^{n} \alpha_{i} \times score _{i}$ （其中 $n$ 是拆解后的独立事实数量）；通过权重体现事实的重要性，最终分数为**事实性量化结果**，分数越高，事实性越强。
   
 ![Factuality](images/8-4.Factuality.png)
 <p align="center">图4 量化事实性流程图

@@ -358,7 +358,7 @@ response = model_policy.generate(prompt)
 > 
 > DPO通过一个精妙的数学推导给出了肯定的答案：
 > 
-> $$\boxed{\text{RLHF优化问题}} \xrightarrow{\text{闭式解}} \boxed{\text{最优策略 ⇔ 奖励函数}} \xrightarrow{\text{代入BT模型}} \boxed{\text{二元分类损失}}$$
+> $$\boxed{\text{RLHF优化问题}} \xrightarrow{\text{闭式解}} \boxed{\text{最优策略} \Leftrightarrow \text{奖励函数}} \xrightarrow{\text{代入BT模型}} \boxed{\text{二元分类损失}}$$
 > 
 > 这个推导过程将**强化学习问题降维为监督学习问题**，让大模型对齐从一个需要四模型协同、在线采样、精细调参的复杂工程，变成了一个**只需两个模型、静态数据、简单交叉熵**的训练流程。
 > 

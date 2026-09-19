@@ -87,6 +87,7 @@ $$f(\Pi, \tau, r)=\Pi'=\left(\Gamma',\left\{\psi_{i}'\right\},\left\{C_{i}'\righ
 这个框架说明：**自进化是一个递归过程，智能体在任务序列中不断把轨迹和反馈转化为新状态**。理解这个框架后，我们就可以进入四个核心问题。
 
 ![self-evolving](self-evolving.png)
+
 ---
 
 ## 一、What：进化什么？

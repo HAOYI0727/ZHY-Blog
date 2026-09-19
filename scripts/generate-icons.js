@@ -30,6 +30,15 @@ const ICON_SETS = {
     "ic": "@iconify-json/ic",
 };
 
+// Some content entries use brand names that are not shipped by the currently
+// installed Iconify collections. Keep the original name in content (so it can
+// still be swapped later) while generating a stable, local fallback SVG.
+const ICON_FALLBACKS = {
+    "devicon:tmux": "material-symbols:terminal",
+    "devicon:latex": "material-symbols:code",
+    "logos:ssh": "material-symbols:terminal",
+};
+
 // 图标集数据缓存
 const iconSetCache = new Map();
 
@@ -127,7 +136,8 @@ function loadIconSet(prefix) {
  * 获取单个图标的 SVG
  */
 function getIconSvg(iconName) {
-    const [prefix, name] = iconName.split(":");
+    const resolvedIconName = ICON_FALLBACKS[iconName] || iconName;
+    const [prefix, name] = resolvedIconName.split(":");
     if (!prefix || !name) return null;
 
     const iconSet = loadIconSet(prefix);
@@ -144,7 +154,7 @@ function getIconSvg(iconName) {
                 return buildSvg(realData, iconSet);
             }
         }
-        console.warn(`⚠️  图标未找到: ${iconName}`);
+        console.warn(`⚠️  图标未找到: ${resolvedIconName}`);
         return null;
     }
 

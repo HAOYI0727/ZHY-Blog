@@ -321,7 +321,7 @@ $$ \mathcal{J}_{\text{PPO}}(\theta) = \mathbb{E}_{[q \sim P(Q), o \sim \pi_{\the
 
 与GRPO的相似之处：
 - Ratio比率：$\frac{\pi_\theta(o_{i,t}|q,o_{i,<t})}{\pi_{\theta_{\text{old}}}(o_{i,t}|q,o_{i,<t})} \hat{A}_{i,t}$ 与 $ \frac{\pi_{\theta}(o_t|q, o_{<t})}{\pi_{\theta_{old}}(o_t|q, o_{<t})} A_t $
-- Clipping裁剪函数：$min[..., clip(...，1-\varepsilon, 1+\varepsilon )]$
+- Clipping裁剪函数：$min[..., clip(..., 1-\varepsilon, 1+\varepsilon )]$
 
 与GRPO的核心差异：
 - 无**群体平均项**：PPO仅处理单个样本，GRPO则处理群体样本；

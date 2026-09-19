@@ -69,7 +69,7 @@ LLM的训练是**四阶段递进式优化**，最终实现从“具备基础能�
 
 ## 3. $RLHF$：从人类反馈的强化学习（$R$einforcement $L$earning from $H$uman $F$eedback）
 
-$RLHF（Reinforcement Learning from Human Feedback）$是偏好调优的**经典方法**，其核心定义为**两阶段**训练过程：**先训练奖励模型区分回答优劣，再通过强化学习优化LLM生成策略**。其核心是将LLM的token生成过程**形式化为强化学习问题**，通过人类反馈构建奖励信号，实现**策略对齐**。
+$RLHF$（Reinforcement Learning from Human Feedback）是偏好调优的**经典方法**，其核心定义为**两阶段**训练过程：**先训练奖励模型区分回答优劣，再通过强化学习优化LLM生成策略**。其核心是将LLM的token生成过程**形式化为强化学习问题**，通过人类反馈构建奖励信号，实现**策略对齐**。
 
 ### 3.1. LLM的RL形式化定义
 
@@ -97,7 +97,7 @@ $RLHF（Reinforcement Learning from Human Feedback）$是偏好调优的**经典
 
 （2）公式：$p\left(y_{i}>y_{j}\right)=\frac{e^{r_{i}}}{e^{r_{i}}+e^{r_{j}}}=\sigma\left(r_{i}-r_{j}\right)$ 
 > 其中：
-    > - $r_i、r_j$ ：奖励模型对回答 $y_i/y_j$ 输出的标量奖励分数，是核心待学习参数；
+    > - $r_i, r_j$：奖励模型对回答 $y_i/y_j$ 输出的标量奖励分数，是核心待学习参数；
     > - $\sigma(x)$ ：sigmoid函数， $\sigma(x)=\frac{1}{1+e^{-x}}$ ，将分数差映射为**0~1的概率值**，表示 $y_i$ 优于 $y_j$ 的可能性。
 
 > 公式推导：
@@ -220,7 +220,7 @@ $RLHF（Reinforcement Learning from Human Feedback）$是偏好调优的**经典
   - KL散度针对**全局参考模型（SFT）**，而非局部旧策略，避免策略在迭代中逐步偏离基础能力；
   - 超参数 $\beta$ 动态调整，解决了固定 $\lambda$ 难以适配不同训练阶段的问题
   
-- **目标函数**：$L^{K L P E N}(\theta)=\hat{\mathbb{E}}_{t}\left[\frac{\pi_{\theta}\left(a_{t} | s_{t}\right)}{\pi_{\theta_{old/ref }}\left(a_{t} | s_{t}\right)} \hat{A}_{t}-\beta KL\left[\pi_{\theta_{old/ref }}\left(\cdot | s_{t}\right), \pi_{\theta}\left(\cdot | s_{t}\right)\right]\right]$ 
+  - **目标函数**：$L^{K L P E N}(\theta)=\hat{\mathbb{E}}_{t}\left[\frac{\pi_{\theta}\left(a_{t} | s_{t}\right)}{\pi_{\theta_{old/ref }}\left(a_{t} | s_{t}\right)} \hat{A}_{t}-\beta KL\left[\pi_{\theta_{old/ref }}\left(\cdot | s_{t}\right), \pi_{\theta}\left(\cdot | s_{t}\right)\right]\right]$
 
 > 其中：
 > - $\pi_{\theta_{old/ref }}$：早期PPO-KL Penalty的KL散度针对**旧策略** $\pi_{\theta_{old}}$ （上一轮RL迭代的模型）；而现代实现中，KL散度统一针对**基础模型策略** $\pi_{\theta_{ref}}$ （SFT模型，Base Model），更能保证模型不偏离基础能力；
@@ -228,7 +228,7 @@ $RLHF（Reinforcement Learning from Human Feedback）$是偏好调优的**经典
 
 ### 3.4. RLHF的局限性
 - **模型数量多**：需训练4个模型（策略模型、值函数模型、奖励模型、基础模型），训练流程复杂、资源消耗大；
-- **超参数难调**：包含 $\lambda、\epsilon、\beta$ 等多个超参数，且超参数对训练效果影响显著，调优成本高；
+- **超参数难调**：包含 $\lambda, \epsilon, \beta$ 等多个超参数，且超参数对训练效果影响显著，调优成本高；
 - **训练不稳定**：RL的参数更新易出现震荡、崩塌，需严格监控训练指标（如KL散度、奖励值）；
 - **生成多样性要求高**：若SFT模型生成的回答缺乏多样性，RLHF易陷入局部最优，无法学习到全面的偏好；
 - **必要性存疑**：尚无明确结论证明“偏好调优必须依赖RL”，RL的引入是否带来实质性收益仍需验证。
@@ -246,7 +246,7 @@ $RLHF（Reinforcement Learning from Human Feedback）$是偏好调优的**经典
 
 ## 4. $DPO$（$D$irect $P$reference $O$ptimization,直接偏好优化）
 
-$DPO（Direct Preference Optimization）$是针对RLHF的局限性提出的**有监督式偏好调优方法**，无需训练单独的奖励模型和值函数，**直接基于成对型偏好数据训练LLM**，是目前工业界的**主流偏好调优方法**。
+$DPO$（Direct Preference Optimization）是针对RLHF的局限性提出的**有监督式偏好调优方法**，无需训练单独的奖励模型和值函数，**直接基于成对型偏好数据训练LLM**，是目前工业界的**主流偏好调优方法**。
 
 ### 4.1. 提出动机
 - 模型缺点：RLHF的RL阶段训练复杂、资源消耗大，超参数调优难度高；BoN仅适用于推理阶段，训练阶段未对模型做任何优化，且推理成本高；
@@ -313,7 +313,7 @@ PPO的目标是**最大化奖励期望，同时最小化与参考模型的KL散�
 |训练方式|**多阶段训练（奖励建模+强化学习）**|**单阶段纯有监督训练**|
 |所需模型|4个（策略、值函数、奖励、基础模型）|2个（目标模型、基础模型）|
 |依赖框架|需专业**RL框架**（如PPO、GAE）|普通**有监督训练框架**（如PyTorch/TensorFlow）|
-|超参数数量|多（ $\lambda、\epsilon、\beta、GAE$ 参数等）|**少**（仅 $\beta$ 一个核心超参数）|
+|超参数数量|多（ $\lambda, \epsilon, \beta, GAE$ 参数等）|**少**（仅 $\beta$ 一个核心超参数）|
 |训练稳定性|低（RL更新易震荡、崩塌）|**高**（有监督训练，参数更新平稳）|
 |工程化难度|高（需协调多个模型的训练和交互）|**低**（单模型训练，流程简单）|
 

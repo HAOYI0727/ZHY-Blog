@@ -58,7 +58,7 @@ draft: false
 ### 2.1. 核心原因
 
 - Transformer的自注意力机制是**并行计算**，对序列中token的处理无先后顺序，仅通过词嵌入无法区分token的**位置信息**（如*cute teddy bear*和*teddy bear cute*语义完全不同，但词嵌入的集合完全一致）。
-- 以*a cute teddy bear is reading*为例：若仅用词嵌入 $V_{cute}、V_{teddy bear}、V_{reading}$ ，模型无法判断token的先后顺序，会出现*teddy bear I teddy bear*的错误关联，因此**必须为词嵌入添加位置信息**。
+- 以*a cute teddy bear is reading*为例：若仅用词嵌入 $V_{cute}, V_{teddy\ bear}, V_{reading}$，模型无法判断token的先后顺序，会出现*teddy bear I teddy bear*的错误关联，因此**必须为词嵌入添加位置信息**。
 
 ### 2.2. 绝对位置编码（第一代）
 
