@@ -8,10 +8,10 @@
 
     let {
         publishedDates = [], categories = [], tags = [],
-        class: className = "", style = "", side = "default",
+        side = "default",
     }: {
         publishedDates?: string[]; categories?: CountItem[]; tags?: CountItem[];
-        class?: string; style?: string; side?: string;
+        side?: string;
     } = $props();
 
     const labels = {
@@ -21,6 +21,11 @@
         statistics: i18n(I18nKey.statistics),
     };
     let timeScale = $state<TimeScale>("year");
+    const scaleOptions: { value: TimeScale; label: string }[] = [
+        { value: "year", label: labels.year },
+        { value: "month", label: labels.month },
+        { value: "day", label: labels.day },
+    ];
     const pad = (value: number) => String(value).padStart(2, "0");
     const localDay = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
     const localMonth = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
@@ -30,7 +35,8 @@
         const now = new Date();
         if (scale === "year") {
             const oldest = dates.length ? Math.min(...dates.map((date) => date.getFullYear())) : now.getFullYear();
-            const start = Math.min(oldest, now.getFullYear() - 4);
+            // 年度视图至少展示最近三年，即使文章只集中在较新的年份。
+            const start = Math.min(oldest, now.getFullYear() - 2);
             return Array.from({ length: now.getFullYear() - start + 1 }, (_, index) => {
                 const year = start + index;
                 return { label: String(year), fullLabel: String(year), count: dates.filter((date) => date.getFullYear() === year).length };
@@ -119,18 +125,24 @@
     </svg>
 {/snippet}
 
-<div id={`statistics-${side}`} data-swup-persist={`statistics-${side}`} class={`pb-4 card-base ${className}`} {style}>
-    <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 before:w-1 before:h-4 before:rounded-md before:bg-(--primary) before:absolute before:left-[-16px] before:top-[5.5px]">{labels.statistics}</div>
-    <div class="stats-charts px-3">
-        <section class="chart-section">
-            <label class="scale-control"><span class="sr-only">{labels.activities}</span><select bind:value={timeScale} aria-label={labels.activities}><option value="year">{labels.year}</option><option value="month">{labels.month}</option><option value="day">{labels.day}</option></select></label>
-            {@render lineChart()}
-        </section>
-        <section class="chart-section">{@render radarChart(labels.categories, categoryRadar, "orange")}</section>
-        <section class="chart-section">{@render radarChart(labels.tags, tagRadar, "green")}</section>
-    </div>
+<div class="stats-charts px-3" aria-label={labels.statistics}>
+    <section class="chart-section">
+        <div class="scale-control" role="group" aria-label={labels.activities}>
+            {#each scaleOptions as option}
+                <button
+                    type="button"
+                    class:active={timeScale === option.value}
+                    aria-pressed={timeScale === option.value}
+                    onclick={() => (timeScale = option.value)}
+                >{option.label}</button>
+            {/each}
+        </div>
+        {@render lineChart()}
+    </section>
+    <section class="chart-section">{@render radarChart(labels.categories, categoryRadar, "orange")}</section>
+    <section class="chart-section">{@render radarChart(labels.tags, tagRadar, "green")}</section>
 </div>
 
 <style>
-    .stats-charts{display:flex;flex-direction:column;gap:.6rem;width:100%}.chart-section{position:relative;width:100%;min-height:158px;content-visibility:auto;contain-intrinsic-size:158px}.chart-svg{display:block;width:100%;height:auto;min-height:158px;overflow:visible;color:var(--primary)}.chart-title{fill:currentColor;font-size:13px;font-weight:700}.grid-line,.radar-ring,.radar-axis{stroke:color-mix(in srgb,currentColor 16%,transparent);stroke-width:1;fill:none}.activity-line{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}.activity-dot{fill:var(--card-bg);stroke:currentColor;stroke-width:2}.axis-label,.radar-label{fill:color-mix(in srgb,currentColor 72%,transparent);font-size:8px}.radar-data{stroke-width:2;stroke-linejoin:round}.radar-orange{fill:rgb(249 115 22/.28);stroke:rgb(249 115 22/.88)}.radar-green{fill:rgb(16 185 129/.28);stroke:rgb(16 185 129/.88)}.radar-dot{stroke-width:1.4}.dot-orange{fill:rgb(249 115 22);stroke:var(--card-bg)}.dot-green{fill:rgb(16 185 129);stroke:var(--card-bg)}.scale-control{position:absolute;z-index:2;right:.25rem;top:0}.scale-control select{min-height:28px;border:1px solid var(--line-divider);border-radius:.45rem;background:var(--btn-regular-bg);color:var(--btn-content);padding:2px 22px 2px 8px;font-size:.7rem;cursor:pointer}@media(prefers-reduced-motion:no-preference){.activity-line,.radar-data{animation:chart-enter 360ms ease-out both}@keyframes chart-enter{from{opacity:0}to{opacity:1}}}
+    .stats-charts{display:flex;flex-direction:column;gap:.6rem;width:100%}.chart-section{position:relative;width:100%;min-height:158px;overflow:visible}.chart-svg{display:block;width:100%;height:auto;min-height:158px;overflow:visible;color:var(--primary)}.chart-title{fill:currentColor;font-size:13px;font-weight:700}.grid-line,.radar-ring,.radar-axis{stroke:color-mix(in srgb,currentColor 16%,transparent);stroke-width:1;fill:none}.activity-line{fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}.activity-dot{fill:var(--card-bg);stroke:currentColor;stroke-width:2}.axis-label,.radar-label{fill:color-mix(in srgb,currentColor 72%,transparent);font-size:8px}.radar-data{stroke-width:2;stroke-linejoin:round}.radar-orange{fill:rgb(249 115 22/.28);stroke:rgb(249 115 22/.88)}.radar-green{fill:rgb(16 185 129/.28);stroke:rgb(16 185 129/.88)}.radar-dot{stroke-width:1.4}.dot-orange{fill:rgb(249 115 22);stroke:var(--card-bg)}.dot-green{fill:rgb(16 185 129);stroke:var(--card-bg)}.scale-control{position:absolute;z-index:2;right:.25rem;top:0;display:flex;overflow:hidden;border:1px solid var(--line-divider);border-radius:.45rem;background:var(--btn-regular-bg)}.scale-control button{min-height:26px;border:0;border-right:1px solid var(--line-divider);background:transparent;color:color-mix(in srgb,currentColor 62%,transparent);padding:2px 7px;font-size:.68rem;cursor:pointer}.scale-control button:last-child{border-right:0}.scale-control button.active{background:var(--primary);color:var(--card-bg)}@media(prefers-reduced-motion:no-preference){.activity-line,.radar-data{animation:chart-enter 360ms ease-out both}@keyframes chart-enter{from{opacity:0}to{opacity:1}}}
 </style>

@@ -8,6 +8,7 @@ export const zh_hant: Translation = {
 
     // 導航
     [Key.home]: "首頁",
+    [Key.exhibition]: "展覽",
     [Key.archive]: "歸檔",
     [Key.about]: "關於",
     [Key.search]: "搜尋",

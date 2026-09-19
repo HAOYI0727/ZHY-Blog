@@ -2,6 +2,8 @@
 import { LinkPresets } from "@constants/link-presets";
 import { LinkPreset } from "@/types/config";
 import { getSortedPostsList } from "@utils/post";
+import { getCategoryPathLabel, getCategoryPathParts } from "@utils/category";
+import { parseTags } from "@utils/tag";
 import ArchivePanel from "@components/archivePanel.svelte";
 import GridLayout from "@layouts/grid.astro";
 import BackwardButton from "@components/backwardButton.astro";
@@ -12,6 +14,22 @@ const pageTitle = LinkPresets[LinkPreset.Archive].name;
 const pageDescription = LinkPresets[LinkPreset.Archive].description;
 
 const sortedPostsList = await getSortedPostsList();
+const selectedTags = Astro.url.searchParams.getAll("tag");
+const selectedCategories = Astro.url.searchParams.getAll("category");
+const selectedUncategorized = Astro.url.searchParams.get("uncategorized");
+const filteredPosts = sortedPostsList.filter((post) => {
+    if (selectedTags.length && !parseTags(post.data.tags).some((tag) => selectedTags.includes(tag))) return false;
+    if (selectedCategories.length) {
+        const parts = getCategoryPathParts(post.data.category);
+        const matches = parts && selectedCategories.some((target) => {
+            const targetParts = target.split(" / ").map((part) => part.trim()).filter(Boolean);
+            return targetParts.length <= parts.length && targetParts.every((part, index) => part === parts[index]);
+        });
+        if (!matches) return false;
+    }
+    if (selectedUncategorized !== null && getCategoryPathLabel(post.data.category)) return false;
+    return true;
+});
 ---
 
 <GridLayout title={pageTitle} description={pageDescription}>
@@ -31,7 +49,7 @@ const sortedPostsList = await getSortedPostsList();
                 )}
             </header>
             <!-- 归档面板 -->
-            <ArchivePanel sortedPosts={sortedPostsList} client:idle></ArchivePanel>
+            <ArchivePanel sortedPosts={filteredPosts} tags={selectedTags} categories={selectedCategories} uncategorized={selectedUncategorized}></ArchivePanel>
         </div>
     </div>
 </GridLayout>

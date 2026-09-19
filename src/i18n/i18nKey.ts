@@ -4,6 +4,7 @@ enum I18nKey {
 
     // 导航
     home = "home",
+    exhibition = "exhibition",
     archive = "archive",
     about = "about",
     search = "search",

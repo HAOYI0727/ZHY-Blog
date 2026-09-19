@@ -8,6 +8,7 @@ export const zh_hans: Translation = {
 
     // 导航
     [Key.home]: "主页",
+    [Key.exhibition]: "展览",
     [Key.archive]: "归档",
     [Key.about]: "关于",
     [Key.search]: "搜索",

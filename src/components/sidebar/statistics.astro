@@ -1,5 +1,7 @@
 ---
 import { getCategoryList, getSortedPostsList, getTagList } from "@utils/post";
+import { i18n } from "@i18n/translation";
+import I18nKey from "@i18n/i18nKey";
 import StatsCharts from "./statistics.svelte";
 
 
@@ -24,14 +26,30 @@ interface Props {
 }
 
 const { class: className, style, side } = Astro.props;
+const labels = {
+    posts: i18n(I18nKey.posts),
+    categories: i18n(I18nKey.categories),
+    tags: i18n(I18nKey.tags),
+    statistics: i18n(I18nKey.statistics),
+};
 ---
 
-<StatsCharts
-    client:visible
-    {publishedDates}
-    categories={chartCategories}
-    tags={chartTags}
-    class={className}
-    style={style}
-    {side}
-/>
+<div id={`statistics-${side}`} data-swup-persist={`statistics-${side}`} class={`pb-4 card-base ${className || ""}`} style={style}>
+    <div class="statistics-heading font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 before:w-1 before:h-4 before:rounded-md before:bg-(--primary) before:absolute before:left-[-16px] before:top-[5.5px]">{labels.statistics}</div>
+    <div class="stats-summary px-3" aria-label={labels.statistics}>
+        <div><strong>{publishedDates.length}</strong><span>{labels.posts}</span></div>
+        <div><strong>{categories.length}</strong><span>{labels.categories}</span></div>
+        <div><strong>{tags.length}</strong><span>{labels.tags}</span></div>
+    </div>
+    <StatsCharts
+        client:load
+        {publishedDates}
+        categories={chartCategories}
+        tags={chartTags}
+        side={side || "default"}
+    />
+</div>
+
+<style>
+    .stats-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem;margin-bottom:.35rem}.stats-summary div{display:flex;min-width:0;flex-direction:column;align-items:center;border:1px solid color-mix(in srgb,var(--line-divider) 72%,transparent);border-radius:.55rem;padding:.35rem .2rem;background:color-mix(in srgb,var(--btn-regular-bg) 68%,transparent)}.stats-summary strong{font-size:1.05rem;line-height:1.1;color:var(--primary)}.stats-summary span{margin-top:.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65rem;color:color-mix(in srgb,currentColor 62%,transparent)}
+</style>

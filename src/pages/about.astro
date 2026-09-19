@@ -23,8 +23,12 @@ const { Content, headings } = await render(aboutPost);
 ---
 
 <GridLayout title={pageTitle} description={pageDescription} headings={headings}>
-    <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32 mb-4">
+    <div class="about-page flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32 mb-4">
         <div class="card-base z-10 px-9 py-6 relative w-full ">
+            <div class="about-glow about-glow-one" aria-hidden="true"></div>
+            <div class="about-glow about-glow-two" aria-hidden="true"></div>
+            <div class="about-spark about-spark-one" aria-hidden="true">✦</div>
+            <div class="about-spark about-spark-two" aria-hidden="true">·</div>
             <BackwardButton currentPath={Astro.url.pathname} />
             <Markdown class="mt-2">
                 <Content />
@@ -33,3 +37,28 @@ const { Content, headings } = await render(aboutPost);
     </div>
     <Comment path="/about/" />
 </GridLayout>
+
+<style is:global>
+    .about-page .card-base { isolation:isolate; overflow:hidden; }
+    .about-page .custom-md { position:relative; z-index:1; }
+    .about-page .custom-md > * { animation: about-rise .65s both; }
+    .about-page .custom-md > *:nth-child(2) { animation-delay:80ms; }
+    .about-page .custom-md > *:nth-child(3) { animation-delay:140ms; }
+    .about-page .custom-md > *:nth-child(4) { animation-delay:200ms; }
+    .about-page .custom-md h2 { position:relative; scroll-margin-top:6rem; }
+    .about-page .custom-md h2::after { content:""; display:block; width:2.6rem; height:.18rem; margin-top:.45rem; border-radius:99px; background:linear-gradient(90deg,var(--primary),transparent); transition:width .35s ease; }
+    .about-page .custom-md h2:hover::after { width:5rem; }
+    .about-page .custom-md table { position:relative; z-index:1; overflow:hidden; border-radius:1rem; transition:transform .25s ease, box-shadow .25s ease; }
+    .about-page .custom-md table:hover { transform:translateY(-3px); box-shadow:0 .8rem 2rem color-mix(in srgb,var(--primary) 12%,transparent); }
+    .about-glow { position:absolute; z-index:0; width:18rem; height:18rem; border-radius:50%; pointer-events:none; filter:blur(2px); opacity:.18; }
+    .about-glow-one { top:-9rem; right:-5rem; background:radial-gradient(circle,var(--primary),transparent 68%); animation:about-drift 10s ease-in-out infinite alternate; }
+    .about-glow-two { bottom:8rem; left:-13rem; background:radial-gradient(circle,#7c83ff,transparent 68%); animation:about-drift 13s ease-in-out -3s infinite alternate-reverse; }
+    .about-spark { position:absolute; z-index:0; color:var(--primary); opacity:.35; pointer-events:none; }
+    .about-spark-one { top:5.5rem; right:12%; font-size:1.2rem; animation:about-pulse 3s ease-in-out infinite; }
+    .about-spark-two { top:12rem; right:8%; font-size:2rem; animation:about-pulse 4s ease-in-out -1s infinite; }
+    @keyframes about-rise { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    @keyframes about-drift { from { transform:translate3d(-12px,-8px,0) scale(.95); } to { transform:translate3d(16px,12px,0) scale(1.08); } }
+    @keyframes about-pulse { 0%,100% { opacity:.18; transform:scale(.85) rotate(0); } 50% { opacity:.65; transform:scale(1.15) rotate(18deg); } }
+    @media (prefers-reduced-motion: reduce) { .about-page .custom-md > *, .about-glow, .about-spark { animation:none !important; } .about-page .custom-md table { transition:none; } }
+    @media (max-width: 640px) { .about-page .card-base { padding-left:1.2rem; padding-right:1.2rem; } .about-spark-one { right:15%; } }
+</style>

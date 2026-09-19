@@ -1,336 +1,241 @@
 ---
-// src/pages/posts/index.astro
 import { LinkPresets } from "@constants/link-presets";
 import { LinkPreset } from "@/types/config";
-import { getSortedPostsList, getTagsGroupedByCategory } from "@utils/post";
+import { getSortedPostsList } from "@utils/post";
 import { getCategoryPathParts } from "@utils/category";
-import { getCategoryUrl, getTagUrl } from "@utils/url";
+import { getCategoryUrl, getPostUrl, getTagUrl } from "@utils/url";
+import { parseTags } from "@utils/tag";
 import GridLayout from "@layouts/grid.astro";
 import ContinueReading from "@components/ContinueReading.astro";
-import { siteConfig } from "@/config";
-import { langToLocaleMap } from "@i18n/language";
 import { i18n } from "@i18n/translation";
 import I18nKey from "@i18n/i18nKey";
 
 const pageTitle = LinkPresets[LinkPreset.Posts].name;
 const pageDescription = LinkPresets[LinkPreset.Posts].description;
-
 const allPosts = await getSortedPostsList();
-const topicGroups = (await getTagsGroupedByCategory()).map((group) => ({
-  ...group,
-  count: allPosts.filter((post) => getCategoryPathParts(post.data.category)?.[0] === group.category).length,
-}));
 
-// 按年月分组，记录最早文章的封面
-type MonthGroup = {
-  year: number;
-  month: number;
-  count: number;
-  earliestCover: string | null; // 最早文章的封面
-  earliestDate: Date | null;    // 辅助比较
+type TopicGroup = {
+  category: string;
+  posts: typeof allPosts;
+  tags: string[];
+  cover: string | null;
 };
-const monthMap = new Map<string, MonthGroup>();
 
+const topicMap = new Map<string, TopicGroup>();
 for (const post of allPosts) {
-  const date = post.data.published;
-  if (!date) continue;
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const key = `${year}-${String(month).padStart(2, "0")}`;
-  if (!monthMap.has(key)) {
-    monthMap.set(key, {
-      year,
-      month,
-      count: 0,
-      earliestCover: null,
-      earliestDate: null,
-    });
-  }
-  const group = monthMap.get(key)!;
-  group.count += 1;
-  // 如果该月还没有记录日期，或当前日期更早，则更新为最早文章的封面
-  if (!group.earliestDate || date < group.earliestDate) {
-    group.earliestDate = date;
-    // 只保存有效的封面
-    const cover = post.data.cover;
-    if (cover && typeof cover === 'string' && cover.trim() !== '') {
-      group.earliestCover = cover;
-    } else {
-      group.earliestCover = null;
-    }
-  }
+  const category = getCategoryPathParts(post.data.category)?.[0] || "未分类";
+  const group = topicMap.get(category) || { category, posts: [], tags: [], cover: null };
+  group.posts.push(post);
+  group.tags = Array.from(new Set([...group.tags, ...parseTags(post.data.tags)])).sort((a, b) => a.localeCompare(b));
+  topicMap.set(category, group);
 }
 
-// 按年份降序，月份降序排列（最新在前）
-const monthGroups = Array.from(monthMap.values()).sort((a, b) => {
-  if (a.year !== b.year) return b.year - a.year;
-  return b.month - a.month;
-});
+const topicGroups = Array.from(topicMap.values())
+  .map((group) => {
+    group.posts.sort((a, b) => new Date(b.data.published).getTime() - new Date(a.data.published).getTime());
+    const earliest = group.posts[group.posts.length - 1];
+    group.cover = typeof earliest?.data.cover === "string" && earliest.data.cover.trim() ? earliest.data.cover : null;
+    return group;
+  })
+  .sort((a, b) => b.posts.length - a.posts.length || a.category.localeCompare(b.category));
 
-const dateLocale = langToLocaleMap[siteConfig.lang] || "zh-Hans";
-const yearMonthFormatter = new Intl.DateTimeFormat(dateLocale, { year: "numeric", month: "long" });
+const heatCandidates = allPosts.slice().sort((a, b) => new Date(b.data.published).getTime() - new Date(a.data.published).getTime());
+const heatCardGradient = (index: number) => `linear-gradient(135deg, oklch(0.68 0.16 ${205 + index * 17}), oklch(0.45 0.16 ${255 + index * 13}))`;
 ---
 
 <GridLayout title={pageTitle} description={pageDescription}>
   <ContinueReading />
-  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
-    <div class="card-base z-10 px-9 py-6 relative w-full">
-      
-      <!-- 标题区 -->
-      <header class="mb-7 flex flex-wrap items-start justify-between gap-4">
+  <div class="posts-shell">
+    <div class="card-base posts-panel">
+      <header class="posts-header">
         <div>
-          <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
-            {pageTitle}
-          </h1>
-          {pageDescription && (
-            <p class="text-neutral-600 dark:text-neutral-400">
-              {pageDescription}
-            </p>
-          )}
+          <p class="posts-eyebrow"><span class="posts-eyebrow-dot"></span> KNOWLEDGE LIBRARY</p>
+          <h1>{pageTitle}</h1>
+          {pageDescription && <p class="posts-description">{pageDescription}</p>}
         </div>
-        <span class="inline-flex items-center gap-1 px-3 py-1 bg-(--primary)/10 text-(--primary) text-sm rounded-full font-medium">
-          <span class="i-ic:round-article w-4 h-4"></span>
-          {allPosts.length} {i18n(I18nKey.postsCount)}
-        </span>
+        <div class="posts-count"><strong>{allPosts.length}</strong><span>{i18n(I18nKey.postsCount)}</span></div>
       </header>
 
-      <div class="post-browse-switch mb-8" role="tablist" aria-label="文章浏览方式">
-        <button type="button" role="tab" aria-selected="true" aria-controls="post-view-month" data-post-view-button="month">
-          <span class="i-material-symbols:calendar-month-outline-rounded text-lg"></span>
-          按年月
-        </button>
-        <button type="button" role="tab" aria-selected="false" aria-controls="post-view-topic" data-post-view-button="topic">
-          <span class="i-material-symbols:category-outline-rounded text-lg"></span>
-          按分类标签
-        </button>
+      <div class="post-browse-switch" role="tablist" aria-label="文章浏览方式">
+        <button type="button" role="tab" aria-selected="true" aria-controls="post-view-topic" data-post-view-button="topic"><span class="i-material-symbols:category-outline-rounded"></span>按主题</button>
+        <button type="button" role="tab" aria-selected="false" aria-controls="post-view-heat" data-post-view-button="heat"><span class="i-material-symbols:local-fire-department-outline-rounded"></span>按热度</button>
       </div>
 
-      <!-- 月份卡片网格：每行3个，1:1方形 -->
-      <section id="post-view-month" data-post-view="month" role="tabpanel" aria-label="按年月浏览文章">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {monthGroups.map(({ year, month, count, earliestCover }) => {
-          // 构建月份链接
-          const monthLink = `/posts/${year}/${String(month).padStart(2, "0")}/`;
-          // 如果没有封面，生成渐变色背景
-          const hue = (year * 31 + month * 7) % 360;
-          const bgGradient = `linear-gradient(135deg, hsl(${hue}, 70%, 60%), hsl(${(hue + 40) % 360}, 70%, 50%))`;
-          
-          return (
-            <a
-              href={monthLink}
-              class="group relative block rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-400 hover:-translate-y-2 bg-white dark:bg-gray-800"
-              style="aspect-ratio: 1/1;"
-            >
-              <!-- 背景图片或渐变 -->
-              <div class="absolute inset-0 overflow-hidden">
-                {earliestCover ? (
-                  <img
-                    src={earliestCover}
-                    alt=""
-                    class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                    onerror="this.style.display='none'"
-                  />
-                ) : (
-                  // 无封面：渐变背景 + 装饰
-                  <div class="absolute inset-0" style={`background: ${bgGradient};`}>
-                    <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_30%_30%,white,transparent)]"></div>
-                    <div class="absolute bottom-0 right-0 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
-                  </div>
-                )}
-                {/* 深色渐变遮罩，确保底部文字可读 */}
-                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-              </div>
-
-              {/* 底部信息区域 */}
-              <div class="absolute bottom-0 left-0 right-0 p-5 text-white z-10">
-                <div class="text-xl font-bold drop-shadow-lg leading-tight">
-                  {yearMonthFormatter.format(new Date(year, month - 1, 1))}
-                </div>
-                <div class="flex items-center gap-2 text-sm opacity-90 drop-shadow-md mt-1">
-                  <span class="i-ic:round-article w-4 h-4"></span>
-                  <span>{count} {i18n(I18nKey.postsCount)}</span>
-                  {earliestCover && (
-                    <span class="text-xs opacity-70 ml-1">· {i18n(I18nKey.coverImage)}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* 悬停光晕效果 */}
-              <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                <div class="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent"></div>
-              </div>
-            </a>
-          );
-        })}
-      </div>
-
-      <!-- 底部统计 -->
-      <div class="mt-12 text-center text-60 text-sm">
-        {monthGroups.length} {i18n(I18nKey.monthArchives)}
-      </div>
-      </section>
-
-      <section id="post-view-topic" data-post-view="topic" role="tabpanel" aria-label="按分类标签浏览文章" hidden>
+      <section id="post-view-topic" data-post-view="topic" role="tabpanel" aria-label="按主题浏览文章">
         <div class="topic-browser-grid">
-          {topicGroups.map((group, index) => (
-            <article class="topic-browser-card" style={`--topic-order:${index}`}>
-              <a class="topic-browser-head" href={getCategoryUrl(group.category)}>
-                <span class="topic-browser-icon">
-                  <span class="i-material-symbols:folder-open-outline-rounded"></span>
-                </span>
-                <span class="min-w-0">
-                  <strong>{group.category.replaceAll("_", " ")}</strong>
-                  <small>{group.count} 篇文章 · {group.tags.length} 个标签</small>
-                </span>
-                <span class="i-material-symbols:arrow-outward-rounded topic-browser-arrow"></span>
-              </a>
-              <nav class="topic-tag-list" aria-label={`${group.category} 标签`}>
-                {group.tags.map((tag) => (
-                  <a href={getTagUrl(tag)}>#{tag}</a>
-                ))}
-              </nav>
-            </article>
-          ))}
+          {topicGroups.map((group, index) => {
+            return (
+              <article class="topic-browser-card">
+                <a class="topic-browser-cover" href={getCategoryUrl(group.category)} aria-label={`查看${group.category.replaceAll("_", " ")}主题`}>
+                  {group.cover ? <img src={group.cover} alt="" loading="lazy" decoding="async" /> : <div class="topic-browser-cover-fallback" style={`background:${heatCardGradient(index)}`}></div>}
+                  <div class="topic-browser-cover-shade"></div>
+                  <span class="topic-browser-index">{String(index + 1).padStart(2, "0")}</span><span class="topic-browser-count">{group.posts.length} 篇</span>
+                </a>
+                <div class="topic-browser-content">
+                  <a class="topic-browser-head" href={getCategoryUrl(group.category)}>
+                    <span class="min-w-0"><strong>{group.category.replaceAll("_", " ")}</strong><small>{group.tags.length} 个知识标签</small></span>
+                    <span class="i-material-symbols:arrow-outward-rounded topic-browser-arrow"></span>
+                  </a>
+                  <div class="topic-latest">
+                    <span class="topic-latest-label">最近更新</span>
+                    <div class="topic-latest-list">{group.posts.slice(0, 3).map((post) => <a href={getPostUrl(post)}>{post.data.title}</a>)}</div>
+                  </div>
+                  <nav class="topic-tag-list" aria-label={`${group.category} 标签`}>{group.tags.slice(0, 8).map((tag) => <a href={getTagUrl(tag)}>#{tag}</a>)}</nav>
+                </div>
+              </article>
+            );
+          })}
         </div>
-        <div class="mt-9 text-center text-60 text-sm">
-          {topicGroups.length} 个分类 · 点击标签可直接筛选文章
-        </div>
+        <p class="posts-footnote">{topicGroups.length} 个主题 · 主题内按发布时间排序</p>
       </section>
+
+      <section id="post-view-heat" data-post-view="heat" role="tabpanel" aria-label="按热度浏览文章" hidden>
+        <div class="heat-intro"><div><p class="posts-eyebrow"><span class="posts-eyebrow-dot fire"></span> CURRENT SIGNAL</p><h2>最受关注的文章</h2></div><span class="heat-update-note">热度 = 浏览量 + 点赞 × 6</span></div>
+        <div class="heat-list" data-heat-list>
+          {heatCandidates.map((post, index) => {
+            const postDate = new Date(post.data.published);
+            const category = getCategoryPathParts(post.data.category)?.[0] || "未分类";
+            return (
+              <article class="heat-card" data-heat-card data-post-id={post.id} data-published={postDate.getTime()} data-heat="0" data-default-order={index}>
+                <div class="heat-rank" data-heat-rank>{String(index + 1).padStart(2, "0")}</div>
+                <a href={getPostUrl(post)} class="heat-cover" aria-label={post.data.title}>{post.data.cover ? <img src={post.data.cover} alt="" loading="lazy" decoding="async" /> : <span style={`background:${heatCardGradient(index)}`}></span>}</a>
+                <div class="heat-body"><div class="heat-meta"><span>{category.replaceAll("_", " ")}</span><time datetime={postDate.toISOString()}>{postDate.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" })}</time></div><a href={getPostUrl(post)} class="heat-title">{post.data.title}</a>{post.data.description && <p>{post.data.description}</p>}</div>
+                <div class="heat-score"><span class="i-material-symbols:local-fire-department-rounded"></span><strong data-heat-value>0</strong><small>热度</small></div>
+              </article>
+            );
+          })}
+        </div>
+        <nav class="heat-pagination" data-heat-pagination aria-label="热度文章分页">
+          <button type="button" data-heat-prev disabled>上一页</button>
+          <span data-heat-page>第 1 页</span>
+          <button type="button" data-heat-next>下一页</button>
+        </nav>
+        <p class="posts-footnote">共 {allPosts.length} 篇 · 每页 10 篇 · 热度相同时按最新文章优先</p>
+      </section>
+
     </div>
   </div>
 </GridLayout>
 
 <style is:global>
-  /* 保证卡片是1:1正方形 */
-  .aspect-\[1\/1\] {
-    aspect-ratio: 1 / 1;
-  }
-  /* 图片加载失败时隐藏 */
-  .absolute.inset-0 > img[style*="display: none"] {
-    display: none !important;
-  }
-  /* 暗色模式下卡片背景 */
-  .dark .group.bg-white {
-    background-color: #1f1f1f;
-  }
-
-  .post-browse-switch {
-    display: inline-flex;
-    gap: 0.35rem;
-    padding: 0.35rem;
-    border: 1px solid var(--line-divider);
-    border-radius: 0.9rem;
-    background: color-mix(in srgb, var(--btn-regular-bg) 74%, transparent);
-  }
-
-  .post-browse-switch button {
-    display: inline-flex;
-    min-height: 2.65rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.45rem;
-    border: 0;
-    border-radius: 0.65rem;
-    background: transparent;
-    padding: 0.5rem 0.9rem;
-    color: var(--text-secondary);
-    font-size: 0.86rem;
-    font-weight: 650;
-    cursor: pointer;
-    transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
-  }
-
-  .post-browse-switch button[aria-selected="true"] {
-    background: var(--card-bg);
-    color: var(--primary);
-    box-shadow: 0 0.25rem 0.9rem rgb(0 0 0 / 9%);
-  }
-
-  .topic-browser-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1rem;
-  }
-
-  .topic-browser-card {
-    overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider));
-    border-radius: 1.15rem;
-    background:
-      radial-gradient(circle at 100% 0%, color-mix(in oklch, var(--primary) 13%, transparent), transparent 42%),
-      color-mix(in srgb, var(--card-bg) 86%, transparent);
-    padding: 1rem;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
-  }
-
-  .topic-browser-head {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.75rem;
-    color: var(--text-color);
-  }
-
-  .topic-browser-icon {
-    display: grid;
-    width: 2.75rem;
-    height: 2.75rem;
-    place-items: center;
-    border-radius: 0.85rem;
-    background: color-mix(in oklch, var(--primary) 16%, var(--btn-regular-bg));
-    color: var(--primary);
-    font-size: 1.35rem;
-  }
-
-  .topic-browser-head strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; }
-  .topic-browser-head small { display: block; margin-top: 0.15rem; color: var(--text-secondary); font-size: 0.72rem; }
-  .topic-browser-arrow { color: var(--primary); transition: transform 160ms ease; }
-  .topic-browser-head:hover .topic-browser-arrow { transform: rotate(45deg); }
-
-  .topic-tag-list { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.9rem; }
-  .topic-tag-list a {
-    border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
-    border-radius: 999px;
-    background: var(--btn-regular-bg);
-    padding: 0.28rem 0.62rem;
-    color: var(--text-secondary);
-    font-size: 0.7rem;
-    line-height: 1.25;
-    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
-  }
-  .topic-tag-list a:hover {
-    border-color: var(--primary);
-    background: color-mix(in oklch, var(--primary) 15%, var(--btn-regular-bg));
-    color: var(--text-color);
-    transform: translateY(-1px);
-  }
-
-  @media (max-width: 700px) {
-    .post-browse-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
-    .topic-browser-grid { grid-template-columns: 1fr; }
-  }
+  .posts-shell { width: 100%; overflow: hidden; border-radius: var(--radius-large); }
+  .posts-panel { position: relative; padding: 2rem clamp(1.1rem, 3vw, 2.5rem) 2.6rem; }
+  .posts-header { display:flex; justify-content:space-between; align-items:flex-start; gap:1.25rem; margin-bottom:1.6rem; }
+  .posts-header h1 { margin: .2rem 0 .45rem; color:var(--text-color); font-size:clamp(1.75rem, 3vw, 2.45rem); letter-spacing:-.04em; }
+  .posts-description { max-width:40rem; color:var(--text-secondary); font-size:.94rem; line-height:1.6; }
+  .posts-eyebrow { display:flex; align-items:center; gap:.48rem; margin:0; color:var(--text-tertiary); font-size:.68rem; font-weight:800; letter-spacing:.16em; }
+  .posts-eyebrow-dot { width:.48rem; height:.48rem; border-radius:50%; background:var(--primary); box-shadow:0 0 0 .22rem color-mix(in srgb, var(--primary) 15%, transparent); }
+  .posts-eyebrow-dot.fire { background:#f18a3d; box-shadow:0 0 0 .22rem #f18a3d22; }
+  .posts-count { display:flex; align-items:baseline; gap:.38rem; padding:.7rem .95rem; border:1px solid color-mix(in srgb, var(--primary) 20%, var(--line-divider)); border-radius:1rem; background:color-mix(in srgb, var(--primary) 8%, var(--card-bg)); color:var(--text-secondary); white-space:nowrap; }
+  .posts-count strong { color:var(--primary); font-size:1.55rem; line-height:1; }
+  .posts-count span { font-size:.78rem; }
+  .post-browse-switch { display:flex; width:min(100%, 34rem); margin:0 auto 1.7rem; padding:.3rem; gap:.3rem; border:1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider)); border-radius:1rem; background:linear-gradient(135deg, color-mix(in srgb, var(--primary) 8%, var(--btn-regular-bg)), color-mix(in srgb, var(--btn-regular-bg) 88%, transparent)); box-shadow:inset 0 1px 0 rgb(255 255 255 / 10%), 0 .45rem 1.2rem rgb(0 0 0 / 5%); }
+  .post-browse-switch button { position:relative; display:flex; flex:1 1 0; min-height:2.75rem; align-items:center; justify-content:center; gap:.5rem; overflow:hidden; border:1px solid transparent; border-radius:.72rem; background:transparent; color:var(--text-tertiary); font-size:.86rem; font-weight:750; letter-spacing:.01em; cursor:pointer; transition:color 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease; }
+  .post-browse-switch button::before { content:""; position:absolute; inset:0; background:linear-gradient(110deg, transparent 20%, rgb(255 255 255 / 18%), transparent 80%); transform:translateX(-120%); transition:transform 420ms ease; pointer-events:none; }
+  .post-browse-switch button:hover { color:var(--text-color); background:color-mix(in srgb, var(--card-bg) 56%, transparent); }
+  .post-browse-switch button:hover::before { transform:translateX(120%); }
+  .post-browse-switch button:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+  .post-browse-switch button:active { transform:scale(.985); }
+  .post-browse-switch button span { position:relative; z-index:1; display:grid; width:1.45rem; height:1.45rem; place-items:center; border-radius:.45rem; background:color-mix(in srgb, currentColor 10%, transparent); font-size:1.05rem; transition:background 180ms ease, transform 180ms ease; }
+  .post-browse-switch button[aria-selected="true"] { border-color:color-mix(in srgb, var(--primary) 28%, transparent); background:linear-gradient(135deg, color-mix(in srgb, var(--primary) 17%, var(--card-bg)), var(--card-bg)); color:var(--primary); box-shadow:0 .35rem 1rem color-mix(in srgb, var(--primary) 16%, transparent), inset 0 1px 0 rgb(255 255 255 / 16%); }
+  .post-browse-switch button[aria-selected="true"] span { background:color-mix(in srgb, var(--primary) 15%, transparent); transform:scale(1.06); }
+  .topic-browser-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.1rem; }
+  .topic-browser-card { overflow:hidden; border:1px solid color-mix(in srgb, var(--primary) 18%, var(--line-divider)); border-radius:1.2rem; background:color-mix(in srgb, var(--card-bg) 92%, transparent); box-shadow:inset 0 1px 0 rgb(255 255 255 / 8%); }
+  .topic-browser-cover { position:relative; aspect-ratio:1; overflow:hidden; background:var(--btn-regular-bg); }
+  .topic-browser-cover img, .topic-browser-cover-fallback { width:100%; height:100%; object-fit:cover; }
+  .topic-browser-cover { display:block; }
+  .topic-browser-cover-shade { position:absolute; inset:0; background:linear-gradient(180deg,transparent 20%,rgb(8 12 22 / 70%)); }
+  .topic-browser-index, .topic-browser-count { position:absolute; bottom:.75rem; color:white; font-size:.72rem; font-weight:750; letter-spacing:.08em; text-shadow:0 1px 4px #000; }
+  .topic-browser-index { left:1rem; font-size:1.2rem; }
+  .topic-browser-count { right:1rem; }
+  .topic-browser-content { padding:1rem 1.05rem 1.05rem; }
+  .topic-browser-head { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:.7rem; color:var(--text-color); }
+  .topic-browser-head strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:1.05rem; }
+  .topic-browser-head small { display:block; margin-top:.18rem; color:var(--text-tertiary); font-size:.72rem; }
+  .topic-browser-arrow { color:var(--primary); transition:transform 160ms ease; }
+  .topic-browser-head:hover .topic-browser-arrow { transform:rotate(45deg); }
+  .topic-latest { margin-top:.85rem; padding-top:.72rem; border-top:1px solid var(--line-divider); }
+  .topic-latest-label { display:block; margin-bottom:.3rem; color:var(--text-tertiary); font-size:.68rem; letter-spacing:.06em; }
+  .topic-latest-list { display:grid; gap:.35rem; }
+  .topic-latest-list a { position:relative; display:block; overflow:hidden; padding-left:.75rem; color:var(--text-secondary); font-size:.8rem; line-height:1.4; text-overflow:ellipsis; white-space:nowrap; }
+  .topic-latest-list a::before { content:""; position:absolute; top:.5rem; left:.05rem; width:.28rem; height:.28rem; border-radius:50%; background:color-mix(in srgb, var(--primary) 65%, var(--line-divider)); }
+  .topic-latest-list a:hover { color:var(--primary); }
+  .topic-tag-list { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.78rem; }
+  .topic-tag-list a { border:1px solid color-mix(in srgb, var(--primary) 16%, transparent); border-radius:999px; background:var(--btn-regular-bg); padding:.25rem .55rem; color:var(--text-tertiary); font-size:.68rem; line-height:1.2; }
+  .topic-tag-list a:hover { border-color:var(--primary); background:color-mix(in srgb, var(--primary) 12%, var(--btn-regular-bg)); color:var(--text-color); }
+  .posts-footnote { margin:1.4rem 0 0; color:var(--text-tertiary); text-align:center; font-size:.78rem; }
+  .heat-intro { display:flex; justify-content:space-between; align-items:end; gap:1rem; margin-bottom:1rem; }
+  .heat-intro h2 { margin:.28rem 0 0; color:var(--text-color); font-size:1.4rem; letter-spacing:-.03em; }
+  .heat-update-note { color:var(--text-tertiary); font-size:.72rem; }
+  .heat-list { display:grid; gap:.8rem; }
+  .heat-card { display:grid; grid-template-columns:3rem 6.3rem minmax(0,1fr) 5rem; align-items:center; gap:1rem; min-height:7.7rem; padding:.85rem 1rem .85rem .65rem; border:1px solid var(--line-divider); border-radius:1.1rem; background:color-mix(in srgb, var(--card-bg) 88%, transparent); transition:transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+  .heat-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb, var(--primary) 45%, var(--line-divider)); box-shadow:0 .7rem 1.6rem rgb(0 0 0 / 8%); }
+  .heat-card[data-heat-rank="1"] { border-color:#f3a54c88; background:linear-gradient(90deg,#f3a54c12,transparent 35%), color-mix(in srgb, var(--card-bg) 88%, transparent); }
+  .heat-rank { color:var(--text-tertiary); font-size:1.25rem; font-weight:850; text-align:center; font-variant-numeric:tabular-nums; }
+  .heat-card[data-heat-rank="1"] .heat-rank { color:#e6902f; font-size:1.6rem; }
+  .heat-cover { display:block; height:6rem; overflow:hidden; border-radius:.82rem; background:var(--btn-regular-bg); }
+  .heat-cover img, .heat-cover span { display:block; width:100%; height:100%; object-fit:cover; transition:transform 300ms ease; }
+  .heat-card:hover .heat-cover img { transform:scale(1.06); }
+  .heat-body { min-width:0; }
+  .heat-meta { display:flex; gap:.55rem; color:var(--text-tertiary); font-size:.7rem; }
+  .heat-meta span { color:var(--primary); font-weight:750; }
+  .heat-title { display:block; overflow:hidden; margin-top:.35rem; color:var(--text-color); font-size:1.08rem; font-weight:750; line-height:1.4; text-overflow:ellipsis; white-space:nowrap; }
+  .heat-title:hover { color:var(--primary); }
+  .heat-body p { display:-webkit-box; overflow:hidden; margin:.38rem 0 0; color:var(--text-tertiary); font-size:.78rem; line-height:1.45; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+  .heat-score { display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ef8b3a; }
+  .heat-score > span { font-size:1.5rem; }
+  .heat-score strong { color:var(--text-color); font-size:1.28rem; line-height:1.15; font-variant-numeric:tabular-nums; }
+  .heat-score small { color:var(--text-tertiary); font-size:.65rem; }
+  .heat-pagination { display:flex; align-items:center; justify-content:center; gap:.8rem; margin-top:1.2rem; }
+  .heat-pagination button { min-width:4.5rem; border:1px solid var(--line-divider); border-radius:.55rem; background:var(--btn-regular-bg); color:var(--text-secondary); padding:.4rem .65rem; font-size:.76rem; cursor:pointer; }
+  .heat-pagination button:hover:not(:disabled) { border-color:var(--primary); color:var(--primary); }
+  .heat-pagination button:disabled { cursor:not-allowed; opacity:.4; }
+  .heat-pagination span { min-width:4rem; color:var(--text-tertiary); text-align:center; font-size:.76rem; }
+  @media (max-width: 1040px) { .topic-browser-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width: 700px) { .topic-browser-grid { grid-template-columns:1fr; } }
+  @media (max-width: 620px) { .posts-header { flex-direction:column; } .posts-count { align-self:flex-start; } .post-browse-switch { width:100%; margin-bottom:1.35rem; } .post-browse-switch button { min-height:2.6rem; font-size:.78rem; } .post-browse-switch button span { width:1.3rem; height:1.3rem; font-size:.95rem; } .heat-card { grid-template-columns:2.1rem 4.3rem minmax(0,1fr) 3.2rem; gap:.5rem; } .heat-body p { display:none; } }
 </style>
 
 <script>
-  const setupPostBrowseSwitcher = () => {
+  const setupPostBrowse = () => {
     const root = document.querySelector<HTMLElement>("#swup-container");
     if (!root || root.dataset.postBrowseReady === "true") return;
     const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-post-view-button]"));
     const panels = Array.from(root.querySelectorAll<HTMLElement>("[data-post-view]"));
-    if (buttons.length === 0 || panels.length === 0) return;
+    if (!buttons.length || !panels.length) return;
     root.dataset.postBrowseReady = "true";
-
-    const selectView = (view: string) => {
-      buttons.forEach((button) => button.setAttribute("aria-selected", String(button.dataset.postViewButton === view)));
-      panels.forEach((panel) => { panel.hidden = panel.dataset.postView !== view; });
+    const selectView = (view: string) => { buttons.forEach((button) => button.setAttribute("aria-selected", String(button.dataset.postViewButton === view))); panels.forEach((panel) => { panel.hidden = panel.dataset.postView !== view; }); };
+    buttons.forEach((button) => button.addEventListener("click", () => selectView(button.dataset.postViewButton || "topic")));
+    selectView("topic");
+    const cards = Array.from(root.querySelectorAll<HTMLElement>("[data-heat-card]"));
+    const list = root.querySelector<HTMLElement>("[data-heat-list]");
+    if (!cards.length || !list) return;
+    const pageSize = 10;
+    let currentPage = 1;
+    const previousButton = root.querySelector<HTMLButtonElement>("[data-heat-prev]");
+    const nextButton = root.querySelector<HTMLButtonElement>("[data-heat-next]");
+    const pageLabel = root.querySelector<HTMLElement>("[data-heat-page]");
+    const renderPage = () => {
+      const pageCount = Math.max(1, Math.ceil(cards.length / pageSize));
+      currentPage = Math.min(currentPage, pageCount);
+      const start = (currentPage - 1) * pageSize;
+      cards.forEach((card, index) => { card.hidden = index < start || index >= start + pageSize; });
+      if (previousButton) previousButton.disabled = currentPage <= 1;
+      if (nextButton) nextButton.disabled = currentPage >= pageCount;
+      if (pageLabel) pageLabel.textContent = `第 ${currentPage} / ${pageCount} 页`;
     };
-
-    buttons.forEach((button) => button.addEventListener("click", () => selectView(button.dataset.postViewButton || "month")));
-    selectView("month");
+    previousButton?.addEventListener("click", () => { if (currentPage > 1) { currentPage -= 1; renderPage(); list.scrollIntoView({ behavior: "smooth", block: "start" }); } });
+    nextButton?.addEventListener("click", () => { if (currentPage < Math.ceil(cards.length / pageSize)) { currentPage += 1; renderPage(); list.scrollIntoView({ behavior: "smooth", block: "start" }); } });
+    const ids = cards.map((card) => card.dataset.postId || "").filter(Boolean);
+    const renderHeat = (stats: Record<string, { heat?: number }>) => {
+      cards.forEach((card) => { const stat = stats[card.dataset.postId || ""]; card.dataset.heat = String(Math.max(0, Number(stat?.heat) || 0)); const value = card.querySelector<HTMLElement>("[data-heat-value]"); if (value) value.textContent = card.dataset.heat; });
+      cards.sort((a, b) => Number(b.dataset.heat) - Number(a.dataset.heat) || Number(b.dataset.published) - Number(a.dataset.published) || Number(a.dataset.defaultOrder) - Number(b.dataset.defaultOrder));
+      cards.forEach((card, index) => { card.querySelector<HTMLElement>("[data-heat-rank]")!.textContent = String(index + 1).padStart(2, "0"); list.appendChild(card); });
+      renderPage();
+    };
+    renderHeat({});
+    fetch(`/api/engagement/?posts=${encodeURIComponent(ids.join(","))}`, { credentials: "same-origin" }).then((response) => response.ok ? response.json() : Promise.reject(new Error("engagement unavailable"))).then((payload) => renderHeat(payload.posts || {})).catch(() => undefined);
   };
-
-  setupPostBrowseSwitcher();
-  document.addEventListener("astro:page-load", setupPostBrowseSwitcher);
+  setupPostBrowse();
+  document.addEventListener("astro:page-load", setupPostBrowse);
 </script>

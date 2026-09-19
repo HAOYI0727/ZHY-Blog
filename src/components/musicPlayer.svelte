@@ -327,6 +327,8 @@ function loadSong(song: MusicPlayerTrack) {
 }
 
 let autoplayFailed = $state(false);
+// 记录用户是否已经与页面交互，覆盖音频尚未加载完成时的首次点击。
+let hasUserInteracted = $state(false);
 
 function handleLoadSuccess() {
     isLoading = false;
@@ -344,7 +346,7 @@ function handleLoadSuccess() {
         pendingProgress = 0; // 恢复后清除
     }
     // 如果是自动播放模式，或者当前处于播放状态（如切换歌曲），则尝试播放
-    if (isAutoplayEnabled || isPlaying || shouldPlay) {
+    if (isAutoplayEnabled || hasUserInteracted || isPlaying || shouldPlay) {
         const playPromise = audio?.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
@@ -365,13 +367,16 @@ function handleLoadSuccess() {
 }
 
 function handleUserInteraction() {
-    // 如果自动播放失败且尚未开始播放，则在用户交互时尝试播放
-    if (autoplayFailed && audio && !isPlaying) {
+    // 用户手势是浏览器允许带声音播放的关键；即使自动播放尚未报告失败，
+    // 也记录这次交互，避免首次点击发生在音频加载完成之前而被错过。
+    hasUserInteracted = true;
+    if (audio && currentSong.url && !isPlaying) {
         const playPromise = audio.play();
         if (playPromise !== undefined) {
             playPromise.then(() => {
                 fadeInVolume(volume);
                 autoplayFailed = false;
+                isAutoplayEnabled = false;
             }).catch(() => {});
         }
     }

@@ -8,6 +8,7 @@ export const ja: Translation = {
 
     // ナビゲーション
     [Key.home]: "ホーム",
+    [Key.exhibition]: "展示",
     [Key.archive]: "アーカイブ",
     [Key.about]: "について",
     [Key.search]: "検索",

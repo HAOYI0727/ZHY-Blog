@@ -132,8 +132,9 @@ export class WidgetManager {
             .filter(c => this.shouldShowComponent(c, currentPath));
 
         if (side === "left") {
-            // Left sidebar includes Right components on Tablet (merged)
-            return [...leftComponents, ...rightComponents];
+            // Tablet uses one merged sidebar. Keep the right-side summary widgets
+            // near the top so Statistics is discoverable without a long scroll.
+            return [...rightComponents, ...leftComponents];
         }
         
         if (side === "right") {
@@ -142,8 +143,8 @@ export class WidgetManager {
         }
 
         if (side === "middle") {
-            // Middle sidebar includes all components
-            return [...leftComponents, ...rightComponents];
+            // Mobile drawer follows the same order as the merged tablet sidebar.
+            return [...rightComponents, ...leftComponents];
         }
 
         return [];

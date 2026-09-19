@@ -19,10 +19,10 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
     },
 });
 
-const normalizePostId = (value: unknown) => {
+const normalizeEngagementId = (value: unknown) => {
     if (typeof value !== "string") return null;
     const postId = value.trim();
-    if (!/^\/posts\/[a-z0-9_\-/]+\/$/i.test(postId) || postId.length > 240) return null;
+    if (!/^\/(?:posts|albums)\/[a-z0-9_\-/]+\/$/i.test(postId) || postId.length > 240) return null;
     return postId;
 };
 
@@ -94,7 +94,28 @@ const updateDevelopmentCounts = (postId: string, action: EngagementAction) => {
 const withHeat = (counts: Counts) => ({ ...counts, heat: counts.views + counts.likes * 6 });
 
 export const GET: APIRoute = async ({ url }) => {
-    const postId = normalizePostId(url.searchParams.get("post"));
+    const postIds = (url.searchParams.get("posts") || "")
+        .split(",")
+            .map((postId) => normalizeEngagementId(decodeURIComponent(postId)))
+        .filter((postId): postId is string => Boolean(postId));
+
+    if (postIds.length > 0) {
+        try {
+            const entries = await Promise.all(postIds.slice(0, 100).map(async (postId) => {
+                const counts = getRedisConfig()
+                    ? await readPersistentCounts(postId)
+                    : import.meta.env.DEV
+                        ? readDevelopmentCounts(postId)
+                        : { views: 0, likes: 0 };
+                return [postId, withHeat(counts)] as const;
+            }));
+            return json({ posts: Object.fromEntries(entries), storage: getRedisConfig() ? "persistent" : "development-memory" });
+        } catch {
+            return json({ error: "Unable to read engagement data" }, 502);
+        }
+    }
+
+    const postId = normalizeEngagementId(url.searchParams.get("post"));
     if (!postId) return json({ error: "Invalid post id" }, 400);
 
     try {
@@ -114,7 +135,7 @@ export const POST: APIRoute = async ({ request }) => {
         return json({ error: "Invalid JSON body" }, 400);
     }
 
-    const postId = normalizePostId(body.post);
+    const postId = normalizeEngagementId(body.post);
     const action = body.action;
     if (!postId || (action !== "view" && action !== "like" && action !== "unlike")) {
         return json({ error: "Invalid engagement request" }, 400);

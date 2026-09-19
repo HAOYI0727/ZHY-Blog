@@ -60,7 +60,7 @@ const pageDescription = link.description || "";
                 )}
             </header>
             <!-- 链接网格 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {processedLinks.map(child => (
                     <a
                         href={child.external ? child.url : url(child.url)}

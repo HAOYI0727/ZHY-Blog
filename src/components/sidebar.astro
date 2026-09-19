@@ -28,7 +28,8 @@ const allStickyComponents = widgetManager.getComponentsBySideAndPosition(side, "
 // 过滤并添加动画标记
 let hasVolatile = false;
 const topComponents = allTopComponents.reduce((acc: any[], component) => {
-    const isVisible = widgetManager.shouldShowComponent(component, currentPath);
+    const hasRenderableContent = component.type !== "toc" || (headings && headings.length > 0);
+    const isVisible = hasRenderableContent && widgetManager.shouldShowComponent(component, currentPath);
     const isVolatile = !!component.visibility;
     if (isVisible) {
         // 如果组件本身是 volatile 的，或者它上方的组件中有 volatile 的（会导致当前组件位置偏移），则需要淡入淡出动画
@@ -39,7 +40,8 @@ const topComponents = allTopComponents.reduce((acc: any[], component) => {
     return acc;
 }, []);
 const stickyComponents = allStickyComponents.reduce((acc: any[], component) => {
-    const isVisible = widgetManager.shouldShowComponent(component, currentPath);
+    const hasRenderableContent = component.type !== "toc" || (headings && headings.length > 0);
+    const isVisible = hasRenderableContent && widgetManager.shouldShowComponent(component, currentPath);
     const isVolatile = !!component.visibility;
     if (isVisible) {
         const shouldAnimate = isVolatile || hasVolatile;
@@ -149,32 +151,22 @@ function renderComponent(component: any, index: number) {
         }
 
         /*
-         * Profile 与后续组件始终保持普通文档流。即使 Swup 在切页时
-         * 暂停某个持久化组件的动画，也不能把 Statistics 提升到头像之上。
+         * 所有卡片都使用同一层级和普通文档流。头像、统计、目录之间
+         * 不允许通过持久化动画或定位产生覆盖。
          */
-        .sidebar-scroll-region > [id^="profile-"],
-        .sidebar-scroll-region > [id^="sidebar-sticky-"] {
+        .sidebar-scroll-region > * {
             position: relative !important;
             inset: auto !important;
-            flex: 0 0 auto;
-        }
-
-        .sidebar-scroll-region > [id^="profile-"] {
-            z-index: 2;
-            isolation: isolate;
-        }
-
-        .sidebar-scroll-region > [id^="sidebar-sticky-"] {
             z-index: 1;
+            flex: 0 0 auto !important;
+            min-width: 0;
+            max-width: 100%;
+            clear: both;
+            isolation: isolate;
         }
 
         .sidebar-scroll-region [id^="statistics-"] {
-            position: relative !important;
-            inset: auto !important;
-            z-index: 0;
-            clear: both;
             margin-block-start: 0 !important;
-            isolation: isolate;
         }
 
         [data-side="left"] > .sidebar-scroll-region::-webkit-scrollbar,

@@ -176,9 +176,13 @@ navbar:
             "Posts"
         - # 一级导航链接 - 归档 (预设)
             "Archive"
+        - # 一级导航链接 - 相册 (预设)
+            "Albums"
         - # 一级导航链接 - 展览 (自定义)
             # 导航名称
             name: "Exhibition"
+            # 多语言翻译键
+            i18nKey: "exhibition"
             # 导航链接
             url: "/exhibition/"
             # 导航图标
@@ -187,8 +191,6 @@ navbar:
             description: "A collection of my creative works and experiences"
             # 子链接
             children:
-                - # 二级导航链接 - 相册 (预设)
-                    "Albums"
                 - # 二级导航链接 - 日记 (预设)
                     "Diary"
                 - # 二级导航链接 - 项目 (预设)
@@ -248,6 +250,19 @@ sidebar:
                     mode: "exclude"
                     # 页面路径匹配规则列表 (支持正则字符串)
                     paths: ["^/posts/", "^/archive"]
+            - # 组件 - 文章目录 (预设)
+                # 类型
+                type: "toc"
+                # 位置策略 ("top" 顶部固定 | "sticky" 粘性)
+                position: "top"
+                # 目录深度 (1-6，1 表示只显示 h1 标题，2 表示显示 h1 和 h2 标题，依此类推)
+                depth: 3
+            - # 组件 - 文章统计 (预设)
+                # 类型
+                type: "statistics"
+                # 位置策略 ("top" 顶部固定 | "sticky" 粘性)
+                position: "top"
+                # 不限制页面：桌面右栏、平板合并侧栏和移动端组件抽屉均优先显示
             # - # 组件 - 公告 (预设)
             #     # 类型
             #     type: "announcement"
@@ -259,19 +274,6 @@ sidebar:
             #         mode: "exclude"
             #         # 页面路径匹配规则列表 (支持正则字符串)
             #         paths: ["^/posts/", "^/archive"]
-            - # 组件 - 文章目录 (预设)
-                # 类型
-                type: "toc"
-                # 位置策略 ("top" 顶部固定 | "sticky" 粘性)
-                position: "sticky"
-                # 目录深度 (1-6，1 表示只显示 h1 标题，2 表示显示 h1 和 h2 标题，依此类推)
-                depth: 3
-            - # 组件 - 文章统计 (预设)
-                # 类型
-                type: "statistics"
-                # 位置策略 ("top" 顶部固定 | "sticky" 粘性)
-                position: "sticky"
-                # 不限制页面：桌面右栏、平板合并侧栏和移动端组件抽屉均可访问
 
 # 资料配置
 profile:
@@ -415,6 +417,21 @@ musicPlayer:
                 # 序号
                 id: 1
                 # 标题
+                title: "新海诚动漫纯音乐"
+                # 作者
+                artist: "-"
+                # 封面
+                cover: "/assets/images/musics/XHC.jpg"
+                # 音乐路径
+                url: "assets/music/xhc.m4a"
+                # 歌词路径
+                lrc: ""
+                # 时长
+                duration: 3700
+            - # 列表示例
+                # 序号
+                id: 2
+                # 标题
                 title: "宫崎骏动漫纯音乐"
                 # 作者
                 artist: "-"
@@ -428,7 +445,7 @@ musicPlayer:
                 duration: 2760
             - # 列表示例
                 # 序号
-                id: 2
+                id: 3
                 # 标题
                 title: "BIRDS OF A FEATHER"
                 # 作者
@@ -443,7 +460,7 @@ musicPlayer:
                 duration: 210
             - # 列表示例
                 # 序号
-                id: 3
+                id: 4
                 # 标题
                 title: "WILDFLOWER"
                 # 作者
@@ -458,7 +475,7 @@ musicPlayer:
                 duration: 261
             - # 列表示例
                 # 序号
-                id: 4
+                id: 5
                 # 标题
                 title: "HAPPIER THAN EVER"
                 # 作者
@@ -473,7 +490,7 @@ musicPlayer:
                 duration: 298
             - # 列表示例
                 # 序号
-                id: 5
+                id: 6
                 # 标题
                 title: "CARDIGAN"
                 # 作者
@@ -488,7 +505,7 @@ musicPlayer:
                 duration: 240
             - # 列表示例
                 # 序号
-                id: 6
+                id: 7
                 # 标题
                 title: "AUGUST"
                 # 作者
@@ -503,7 +520,7 @@ musicPlayer:
                 duration: 270
             - # 列表示例
                 # 序号
-                id: 7
+                id: 8
                 # 标题
                 title: "BETTY"
                 # 作者
@@ -518,7 +535,7 @@ musicPlayer:
                 duration: 295
             - # 列表示例
                 # 序号
-                id: 8
+                id: 9
                 # 标题
                 title: "WILLOW"
                 # 作者
@@ -533,7 +550,7 @@ musicPlayer:
                 duration: 216
             - # 列表示例
                 # 序号
-                id: 9
+                id: 10
                 # 标题
                 title: "CHAMPAGNE PROBLEM"
                 # 作者
@@ -548,7 +565,7 @@ musicPlayer:
                 duration: 244
             - # 列表示例
                 # 序号
-                id: 10
+                id: 11
                 # 标题
                 title: "NO BODY NO CRIME"
                 # 作者
@@ -563,7 +580,7 @@ musicPlayer:
                 duration: 218
             - # 列表示例
                 # 序号
-                id: 11
+                id: 12
                 # 标题
                 title: "FORTNIGHT"
                 # 作者
@@ -578,7 +595,7 @@ musicPlayer:
                 duration: 229
             - # 列表示例
                 # 序号
-                id: 12
+                id: 13
                 # 标题
                 title: "DOWN BAD"
                 # 作者
@@ -593,7 +610,7 @@ musicPlayer:
                 duration: 264
             - # 列表示例
                 # 序号
-                id: 13
+                id: 14
                 # 标题
                 title: "HATE THAT I MADE YOU LOVE ME"
                 # 作者
@@ -608,7 +625,7 @@ musicPlayer:
                 duration: 198
             - # 列表示例
                 # 序号
-                id: 14
+                id: 15
                 # 标题
                 title: "ETERNAL SUNSHINE"
                 # 作者
@@ -623,7 +640,7 @@ musicPlayer:
                 duration: 253
             - # 列表示例
                 # 序号
-                id: 15
+                id: 16
                 # 标题
                 title: "INTRO & TWILIGHT_ZONE"
                 # 作者
@@ -638,7 +655,7 @@ musicPlayer:
                 duration: 353
             - # 列表示例
                 # 序号
-                id: 16
+                id: 17
                 # 标题
                 title: "THANK U NEXT"
                 # 作者
@@ -653,7 +670,7 @@ musicPlayer:
                 duration: 209
             - # 列表示例
                 # 序号
-                id: 17
+                id: 18
                 # 标题
                 title: "ONE LAST TIME"
                 # 作者
@@ -668,7 +685,7 @@ musicPlayer:
                 duration: 198
             - # 列表示例
                 # 序号
-                id: 18
+                id: 19
                 # 标题
                 title: "DIE WITH A SMILE"
                 # 作者
@@ -683,7 +700,7 @@ musicPlayer:
                 duration: 252
             - # 列表示例
                 # 序号
-                id: 19
+                id: 20
                 # 标题
                 title: "TALKING TO THE MOON"
                 # 作者
@@ -696,23 +713,8 @@ musicPlayer:
                 lrc: ""
                 # 时长
                 duration: 221
-            - # 列表示例
-                # 序号
-                id: 20
-                # 标题
-                title: "KILL BILL"
-                # 作者
-                artist: "SZA"
-                # 封面
-                cover: "/assets/images/musics/KILL_BILL.jpg"
-                # 音乐路径
-                url: "assets/music/KILL_BILL.m4a"
-                # 歌词路径
-                lrc: ""
-                # 时长
-                duration: 157
-    # 避免浏览器拦截自动播放并弹出错误提示，由用户主动开始播放
-    autoplay: false
+    # 进入页面时尝试自动播放；若浏览器拦截，则在用户首次交互时恢复播放
+    autoplay: true
 
 # 看板娘配置
 pio:

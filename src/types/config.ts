@@ -235,6 +235,8 @@ export enum LinkPreset {
 export type NavbarLink = {
     // 链接名称
     name: string;
+    // 可选的多语言翻译键
+    i18nKey?: string;
     // 链接
     url: string;
     // 是否为外部链接

@@ -24,6 +24,10 @@ function resolveChildren(link: NavbarLink): NavbarLink[] {
     );
 }
 
+function displayName(link: NavbarLink): string {
+    return link.i18nKey ? i18n(link.i18nKey as I18nKey) : link.name;
+}
+
 function togglePanel() {
     isOpen = !isOpen;
     document.body.classList.toggle("mobile-nav-open", isOpen);
@@ -109,7 +113,7 @@ onMount(() => {
                             {#if link.icon}
                                 <Icon icon={link.icon} class="text-[1.1rem] mr-2 shrink-0" />
                             {/if}
-                            {link.name}
+                            {displayName(link)}
                         </span>
                     </a>
                     {#if hasChildren}
