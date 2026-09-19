@@ -119,17 +119,17 @@ const monthGroups = Array.from(monthMap.values()).sort((a, b) => b.key.localeCom
       </section>
 
       <section id="post-view-heat" data-post-view="heat" role="tabpanel" aria-label="按热度浏览文章" hidden>
-        <div class="heat-intro"><div><p class="posts-eyebrow"><span class="posts-eyebrow-dot fire"></span> CURRENT SIGNAL</p><h2>最受关注的文章</h2></div><span class="heat-update-note">热度 = 浏览量 + 点赞 × 6</span></div>
+        <div class="heat-intro"><div><p class="posts-eyebrow"><span class="posts-eyebrow-dot fire"></span> CURRENT SIGNAL</p><h2>最受关注的文章</h2></div><span class="heat-update-note" data-heat-status>热度 = 浏览量 + 点赞 × 6</span></div>
         <div class="heat-list" data-heat-list>
           {heatCandidates.map((post, index) => {
             const postDate = new Date(post.data.published);
             const category = getCategoryPathParts(post.data.category)?.[0] || "未分类";
             return (
-              <article class="heat-card" data-heat-card data-post-id={post.id} data-published={postDate.getTime()} data-heat="0" data-default-order={index}>
+              <article class="heat-card" data-heat-card data-post-id={getPostUrl(post)} data-published={postDate.getTime()} data-heat="0" data-default-order={index}>
                 <div class="heat-rank" data-heat-rank>{String(index + 1).padStart(2, "0")}</div>
                 <a href={getPostUrl(post)} class="heat-cover" aria-label={post.data.title}>{post.data.cover ? <img src={post.data.cover} alt="" loading="lazy" decoding="async" /> : <span style={`background:${heatCardGradient(index)}`}></span>}</a>
                 <div class="heat-body"><div class="heat-meta"><span>{category.replaceAll("_", " ")}</span><time datetime={postDate.toISOString()}>{postDate.toLocaleDateString("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit" })}</time></div><a href={getPostUrl(post)} class="heat-title">{post.data.title}</a>{post.data.description && <p>{post.data.description}</p>}</div>
-                <div class="heat-score"><span class="i-material-symbols:local-fire-department-rounded"></span><strong data-heat-value>0</strong><small>热度</small></div>
+                <div class="heat-score"><span class="i-material-symbols:local-fire-department-rounded"></span><strong data-heat-value>—</strong><small>热度</small></div>
               </article>
             );
           })}
@@ -271,14 +271,17 @@ const monthGroups = Array.from(monthMap.values()).sort((a, b) => b.key.localeCom
     previousButton?.addEventListener("click", () => { if (currentPage > 1) { currentPage -= 1; renderPage(); list.scrollIntoView({ behavior: "smooth", block: "start" }); } });
     nextButton?.addEventListener("click", () => { if (currentPage < Math.ceil(cards.length / pageSize)) { currentPage += 1; renderPage(); list.scrollIntoView({ behavior: "smooth", block: "start" }); } });
     const ids = cards.map((card) => card.dataset.postId || "").filter(Boolean);
-    const renderHeat = (stats: Record<string, { heat?: number }>) => {
-      cards.forEach((card) => { const stat = stats[card.dataset.postId || ""]; card.dataset.heat = String(Math.max(0, Number(stat?.heat) || 0)); const value = card.querySelector<HTMLElement>("[data-heat-value]"); if (value) value.textContent = card.dataset.heat; });
+    const renderHeat = (stats: Record<string, { heat?: number }>, showValues = true) => {
+      cards.forEach((card) => { const stat = stats[card.dataset.postId || ""]; card.dataset.heat = String(Math.max(0, Number(stat?.heat) || 0)); const value = card.querySelector<HTMLElement>("[data-heat-value]"); if (value && showValues) value.textContent = card.dataset.heat; });
       cards.sort((a, b) => Number(b.dataset.heat) - Number(a.dataset.heat) || Number(b.dataset.published) - Number(a.dataset.published) || Number(a.dataset.defaultOrder) - Number(b.dataset.defaultOrder));
       cards.forEach((card, index) => { card.querySelector<HTMLElement>("[data-heat-rank]")!.textContent = String(index + 1).padStart(2, "0"); list.appendChild(card); });
       renderPage();
     };
-    renderHeat({});
-    fetch(`/api/engagement/?posts=${encodeURIComponent(ids.join(","))}`, { credentials: "same-origin" }).then((response) => response.ok ? response.json() : Promise.reject(new Error("engagement unavailable"))).then((payload) => renderHeat(payload.posts || {})).catch(() => undefined);
+    renderHeat({}, false);
+    fetch(`/api/engagement/?posts=${encodeURIComponent(ids.join(","))}`, { credentials: "same-origin" }).then((response) => response.ok ? response.json() : Promise.reject(new Error("engagement unavailable"))).then((payload) => renderHeat(payload.posts || {})).catch(() => {
+      const status = root.querySelector<HTMLElement>("[data-heat-status]");
+      if (status) status.textContent = "热度数据暂不可用";
+    });
   };
   // Swup 可能在新容器插入前执行页面脚本；延后一帧，确保切页后的 DOM 已经可用。
   const schedulePostBrowseSwitcher = () => {

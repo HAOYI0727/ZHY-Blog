@@ -101,16 +101,20 @@ export const GET: APIRoute = async ({ url }) => {
         .filter((postId): postId is string => Boolean(postId));
 
     if (postIds.length > 0) {
+        const persistentConfig = getRedisConfig();
+        if (!persistentConfig && !import.meta.env.DEV) {
+            return json({ error: "Persistent engagement storage is not configured", storage: "unavailable" }, 503);
+        }
         try {
             const entries = await Promise.all(postIds.slice(0, 100).map(async (postId) => {
-                const counts = getRedisConfig()
+                const counts = persistentConfig
                     ? await readPersistentCounts(postId)
                     : import.meta.env.DEV
                         ? readDevelopmentCounts(postId)
                         : { views: 0, likes: 0 };
                 return [postId, withHeat(counts)] as const;
             }));
-            return json({ posts: Object.fromEntries(entries), storage: getRedisConfig() ? "persistent" : "development-memory" });
+            return json({ posts: Object.fromEntries(entries), storage: persistentConfig ? "persistent" : "development-memory" });
         } catch {
             return json({ error: "Unable to read engagement data" }, 502);
         }
