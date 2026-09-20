@@ -357,7 +357,10 @@ import { initHue } from "@utils/hue";
 import { initMarkdownActions } from "@/utils/markdown";
 import { initFancybox, cleanupFancybox } from "@utils/fancybox";
 import { initReadingContinuity } from "@utils/readingContinuity";
+import { initReadingLibrary } from "@utils/readingLibrary";
 import { initPostShare } from "@utils/postShare";
+import { initPostBrowseSwitcher } from "@utils/postBrowseSwitcher";
+import { initAlbumExperience } from "@utils/albumExperience";
 
 
 // 初始化Swup
@@ -480,24 +483,15 @@ const setup = () => {
             top: 0,
             behavior: 'auto'
         });
-        // Check if the current page is a post page, if so, trigger a custom event to initialize the comment system
-        setTimeout(() => {
-            if (document.querySelector('[data-comment-root]')) {
-                const pageLoadedEvent = new CustomEvent('twilight:page:loaded', {
-                    detail: {
-                        path: window.location.pathname,
-                        timestamp: Date.now()
-                    }
-                });
-                document.dispatchEvent(pageLoadedEvent);
-            }
-        }, 300);
         // Initialize page-specific enhancements after Swup replaces the content.
         initWallpaperMode();
         initFancybox();
         initMarkdownActions();
         initReadingContinuity();
+        initReadingLibrary();
         initPostShare();
+        initPostBrowseSwitcher();
+        initAlbumExperience();
     });
     initFancybox();
     window.swup.hooks.on("content:replace", () => {
@@ -564,9 +558,14 @@ initMarkdownActions();
 
 // Restore reading progress and render the local cross-session prompt.
 initReadingContinuity();
+initReadingLibrary();
 
 // Bind article share controls on direct loads and after every Swup navigation.
 initPostShare();
+
+// Bind article browse controls on direct loads and after every Swup navigation.
+initPostBrowseSwitcher();
+initAlbumExperience();
 
 // 翻译库体积较大：仅在用户选择过非默认语言或真正点击翻译时加载。
 window.loadTranslateScript = async () => {

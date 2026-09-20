@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
 import { siteConfig, profileConfig, postConfig } from "@/config";
-import { getRelatedPosts, getSortedPosts, type PostForList } from "@utils/post";
+import { getLearningPath, getRelatedPosts, getSortedPosts, type LearningPathItem, type PostForList } from "@utils/post";
 import { formatDateToYYYYMMDD } from "@utils/date";
 import { getFileDirFromPath, getPostUrl, getPostUrlBySlug, removeFileExtension, url } from "@utils/url";
 import { SUPPORTED_LANGUAGES, langToTranslateMap } from "@i18n/language";
@@ -19,8 +19,10 @@ import ImageWrapper from "@components/common/imageWrapper.astro";
 import PasswordProtection from "@components/common/passwordProtection.astro";
 import PostMetadata from "@components/post/postMeta.astro";
 import PostEngagement from "@components/post/PostEngagement.astro";
-import Comment from "@components/comment.astro";
+import FeedbackEntry from "@components/post/FeedbackEntry.astro";
 import RelatedPosts from "@components/post/RelatedPosts.astro";
+import LearningPath from "@components/post/LearningPath.astro";
+import UpdateHistory from "@components/post/UpdateHistory.astro";
 import GridLayout from "@layouts/grid.astro";
 
 export async function getStaticPaths() {
@@ -30,15 +32,17 @@ export async function getStaticPaths() {
         props: {
             entry: CollectionEntry<"posts">;
             relatedPosts: PostForList[];
+            learningPath: LearningPathItem[];
         };
     }[] = [];
 
     for (const entry of blogEntries) {
         const slug = removeFileExtension(entry.id);
         const relatedPosts = getRelatedPosts(entry, blogEntries);
+        const learningPath = getLearningPath(entry, blogEntries);
         paths.push({
             params: { slug },
-            props: { entry, relatedPosts },
+            props: { entry, relatedPosts, learningPath },
         });
         if (entry.data.routeName) {
             let routeName = entry.data.routeName
@@ -49,7 +53,7 @@ export async function getStaticPaths() {
             }
             paths.push({
                 params: { slug: routeName },
-                props: { entry, relatedPosts },
+                props: { entry, relatedPosts, learningPath },
             });
         }
     }
@@ -57,7 +61,7 @@ export async function getStaticPaths() {
     return paths;
 }
 
-const { entry, relatedPosts } = Astro.props;
+const { entry, relatedPosts, learningPath } = Astro.props;
 const { Content, headings, remarkPluginFrontmatter } = await render(entry);
 
 // 加密逻辑
@@ -130,7 +134,7 @@ const postDesc = entry.data.description || postTitle;
     />
 
     <div
-        class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4"
+        class="post-shell flex w-full rounded-(--radius-large) overflow-hidden relative mb-4"
     >
         <div
             id="post-container"
@@ -139,7 +143,7 @@ const postDesc = entry.data.description || postTitle;
             data-reading-title={postTitle}
             data-reading-total-minutes={remarkPluginFrontmatter.minutes}
             class:list={[
-                "card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full ",
+                "post-article-card card-base z-10 px-6 md:px-9 pt-6 pb-4 relative w-full ",
                 {},
             ]}
         >
@@ -158,7 +162,7 @@ const postDesc = entry.data.description || postTitle;
 
             <!-- 字数统计 & 阅读时间 -->
             <div
-                class="flex flex-row flex-wrap text-black/30 dark:text-white/30 gap-x-5 gap-y-2 mb-3 transition onload-animation-up"
+                class="post-reading-metrics flex flex-row flex-wrap text-black/30 dark:text-white/30 gap-x-5 gap-y-2 mb-3 transition onload-animation-up"
             >
                 <div class="flex flex-row items-center">
                     <div
@@ -208,12 +212,13 @@ const postDesc = entry.data.description || postTitle;
             </div>
 
             <!-- 标题 -->
-            <div class="relative onload-animation-up">
+            <div class="post-title-card relative onload-animation-up">
+                <p class="post-title-eyebrow"><span></span> ARTICLE NOTE</p>
                 <div
                     data-pagefind-body
                     data-pagefind-weight="10"
                     data-pagefind-meta="title"
-                    class="transition w-full block font-bold mb-3
+                    class="post-title-card__title transition w-full block font-bold
                     text-3xl md:text-[2.25rem]/[2.75rem]
                     text-black/90 dark:text-white/90
                     md:before:w-1 before:h-5 before:rounded-md before:bg-(--primary)
@@ -286,7 +291,7 @@ const postDesc = entry.data.description || postTitle;
 
     <!-- 分享按钮组（使用 fa6-brands / fa6-solid 图标） -->
             <div
-                class="onload-animation-up mb-4"
+                    class="post-share-panel onload-animation-up mb-4"
                 data-post-share
                 data-share-url={fullPostUrl}
                 data-share-title={postTitle}
@@ -342,13 +347,46 @@ const postDesc = entry.data.description || postTitle;
                         <Icon name="fa6-solid:share-nodes" class="text-base" />
                         <span class="text-xs font-medium hidden sm:inline">{i18n(I18nKey.nativeShare)}</span>
                     </button>
+                    <div
+                        class="reading-library-actions ml-auto flex items-center gap-2"
+                        data-reading-library
+                        data-library-url={postUrl}
+                        data-library-title={postTitle}
+                    >
+                        <button
+                            type="button"
+                            class="library-btn"
+                            data-library-bookmark
+                            data-label-off={i18n(I18nKey.bookmark)}
+                            data-label-on={i18n(I18nKey.bookmarked)}
+                            aria-pressed="false"
+                            aria-label={i18n(I18nKey.bookmark)}
+                            title={i18n(I18nKey.bookmark)}
+                        >
+                            <Icon name="material-symbols:favorite-outline-rounded" />
+                            <span class="hidden sm:inline">{i18n(I18nKey.bookmark)}</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="library-btn"
+                            data-library-read
+                            data-label-off={i18n(I18nKey.markAsRead)}
+                            data-label-on={i18n(I18nKey.markedAsRead)}
+                            aria-pressed="false"
+                            aria-label={i18n(I18nKey.markAsRead)}
+                            title={i18n(I18nKey.markAsRead)}
+                        >
+                            <Icon name="material-symbols:history-rounded" />
+                            <span class="hidden sm:inline">{i18n(I18nKey.markAsRead)}</span>
+                        </button>
+                    </div>
                 </div>
     </div>
 
+    <LearningPath items={learningPath} />
+    <UpdateHistory published={entry.data.published!} updated={entry.data.updated} entries={entry.data.changeLog} />
+    <FeedbackEntry title={postTitle} postUrl={fullPostUrl} />
     <RelatedPosts posts={relatedPosts} />
-
-    <!-- 评论 -->
-    <Comment post={entry} />
 
     <!-- 最后修改时间 -->
     {postConfig.showLastModified && (
@@ -492,6 +530,78 @@ const postDesc = entry.data.description || postTitle;
 </GridLayout>
 
 <style is:global>
+    .post-shell { isolation: isolate; }
+    .post-article-card {
+        border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--line-divider));
+        background:
+            radial-gradient(circle at 92% 0%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 28%),
+            var(--card-bg);
+        box-shadow: 0 1.25rem 3.2rem color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+    .post-reading-metrics > div {
+        padding: .3rem .55rem .3rem .35rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 13%, transparent);
+        border-radius: .7rem;
+        background: color-mix(in oklch, var(--primary) 5%, transparent);
+    }
+    .post-reading-metrics > div > div:first-child {
+        background: color-mix(in oklch, var(--primary) 12%, var(--btn-regular-bg));
+        color: var(--primary);
+    }
+    .post-title-card {
+        margin-bottom: 1rem;
+        padding: .95rem 1rem 1.05rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 19%, var(--line-divider));
+        border-radius: 1rem;
+        background: linear-gradient(120deg, color-mix(in oklch, var(--primary) 9%, var(--card-bg)), var(--card-bg));
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%), 0 .45rem 1.25rem color-mix(in srgb, var(--primary) 6%, transparent);
+    }
+    .post-title-eyebrow {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        margin: 0 0 .55rem;
+        color: var(--primary);
+        font-size: .66rem;
+        font-weight: 800;
+        letter-spacing: .16em;
+    }
+    .post-title-eyebrow span {
+        width: .42rem;
+        height: .42rem;
+        border-radius: 999px;
+        background: var(--primary);
+        box-shadow: 0 0 .7rem color-mix(in oklch, var(--primary) 68%, transparent);
+    }
+    .post-title-card__title { margin-bottom: 0 !important; }
+    #post-container [data-pagefind-body] {
+        text-wrap: balance;
+    }
+    #post-container .markdown-content :is(h2, h3) {
+        scroll-margin-top: 5rem;
+    }
+    #post-container .markdown-content h2 {
+        position: relative;
+        padding-left: .85rem;
+    }
+    #post-container .markdown-content h2::before {
+        position: absolute;
+        top: .35em;
+        bottom: .35em;
+        left: 0;
+        width: .25rem;
+        border-radius: 999px;
+        content: "";
+        background: var(--primary);
+        box-shadow: 0 0 .75rem color-mix(in oklch, var(--primary) 55%, transparent);
+    }
+    .post-share-panel {
+        padding: .7rem .8rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 12%, var(--line-divider));
+        border-radius: .9rem;
+        background: color-mix(in oklch, var(--primary) 4%, transparent);
+    }
+    .post-share-panel > div { gap: .45rem; }
     .post-reader-nav {
         display: flex;
         flex-wrap: wrap;
@@ -520,6 +630,22 @@ const postDesc = entry.data.description || postTitle;
         cursor: pointer;
         transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
     }
+
+    .library-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        min-height: 2rem;
+        padding: .35rem .65rem;
+        border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--btn-regular-bg) 72%, transparent);
+        color: color-mix(in srgb, currentColor 70%, transparent);
+        font-size: .75rem;
+        cursor: pointer;
+        transition: .2s ease;
+    }
+    .library-btn:hover, .library-btn.is-active { border-color: color-mix(in oklch, var(--primary) 48%, transparent); background: color-mix(in oklch, var(--primary) 12%, transparent); color: var(--primary); }
 
     .post-reader-nav__item:hover {
         color: var(--primary);

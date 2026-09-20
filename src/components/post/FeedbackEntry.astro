@@ -1,0 +1,55 @@
+---
+import { Icon } from "astro-icon/components";
+import { i18n } from "@i18n/translation";
+import I18nKey from "@i18n/i18nKey";
+
+interface Props {
+    title: string;
+    postUrl: string;
+}
+
+const { title, postUrl } = Astro.props;
+const issueUrl = `https://github.com/Spr-Aachen/Twilight/issues/new?title=${encodeURIComponent(`[文章反馈] ${title}`)}&body=${encodeURIComponent(`文章：${postUrl}\n\n反馈内容：\n`)}`;
+---
+
+<section id="feedback-entry" class="feedback-entry card-base mb-4 p-6 transition-swup-fade" aria-labelledby="feedback-entry-title">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-start gap-3">
+            <div class="feedback-entry__icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-(--primary)" aria-hidden="true">
+                <Icon name="material-symbols:feedback-outline-rounded" class="text-xl" />
+            </div>
+            <div>
+                <h2 id="feedback-entry-title" class="text-lg font-bold text-90">{i18n(I18nKey.feedback)}</h2>
+                <p class="mt-1 text-sm text-60">{i18n(I18nKey.feedbackDescription)}</p>
+            </div>
+        </div>
+        <a
+            class="feedback-entry__link inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium"
+            href={issueUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            {i18n(I18nKey.feedbackArticle)}
+            <Icon name="material-symbols:open-in-new-rounded" class="text-base" aria-hidden="true" />
+        </a>
+    </div>
+</section>
+
+<style>
+    .feedback-entry__icon {
+        border: 1px solid color-mix(in oklch, var(--primary) 20%, transparent);
+        background: color-mix(in oklch, var(--primary) 10%, var(--btn-regular-bg));
+    }
+    .feedback-entry__link {
+        color: var(--btn-content);
+        background: var(--btn-regular-bg);
+        border: 1px solid var(--line-divider);
+        transition: color .2s ease, border-color .2s ease, background-color .2s ease, transform .2s ease;
+    }
+    .feedback-entry__link:hover {
+        color: var(--primary);
+        border-color: color-mix(in oklch, var(--primary) 48%, transparent);
+        background: color-mix(in oklch, var(--primary) 10%, transparent);
+        transform: translateY(-1px);
+    }
+</style>

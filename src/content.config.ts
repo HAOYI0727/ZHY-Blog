@@ -28,6 +28,12 @@ const postsCollection = defineCollection({
         directoryTitle: z.coerce.string().optional().default("").transform(s => s.trim()),
         published: optionalDateSchema,
         updated: optionalDateSchema,
+        changeLog: z.array(z.object({
+            date: optionalDateSchema,
+            note: z.string().min(1),
+        })).optional().default([]),
+        learningPath: z.string().optional().default(""),
+        learningOrder: z.number().int().optional(),
         description: z.string().optional().default(""),
         cover: z.string().optional().default(""),
         coverInContent: z.boolean().optional().default(false),

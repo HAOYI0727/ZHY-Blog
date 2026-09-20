@@ -10,6 +10,7 @@
 		"type-check": "astro check",
 		"check-stylus": "node scripts/compile-inline-stylus.cjs",
 		"check:features": "node scripts/check-ui-features.cjs",
+		"check:links": "node scripts/check-site-links.cjs",
 		"check": "astro check && node scripts/compile-inline-stylus.cjs",
 		"dev": "node scripts/generate-icons.js && astro dev",
 		"build": "node scripts/generate-icons.js && node scripts/build-with-pagefind.cjs",

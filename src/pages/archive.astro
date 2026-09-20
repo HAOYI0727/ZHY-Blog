@@ -34,22 +34,76 @@ const filteredPosts = sortedPostsList.filter((post) => {
 
 <GridLayout title={pageTitle} description={pageDescription}>
     <ContinueReading />
-    <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
-        <div class="card-base z-10 px-9 py-6 relative w-full ">
+    <div class="archive-shell flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+        <div class="archive-panel card-base z-10 px-6 md:px-9 py-6 relative w-full ">
             <BackwardButton currentPath={Astro.url.pathname} />
             <!-- 标题 -->
-            <header class="mb-8">
-                <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
-                    {pageTitle}
-                </h1>
-                {pageDescription && (
-                    <p class="text-neutral-600 dark:text-neutral-400">
-                        {pageDescription}
-                    </p>
-                )}
+            <header class="archive-header mb-8">
+                <div>
+                    <p class="archive-eyebrow"><span></span> KNOWLEDGE TIMELINE</p>
+                    <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
+                        {pageTitle}
+                    </h1>
+                    {pageDescription && <p class="archive-description">{pageDescription}</p>}
+                </div>
+                <div class="archive-count" aria-label={`${filteredPosts.length} 篇文章`}>
+                    <strong>{filteredPosts.length}</strong>
+                    <span>篇文章</span>
+                </div>
             </header>
             <!-- 归档面板 -->
             <ArchivePanel sortedPosts={filteredPosts} tags={selectedTags} categories={selectedCategories} uncategorized={selectedUncategorized}></ArchivePanel>
         </div>
     </div>
 </GridLayout>
+
+<style>
+    .archive-shell { isolation: isolate; }
+    .archive-panel {
+        border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--line-divider));
+        background:
+            radial-gradient(circle at 8% 0%, color-mix(in oklch, var(--primary) 11%, transparent), transparent 28%),
+            var(--card-bg);
+        box-shadow: 0 1rem 3rem color-mix(in srgb, var(--primary) 7%, transparent);
+    }
+    .archive-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1.25rem;
+        padding: 1rem 1rem 1.1rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
+        border-radius: 1rem;
+        background: linear-gradient(120deg, color-mix(in oklch, var(--primary) 9%, transparent), transparent 62%);
+    }
+    .archive-eyebrow {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        margin: 0 0 .45rem;
+        color: var(--primary);
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .16em;
+    }
+    .archive-eyebrow span { width: .42rem; height: .42rem; border-radius: 999px; background: var(--primary); box-shadow: 0 0 .7rem color-mix(in oklch, var(--primary) 70%, transparent); }
+    .archive-description { margin: 0; color: var(--text-secondary); }
+    .archive-count {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 5.2rem;
+        min-height: 4.2rem;
+        padding: .55rem .8rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+        border-radius: .85rem;
+        background: color-mix(in oklch, var(--primary) 9%, var(--card-bg));
+    }
+    .archive-count strong { color: var(--primary); font-size: 1.45rem; line-height: 1; }
+    .archive-count span { margin-top: .3rem; color: var(--text-tertiary); font-size: .68rem; white-space: nowrap; }
+    @media (max-width: 520px) {
+        .archive-header { align-items: flex-start; }
+        .archive-count { min-width: 4.5rem; }
+    }
+</style>

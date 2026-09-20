@@ -1,0 +1,54 @@
+---
+import { Icon } from "astro-icon/components";
+import dayjs from "dayjs";
+
+import type { CollectionEntry } from "astro:content";
+import { i18n } from "@i18n/translation";
+import I18nKey from "@i18n/i18nKey";
+
+interface Props {
+    published: Date;
+    updated?: Date;
+    entries: CollectionEntry<"posts">["data"]["changeLog"];
+}
+
+const { published, updated, entries = [] } = Astro.props;
+const history = entries.length > 0
+    ? entries.filter((entry) => entry.date).map((entry) => ({ date: entry.date!, note: entry.note }))
+    : updated && updated.getTime() !== published.getTime()
+        ? [{ date: updated, note: i18n(I18nKey.updateHistoryDescription) }]
+        : [];
+---
+
+{history.length > 0 && (
+    <section class="update-history card-base mb-4 overflow-hidden rounded-(--radius-large) p-5 md:p-6" aria-labelledby="update-history-title">
+        <div class="mb-4 flex items-start gap-3">
+            <div class="update-history__icon flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-(--primary)">
+                <Icon name="material-symbols:history-rounded" class="text-[1.35rem]" />
+            </div>
+            <div>
+                <h2 id="update-history-title" class="text-lg font-bold text-90">{i18n(I18nKey.updateHistory)}</h2>
+                <p class="mt-1 text-sm text-60">{i18n(I18nKey.updateHistoryDescription)}</p>
+            </div>
+        </div>
+        <ol class="update-history__list">
+            {history.sort((a, b) => b.date.getTime() - a.date.getTime()).map((item) => (
+                <li>
+                    <time datetime={item.date.toISOString()}>{dayjs(item.date).format("YYYY-MM-DD")}</time>
+                    <span>{item.note}</span>
+                </li>
+            ))}
+        </ol>
+    </section>
+)}
+
+<style>
+    .update-history { border: 1px solid color-mix(in oklch, var(--primary) 14%, transparent); background: color-mix(in srgb, var(--card-bg) 92%, transparent); }
+    .update-history__icon { border: 1px solid color-mix(in oklch, var(--primary) 20%, transparent); background: color-mix(in oklch, var(--primary) 10%, var(--btn-regular-bg)); }
+    .update-history__list { position: relative; display: grid; gap: .8rem; margin: 0; padding: .2rem 0 .2rem 1.1rem; list-style: none; }
+    .update-history__list::before { position: absolute; inset: .4rem auto .4rem .28rem; width: 1px; background: var(--line-divider); content: ""; }
+    .update-history__list li { position: relative; display: grid; gap: .2rem; padding-left: .9rem; }
+    .update-history__list li::before { position: absolute; left: -.98rem; top: .3rem; width: .6rem; height: .6rem; border: 2px solid var(--card-bg); border-radius: 999px; background: var(--primary); content: ""; box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 35%, transparent); }
+    .update-history__list time { color: var(--primary); font-size: .75rem; font-weight: 700; }
+    .update-history__list span { color: color-mix(in srgb, currentColor 72%, transparent); font-size: .85rem; line-height: 1.55; }
+</style>

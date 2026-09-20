@@ -4,7 +4,7 @@ published: 2026-09-16
 description: 系统梳理 LLM Agent 记忆机制从 Storage、Reflection 到 Experience 的演化框架。解析长期一致性、动态环境与持续学习三大驱动，剖析主动探索与跨轨迹抽象两大变革机制，并展望主动记忆感知、工作记忆、经验基准、分布式共享记忆与多模态记忆等未来方向。
 cover: "/assets/images/posts/memory_evolution.png"
 coverInContent: false
-tags: [AI Agent, LLM, Memory, Reflection, Experience, 跨轨迹抽象, Survey]
+tags: [AI Agent, LLM, Memory, Reflection, Experience, Self-Evolving, Survey]
 category: AI_Agent
 draft: false
 ---

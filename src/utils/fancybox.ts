@@ -47,6 +47,7 @@ export async function initFancybox() {
             },
         },
         animated: true,
+        idle: false,
         dragToClose: true,
         keyboard: {
             Escape: "close",
@@ -66,14 +67,18 @@ export async function initFancybox() {
             maxScale: 3,
             minScale: 1
         },
-        caption: false,
+        caption: (_fancybox: any, _carousel: any, slide: any) => {
+            const trigger = slide?.trigger as HTMLElement | undefined;
+            const detail = trigger?.closest("figure")?.querySelector(".photo-caption")?.textContent?.trim();
+            return detail || trigger?.getAttribute?.("alt") || "";
+        },
     };
     // 绑定相册/文章图片
     Fancybox.bind(albumImagesSelector, {
         ...commonConfig,
         groupAll: true,
         Carousel: {
-            transition: "slide",
+            transition: "fade",
             preload: 2,
         },
     });

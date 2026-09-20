@@ -17,10 +17,8 @@ const { id, name, isCollapsed, collapsedHeight, style } = Astro.props;
 const className = Astro.props.class;
 ---
 
-<widget-layout id={id} data-id={id} data-swup-persist={id} data-is-collapsed={String(isCollapsed)} class:list={["pb-4 card-base", className]} style={style}>
-    <div class="font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2
-        before:w-1 before:h-4 before:rounded-md before:bg-(--primary)
-        before:absolute before:left-[-16px] before:top-[5.5px]">{name}</div>
+<widget-layout id={id} data-id={id} data-swup-persist={id} data-is-collapsed={String(isCollapsed)} class:list={["widget-layout-card pb-4 card-base", className]} style={style}>
+    <div class="widget-layout-heading font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2">{name}</div>
     <div id={`${id}-wrapper`} class:list={["collapse-wrapper px-4 overflow-hidden", {"collapsed": isCollapsed}]}>
         <slot></slot>
     </div>
@@ -34,6 +32,37 @@ const className = Astro.props.class;
 </widget-layout>
 
 <style define:vars={{ collapsedHeight }}>
+    .widget-layout-card {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--primary) 11%, var(--line-divider));
+        background:
+            linear-gradient(145deg, color-mix(in oklch, var(--primary) 3%, transparent), transparent 48%),
+            var(--card-bg);
+        box-shadow: 0 .5rem 1.8rem color-mix(in srgb, var(--primary) 5%, transparent);
+    }
+    .widget-layout-card::before {
+        position: absolute;
+        top: 0;
+        left: 1.1rem;
+        right: 1.1rem;
+        height: 2px;
+        content: "";
+        background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--primary) 72%, transparent), transparent);
+        opacity: .65;
+    }
+    .widget-layout-heading::before {
+        position: absolute;
+        top: .35rem;
+        left: -1rem;
+        width: .25rem;
+        height: 1.15rem;
+        border-radius: 999px;
+        content: "";
+        background: var(--primary);
+        box-shadow: 0 0 .75rem color-mix(in oklch, var(--primary) 62%, transparent);
+    }
+    .widget-layout-card:hover { border-color: color-mix(in srgb, var(--primary) 24%, var(--line-divider)); }
     .collapsed {
         height: var(--collapsedHeight);
     }

@@ -91,6 +91,44 @@ export type PostForList = {
     data: ResolvedPost["data"];
 };
 
+export type LearningPathItem = PostForList & {
+    position: number;
+    total: number;
+    isCurrent: boolean;
+};
+
+function getLearningPathKey(post: CollectionEntry<"posts">): string {
+    const explicitPath = post.data.learningPath?.trim().toLowerCase();
+    if (explicitPath) return `path:${explicitPath}`;
+
+    const category = getCategoryPathParts(post.data.category)?.join("/").toLowerCase();
+    return `category:${category || "uncategorized"}`;
+}
+
+export function getLearningPath(
+    current: CollectionEntry<"posts">,
+    posts: ResolvedPost[],
+): LearningPathItem[] {
+    const currentKey = getLearningPathKey(current);
+    const pathPosts = posts
+        .filter((post) => getLearningPathKey(post) === currentKey)
+        .sort((a, b) => {
+            const orderA = a.data.learningOrder ?? Number.MAX_SAFE_INTEGER;
+            const orderB = b.data.learningOrder ?? Number.MAX_SAFE_INTEGER;
+            return orderA - orderB || new Date(a.data.published!).getTime() - new Date(b.data.published!).getTime();
+        });
+
+    if (pathPosts.length < 2) return [];
+    const total = pathPosts.length;
+    return pathPosts.map((post, index) => ({
+        id: post.id,
+        data: post.data,
+        position: index + 1,
+        total,
+        isCurrent: post.id === current.id,
+    }));
+}
+
 export function getRelatedPosts(
     current: CollectionEntry<"posts">,
     posts: ResolvedPost[],

@@ -87,6 +87,18 @@ function main() {
             cwd: process.cwd(),
         });
 
+        console.log('🩺 Running static site health checks...');
+        execFileSync(process.execPath, [resolve('scripts', 'check-site-health.cjs'), outputDir], {
+            stdio: 'inherit',
+            cwd: process.cwd(),
+        });
+
+        console.log('🔗 Running local link and asset checks...');
+        execFileSync(process.execPath, [resolve('scripts', 'check-site-links.cjs'), outputDir], {
+            stdio: 'inherit',
+            cwd: process.cwd(),
+        });
+
         console.log('✅ Build completed!');
         console.log(`📊 Search index generated at: ${outputDir}/pagefind/`);
 

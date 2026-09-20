@@ -5,7 +5,6 @@ import { LinkPresets } from "@constants/link-presets";
 import { LinkPreset } from "@/types/config";
 import { friendsData } from "@utils/friends";
 import Markdown from "@components/common/markdown.astro";
-import Comment from "@components/comment.astro";
 import GridLayout from "@layouts/grid.astro";
 import BackwardButton from "@components/backwardButton.astro";
 
@@ -90,7 +89,6 @@ const shuffledItems = shuffleArray(items);
             </Markdown>
         </div>
     </div>
-    <Comment path="/friends/" />
 </GridLayout>
 
 <style>

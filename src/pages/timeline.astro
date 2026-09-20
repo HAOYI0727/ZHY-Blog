@@ -59,7 +59,8 @@ const getTypeIcon = (type: string) => {
         <div class="card-base z-10 px-9 py-6 relative w-full">
             <BackwardButton currentPath={Astro.url.pathname} />
             <!-- 页面标题 -->
-            <div class="flex flex-col items-start justify-center mb-8">
+            <div class="timeline-header flex flex-col items-start justify-center mb-8">
+                <p class="timeline-eyebrow"><span></span> LIFE IN MOTION</p>
                 <h1 class="text-4xl font-bold text-black/90 dark:text-white/90 mb-2">
                     {i18n(I18nKey.timeline)}
                 </h1>
@@ -205,3 +206,9 @@ const getTypeIcon = (type: string) => {
         }
     });
 </script>
+
+<style>
+    .timeline-header { padding:.25rem 0; }
+    .timeline-eyebrow { display:flex; align-items:center; gap:.45rem; margin:0 0 .45rem; color:var(--primary); font-size:.68rem; font-weight:800; letter-spacing:.15em; }
+    .timeline-eyebrow span { width:.42rem; height:.42rem; border-radius:999px; background:var(--primary); box-shadow:0 0 .7rem color-mix(in oklch,var(--primary) 65%,transparent); }
+</style>

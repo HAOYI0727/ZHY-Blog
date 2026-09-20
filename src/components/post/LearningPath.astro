@@ -1,0 +1,88 @@
+---
+import { Icon } from "astro-icon/components";
+
+import type { LearningPathItem } from "@utils/post";
+import { getPostUrl } from "@utils/url";
+import { i18n } from "@i18n/translation";
+import I18nKey from "@i18n/i18nKey";
+
+interface Props {
+    items: LearningPathItem[];
+}
+
+const { items } = Astro.props;
+const current = items.find((item) => item.isCurrent);
+const previous = current ? items[current.position - 2] : undefined;
+const next = current ? items[current.position] : undefined;
+---
+
+{current && (
+    <section class="learning-path card-base mb-4 overflow-hidden rounded-(--radius-large) p-5 md:p-6" aria-labelledby="learning-path-title">
+        <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="learning-path__icon flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-(--primary)">
+                    <Icon name="material-symbols:alt-route-rounded" class="text-[1.45rem]" />
+                </div>
+                <div class="min-w-0">
+                    <h2 id="learning-path-title" class="text-lg font-bold text-90 md:text-xl">{i18n(I18nKey.learningPath)}</h2>
+                    <p class="mt-1 text-sm leading-relaxed text-60">{i18n(I18nKey.learningPathDescription)}</p>
+                </div>
+            </div>
+            <span class="learning-path__progress rounded-full px-3 py-1 text-xs font-semibold text-(--primary)">
+                {i18n(I18nKey.learningPathProgress)} {current.position} / {current.total}
+            </span>
+        </div>
+
+        <ol class="learning-path__steps" aria-label={i18n(I18nKey.learningPath)}>
+            {items.map((item) => (
+                <li class:list={["learning-path__step", { "is-current": item.isCurrent }]}>
+                    {item.isCurrent ? (
+                        <div class="learning-path__card" aria-current="step">
+                            <span class="learning-path__index">{item.position}</span>
+                            <span class="min-w-0 flex-1 truncate text-sm font-semibold text-90">{item.data.title}</span>
+                        </div>
+                    ) : (
+                        <a class="learning-path__card" href={getPostUrl(item)}>
+                            <span class="learning-path__index">{item.position}</span>
+                            <span class="min-w-0 flex-1 truncate text-sm text-75">{item.data.title}</span>
+                        </a>
+                    )}
+                </li>
+            ))}
+        </ol>
+
+        <div class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {previous ? (
+                <a class="learning-path__nav" href={getPostUrl(previous)}>
+                    <Icon name="material-symbols:arrow-back-rounded" />
+                    <span class="min-w-0"><small>{i18n(I18nKey.learningPathPrevious)}</small><strong>{previous.data.title}</strong></span>
+                </a>
+            ) : <span />}
+            {next && (
+                <a class="learning-path__nav justify-end text-right" href={getPostUrl(next)}>
+                    <span class="min-w-0"><small>{i18n(I18nKey.learningPathNext)}</small><strong>{next.data.title}</strong></span>
+                    <Icon name="material-symbols:arrow-forward-rounded" />
+                </a>
+            )}
+        </div>
+    </section>
+)}
+
+<style>
+    .learning-path {
+        border: 1px solid color-mix(in oklch, var(--primary) 16%, transparent);
+        background: radial-gradient(circle at 92% 0%, color-mix(in oklch, var(--primary) 11%, transparent), transparent 34%), color-mix(in srgb, var(--card-bg) 92%, transparent);
+    }
+    .learning-path__icon { border: 1px solid color-mix(in oklch, var(--primary) 20%, transparent); background: color-mix(in oklch, var(--primary) 10%, var(--btn-regular-bg)); }
+    .learning-path__progress { background: color-mix(in oklch, var(--primary) 10%, transparent); }
+    .learning-path__steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr)); gap: .6rem; margin: 0; padding: 0; list-style: none; }
+    .learning-path__card { display: flex; align-items: center; gap: .65rem; min-height: 3rem; padding: .65rem .75rem; border: 1px solid var(--line-divider); border-radius: .8rem; background: color-mix(in srgb, var(--card-bg) 76%, transparent); text-decoration: none; transition: border-color .2s ease, transform .2s ease, background .2s ease; }
+    a.learning-path__card:hover { border-color: color-mix(in oklch, var(--primary) 55%, transparent); transform: translateY(-1px); }
+    .learning-path__step.is-current .learning-path__card { border-color: color-mix(in oklch, var(--primary) 50%, transparent); background: color-mix(in oklch, var(--primary) 10%, var(--card-bg)); }
+    .learning-path__index { display: inline-flex; width: 1.65rem; height: 1.65rem; flex: 0 0 auto; align-items: center; justify-content: center; border-radius: 999px; background: color-mix(in oklch, var(--primary) 15%, transparent); color: var(--primary); font-size: .75rem; font-weight: 700; }
+    .learning-path__nav { display: flex; align-items: center; gap: .65rem; min-width: 0; padding: .75rem .85rem; border-radius: .8rem; background: color-mix(in srgb, var(--btn-regular-bg) 70%, transparent); color: inherit; text-decoration: none; }
+    .learning-path__nav:hover { color: var(--primary); }
+    .learning-path__nav small, .learning-path__nav strong { display: block; }
+    .learning-path__nav small { margin-bottom: .15rem; color: color-mix(in srgb, currentColor 58%, transparent); font-size: .7rem; }
+    .learning-path__nav strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+</style>

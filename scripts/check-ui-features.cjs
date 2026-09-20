@@ -2,8 +2,18 @@ const { existsSync, readFileSync } = require("node:fs");
 const { join, resolve } = require("node:path");
 const yaml = require("js-yaml");
 
-const outputDir = resolve(process.argv[2] || "dist");
 const projectRoot = resolve(__dirname, "..");
+
+// Astro 的 server 输出会把静态页面放在 dist/client；保留参数覆盖能力，
+// 同时让直接运行 `npm run check:features` 与构建流程使用同一份产物。
+function resolveOutputDir() {
+    if (process.argv[2]) return resolve(process.argv[2]);
+    const distDir = resolve("dist");
+    const clientDir = join(distDir, "client");
+    return existsSync(join(distDir, "index.html")) ? distDir : clientDir;
+}
+
+const outputDir = resolveOutputDir();
 
 function fail(message) {
     console.error(`❌ ${message}`);
@@ -271,7 +281,49 @@ const sourceContracts = [
         [
             ['data-post-view-button="month"', "文章页默认年月浏览模式"],
             ['data-post-view-button="topic"', "文章页分类标签浏览模式"],
-            ["setupPostBrowseSwitcher", "文章浏览模式切换逻辑"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "utils", "postBrowseSwitcher.ts"),
+        [
+            ["export function initPostBrowseSwitcher", "文章浏览模式切换逻辑"],
+            ["data-post-view-button", "文章浏览模式按钮绑定"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "utils", "readingLibrary.ts"),
+        [
+            ["initReadingLibrary", "本地书签与已读状态"],
+            ["twilight:reading-library:v1", "阅读状态本地存储"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "components", "post", "UpdateHistory.astro"),
+        [
+            ["update-history", "文章更新记录"],
+            ["changeLog", "文章变更记录字段"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "components", "post", "FeedbackEntry.astro"),
+        [
+            ["issues/new", "统一反馈入口"],
+            ["feedback-entry", "文章反馈卡片"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "utils", "albumExperience.ts"),
+        [
+            ["initAlbumExperience", "相册交互生命周期"],
+            ["data-album-views", "相册浏览量统计"],
+            ["sessionStorage", "相册浏览去重"],
+        ],
+    ],
+    [
+        join(projectRoot, "scripts", "check-site-health.cjs"),
+        [
+            ["leakedPlaceholder", "构建产物占位符检查"],
+            ["missingTitle", "页面标题完整性检查"],
         ],
     ],
     [

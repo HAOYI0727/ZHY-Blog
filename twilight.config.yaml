@@ -17,7 +17,8 @@ site:
         # 显示语言选择下拉框
         showSelectTag: false
         # 自动检测用户语言
-        autoDiscriminate: true
+        # 默认使用站点语言；用户仍可在语言菜单中主动切换。
+        autoDiscriminate: false
         # 翻译时忽略的 CSS 类名
         ignoreClasses:
             - "ignore"
@@ -44,7 +45,7 @@ site:
         # 主题色的默认色相 (范围从 0 到 360。例如：红色：0，青色：200，蓝绿色：250，粉色：345)
         hue: 255
     # 默认主题 ("system" 跟随系统 | "light" 浅色 | "dark" 深色)
-    defaultTheme: "system"
+    defaultTheme: "dark"
     # 壁纸配置
     wallpaper:
         # 模式 ("banner" 横幅 | "fullscreen" 全屏 | "none" 纯色)
@@ -344,16 +345,8 @@ post:
         url: "https://creativecommons.org/licenses/by-nc-sa/4.0/"
     # 评论配置
     comment:
-        # 启用评论功能
-        enable: true
-        # 评论服务提供商（可选，不填则自动检测已配置的服务）
-        provider: waline
-        # Waline 评论系统配置
-        waline:
-            # 服务端地址
-            serverURL: "https://zhy-blog.vercel.app/"
-            # 语言
-            lang: "zh-CN"
+        # 评论功能暂时关闭，文章反馈统一通过 GitHub Issue 提交。
+        enable: false
     
 # 页脚配置
 footer:

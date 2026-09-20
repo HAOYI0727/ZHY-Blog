@@ -34,8 +34,8 @@ const labels = {
 };
 ---
 
-<div id={`statistics-${side}`} data-swup-persist={`statistics-${side}`} class={`pb-4 card-base ${className || ""}`} style={style}>
-    <div class="statistics-heading font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2 before:w-1 before:h-4 before:rounded-md before:bg-(--primary) before:absolute before:left-[-16px] before:top-[5.5px]">{labels.statistics}</div>
+<div id={`statistics-${side}`} data-swup-persist={`statistics-${side}`} class={`statistics-card pb-4 card-base ${className || ""}`} style={style}>
+    <div class="statistics-heading font-bold transition text-lg text-neutral-900 dark:text-neutral-100 relative ml-8 mt-4 mb-2">{labels.statistics}</div>
     <div class="stats-summary px-3" aria-label={labels.statistics}>
         <div><strong>{publishedDates.length}</strong><span>{labels.posts}</span></div>
         <div><strong>{categories.length}</strong><span>{labels.categories}</span></div>
@@ -51,5 +51,7 @@ const labels = {
 </div>
 
 <style>
-    .stats-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem;margin-bottom:.35rem}.stats-summary div{display:flex;min-width:0;flex-direction:column;align-items:center;border:1px solid color-mix(in srgb,var(--line-divider) 72%,transparent);border-radius:.55rem;padding:.35rem .2rem;background:color-mix(in srgb,var(--btn-regular-bg) 68%,transparent)}.stats-summary strong{font-size:1.05rem;line-height:1.1;color:var(--primary)}.stats-summary span{margin-top:.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65rem;color:color-mix(in srgb,currentColor 62%,transparent)}
+    .statistics-card { border: 1px solid color-mix(in srgb, var(--primary) 11%, var(--line-divider)); background: linear-gradient(145deg, color-mix(in oklch, var(--primary) 4%, transparent), transparent 55%), var(--card-bg); box-shadow: 0 .5rem 1.8rem color-mix(in srgb, var(--primary) 5%, transparent); }
+    .statistics-heading::before { position:absolute; top:.35rem; left:-1rem; width:.25rem; height:1.15rem; border-radius:999px; content:""; background:var(--primary); box-shadow:0 0 .75rem color-mix(in oklch,var(--primary) 62%,transparent); }
+    .stats-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem;margin-bottom:.35rem}.stats-summary div{display:flex;min-width:0;flex-direction:column;align-items:center;border:1px solid color-mix(in srgb,var(--primary) 15%,var(--line-divider));border-radius:.55rem;padding:.42rem .2rem;background:color-mix(in oklch,var(--primary) 6%,var(--btn-regular-bg));transition:transform .2s ease,border-color .2s ease,background .2s ease}.stats-summary div:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--primary) 38%,transparent);background:color-mix(in oklch,var(--primary) 11%,var(--btn-regular-bg))}.stats-summary strong{font-size:1.05rem;line-height:1.1;color:var(--primary)}.stats-summary span{margin-top:.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.65rem;color:color-mix(in srgb,currentColor 62%,transparent)}
 </style>

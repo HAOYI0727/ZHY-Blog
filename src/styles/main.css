@@ -33,9 +33,22 @@
     color utility to any element that depends on these defaults.
 */
 @layer base {
+    html {
+        background-color: var(--page-bg);
+        background-image:
+            radial-gradient(circle at 8% 0%, color-mix(in oklch, var(--primary) 13%, transparent), transparent 30rem),
+            radial-gradient(circle at 96% 48%, color-mix(in oklch, var(--primary) 9%, transparent), transparent 34rem),
+            linear-gradient(135deg, color-mix(in oklch, var(--primary) 2%, transparent), transparent 42%);
+        background-attachment: fixed;
+    }
+
     html,
     body {
         color: var(--text-color);
+    }
+
+    body {
+        background: transparent;
     }
 
     button,
@@ -52,6 +65,38 @@
     ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
     }
+}
+
+/* 全站共享的蓝色表面层：保持轻微、连续，不覆盖已有页面专属背景。 */
+:where(.card-base, .card-base-transparent) {
+    border: 1px solid color-mix(in srgb, var(--primary) 12%, var(--line-divider));
+    box-shadow: 0 .55rem 1.8rem color-mix(in srgb, var(--primary) 6%, transparent);
+}
+
+:where(.card-base, .card-base-transparent):hover {
+    border-color: color-mix(in srgb, var(--primary) 24%, var(--line-divider));
+}
+
+:where(.btn-regular, .btn-plain, .btn-card) {
+    border-color: color-mix(in srgb, var(--primary) 13%, var(--line-divider));
+}
+
+:where(.btn-regular, .btn-plain, .btn-card):hover {
+    border-color: color-mix(in srgb, var(--primary) 28%, var(--line-divider));
+    box-shadow: 0 .3rem 1rem color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+hr {
+    border-color: color-mix(in srgb, var(--primary) 15%, var(--line-divider));
+}
+
+#navbar > div {
+    border-color: color-mix(in srgb, var(--primary) 12%, var(--line-divider));
+    box-shadow: 0 .35rem 1.6rem color-mix(in srgb, var(--primary) 6%, transparent);
+}
+
+#progress-bar-fill {
+    box-shadow: 0 0 .55rem color-mix(in oklch, var(--primary) 68%, transparent);
 }
 
 
