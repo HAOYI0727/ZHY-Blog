@@ -1,5 +1,5 @@
 const { existsSync, readFileSync, readdirSync } = require("node:fs");
-const { join, relative, resolve, extname } = require("node:path");
+const { join, relative, resolve, extname, sep } = require("node:path");
 
 function resolveOutputDir() {
     if (process.argv[2]) return resolve(process.argv[2]);
@@ -40,6 +40,28 @@ function candidatesFor(url) {
     return [target, join(target, "index.html"), `${target}.html`];
 }
 
+// Vercel runs on a case-sensitive Linux filesystem, while local macOS
+// development commonly uses a case-insensitive volume. Resolve each path
+// segment against the directory entries so a `VLM.png`/`vlm.png` mismatch is
+// caught before deployment rather than only after the remote build fails.
+function existsCaseSensitive(path) {
+    const relativePath = relative(outputDir, path);
+    if (relativePath.startsWith("..") || relativePath === "") return relativePath === "";
+    let current = outputDir;
+    for (const segment of relativePath.split(sep)) {
+        if (!segment) continue;
+        let entries;
+        try {
+            entries = readdirSync(current);
+        } catch {
+            return false;
+        }
+        if (!entries.includes(segment)) return false;
+        current = join(current, segment);
+    }
+    return true;
+}
+
 for (const file of htmlFiles) {
     const html = readFileSync(file, "utf8");
     let match;
@@ -47,7 +69,7 @@ for (const file of htmlFiles) {
         const url = match[1];
         if (isSkippable(url)) continue;
         const candidates = candidatesFor(url);
-        if (candidates.length && !candidates.some(existsSync)) {
+        if (candidates.length && !candidates.some(existsCaseSensitive)) {
             if (!missing.has(url)) missing.set(url, []);
             missing.get(url).push(relative(outputDir, file));
         }
