@@ -2,7 +2,7 @@
 import { getCategoryList, getSortedPostsList, getTagList } from "@utils/post";
 import { i18n } from "@i18n/translation";
 import I18nKey from "@i18n/i18nKey";
-import StatsCharts from "./statistics.svelte";
+import StatisticsCharts from "./statisticsCharts.astro";
 
 
 const posts = await getSortedPostsList();
@@ -41,8 +41,7 @@ const labels = {
         <div><strong>{categories.length}</strong><span>{labels.categories}</span></div>
         <div><strong>{tags.length}</strong><span>{labels.tags}</span></div>
     </div>
-    <StatsCharts
-        client:load
+    <StatisticsCharts
         {publishedDates}
         categories={chartCategories}
         tags={chartTags}

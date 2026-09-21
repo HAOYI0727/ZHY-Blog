@@ -169,6 +169,9 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
             <div class="welcome-content relative z-10 grid lg:grid-cols-[minmax(0,1.05fr)_minmax(28rem,0.95fr)]">
                 <section class="welcome-hero relative flex flex-col justify-between overflow-hidden p-6 sm:p-9 lg:min-h-[43rem] lg:p-10 xl:p-12">
                     <div class="welcome-hero-grid absolute inset-0 -z-10" aria-hidden="true"></div>
+                    <div class="welcome-theme-ribbon" aria-hidden="true">
+                        <span></span><span></span><span></span>
+                    </div>
                     <div class="welcome-floating-orb welcome-floating-orb-a absolute" aria-hidden="true">
                         <span>AI</span>
                     </div>
@@ -421,7 +424,7 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
         --welcome-sky: 104 168 245;
         --welcome-mint: 139 137 235;
         --welcome-sunset: 180 132 226;
-        --tech-primary: oklch(0.72 0.18 var(--hue));
+        --tech-primary: color-mix(in oklch, var(--primary) 82%, white 18%);
         --tech-cyan: oklch(0.82 0.13 calc(var(--hue) - 65));
         --tech-violet: oklch(0.73 0.18 calc(var(--hue) + 28));
         opacity: 1;
@@ -625,6 +628,24 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
         background-size: 3.4rem 3.4rem;
         mask-image: radial-gradient(circle at 30% 45%, black, transparent 70%);
     }
+
+    .welcome-theme-ribbon {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        width: min(11rem, 42%);
+        margin: .1rem 0 1.2rem;
+    }
+    .welcome-theme-ribbon span {
+        display: block;
+        height: .22rem;
+        flex: 1;
+        border-radius: 999px;
+        background: var(--tech-primary);
+        box-shadow: 0 0 .7rem color-mix(in oklch, var(--primary) 65%, transparent);
+    }
+    .welcome-theme-ribbon span:nth-child(2) { flex: 1.8; background: var(--tech-cyan); }
+    .welcome-theme-ribbon span:nth-child(3) { flex: .65; background: var(--tech-violet); }
 
     .welcome-floating-orb {
         z-index: -1;

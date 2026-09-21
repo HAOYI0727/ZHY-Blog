@@ -192,6 +192,11 @@ const loadingOverlayEnabled = siteConfig.loadingOverlay?.enable ?? true;
                   media={favicon.theme && `(prefers-color-scheme: ${favicon.theme})`}
             />
         ))}
+        <!-- Safari/iOS requests these conventional root-level icons even when no
+             explicit link is present. Keep both names available to avoid noisy
+             404s and to make Add to Home Screen use the site mark. -->
+        <link rel="apple-touch-icon" sizes="180x180" href={url("/apple-touch-icon.png")} />
+        <link rel="apple-touch-icon-precomposed" sizes="180x180" href={url("/apple-touch-icon-precomposed.png")} />
         <!-- Set the theme before the page is rendered to avoid a flash -->
         <script is:inline define:vars={{LIGHT_MODE, DARK_MODE, SYSTEM_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, NAVBAR_HEIGHT, configHue, defaultTheme: siteConfig.defaultTheme}}>
             // Load the theme from local storage

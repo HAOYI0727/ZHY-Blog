@@ -45,6 +45,12 @@ const featureMarkers = [
     ['id="scheme-switch"', "亮暗模式"],
     ['id="wallpaper-mode-switch"', "背景风格"],
     ['id="translate-switch"', "语言翻译"],
+    ['data-statistics-charts', "统计图表"],
+    ['data-chart-scale="year"', "年度统计曲线"],
+    ['data-chart-scale="month"', "月度统计曲线"],
+    ['data-chart-scale="day"', "日度统计曲线"],
+    ['aria-label="分类"', "分类雷达图"],
+    ['aria-label="标签"', "标签雷达图"],
     ['aria-keyshortcuts="Control+K Meta+K /"', "搜索快捷键"],
     ['id="page-overlay-container"', "页面级弹窗容器"],
 ];
@@ -192,6 +198,14 @@ const sourceContracts = [
             ["buildActivity(timeScale)", "移动端完整统计图"],
             ["radarChart(labels.categories", "分类雷达图"],
             ["radarChart(labels.tags", "标签雷达图"],
+        ],
+    ],
+    [
+        join(projectRoot, "src", "components", "sidebar", "statisticsCharts.astro"),
+        [
+            ["data-statistics-charts", "服务端统计图表容器"],
+            ["data-chart-scale", "统计时间粒度切换"],
+            ["astro:page-load", "无刷新导航后的图表交互恢复"],
         ],
     ],
     [

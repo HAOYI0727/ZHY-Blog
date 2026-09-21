@@ -45,7 +45,7 @@ const iconSetCache = new Map();
 /**
  * 递归获取目录下所有文件
  */
-function getAllFiles(dir, extensions = [".svelte", ".astro", ".json"]) {
+function getAllFiles(dir, extensions = [".svelte", ".astro", ".json", ".ts"]) {
     const files = [];
 
     function walk(currentDir) {
@@ -90,6 +90,14 @@ function extractIconNames(content) {
         while ((match = pattern.exec(content)) !== null) {
             icons.add(match[1]);
         }
+    }
+
+    // TypeScript data/config files often keep icon names in maps rather than
+    // an `icon=` attribute (for example skill-category fallbacks). Restrict
+    // this to object values so URLs and unrelated colon-delimited strings do
+    // not get mistaken for icons.
+    for (const match of content.matchAll(/^\s*[a-z][a-z0-9_-]*\s*:\s*["'`]([a-z0-9-]+:[a-z0-9-]+)["'`]/gim)) {
+        icons.add(match[1]);
     }
 
     // 提取条件表达式中的所有静态图标名，例如：

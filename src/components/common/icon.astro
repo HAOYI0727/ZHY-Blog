@@ -23,7 +23,6 @@ const {
     size = "md",
     color,
     fallback = "●",
-    loading = "lazy",
 } = Astro.props;
 
 // 尺寸映射
@@ -54,13 +53,12 @@ const isStatic = hasIcon(icon);
     />
 ) : (
     <span
-        class={`inline-flex items-center justify-center ${combinedClass}`}
+        class={`inline-flex items-center justify-center font-semibold ${combinedClass}`}
         style={combinedStyle}
+        role="img"
+        aria-label={fallback}
     >
-        <iconify-icon
-            icon={icon}
-            loading={loading}
-        ></iconify-icon>
+        {fallback}
     </span>
 )}
 

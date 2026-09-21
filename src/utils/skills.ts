@@ -1,5 +1,7 @@
 // Skill data configuration file
 // Used to manage data for the skill display page
+import { hasIcon } from "@utils/icons";
+
 const skillModules = import.meta.glob('../content/skills/*.json', { eager: true });
 
 export interface Skill {
@@ -19,11 +21,31 @@ export interface Skill {
     basePath?: string;
 }
 
+// Bundled, topic-aware fallbacks keep the skill grid useful even when an
+// upstream Iconify collection renames or removes a brand icon.
+export const SKILL_ICON_FALLBACKS: Record<Skill["category"], string> = {
+  ai: "material-symbols:psychology",
+  backend: "material-symbols:dns",
+  client: "material-symbols:devices",
+  frontend: "material-symbols:code",
+  database: "material-symbols:database",
+  engines: "material-symbols:settings",
+  tools: "material-symbols:terminal",
+  others: "material-symbols:category",
+};
+
+function resolveSkillIcon(icon: string | undefined, category: Skill["category"]) {
+  if (icon && hasIcon(icon)) return icon;
+  return SKILL_ICON_FALLBACKS[category] || SKILL_ICON_FALLBACKS.others;
+}
+
 export const skillsData: Skill[] = Object.entries(skillModules).map(([path, mod]: [string, any]) => {
   const id = path.split('/').pop()?.replace('.json', '') || '';
   const data = mod.default;
   const basePath = path.replace('../', '').replace(/\/[^/]+$/, '');
-  return { id, ...data, basePath } as Skill;
+  const skill = { id, ...data, basePath } as Skill;
+  skill.icon = resolveSkillIcon(skill.icon, skill.category);
+  return skill;
 });
 
 // Get skill statistics

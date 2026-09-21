@@ -53,6 +53,15 @@
             ]
         },
         {
+            "source": "/(favicon\\.ico|apple-touch-icon(?:-precomposed)?\\.png)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=31536000, immutable"
+                }
+            ]
+        },
+        {
             "source": "/pio/(.*)",
             "headers": [
                 {

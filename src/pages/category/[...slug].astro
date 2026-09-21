@@ -70,12 +70,12 @@ const pageDescription = `${filteredPosts.length} ${i18n(I18nKey.postsCount)}`;
 ---
 
 <GridLayout title={pageTitle} description={pageDescription}>
-  <div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
-    <div class="card-base z-10 px-9 py-6 relative w-full">
+  <div class="category-page-shell flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+    <div class="category-page-card card-base z-10 px-5 py-5 sm:px-9 sm:py-6 relative w-full">
       <BackwardButton currentPath={Astro.url.pathname} />
 
       <!-- 面包屑导航 -->
-      <nav class="text-sm text-60 mb-4 flex flex-wrap items-center gap-1">
+      <nav class="category-breadcrumb text-sm text-60 mb-5 flex flex-wrap items-center gap-1" aria-label={i18n(I18nKey.categories)}>
         <a href="/" class="hover:text-(--primary) transition-colors">{i18n(I18nKey.home)}</a>
         <span class="mx-1">/</span>
         <a href="/posts/" class="hover:text-(--primary) transition-colors">{i18n(I18nKey.categories)}</a>
@@ -94,12 +94,13 @@ const pageDescription = `${filteredPosts.length} ${i18n(I18nKey.postsCount)}`;
       </nav>
 
       <!-- 标题区 -->
-      <header class="mb-6">
-        <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
-          {pageTitle}
+      <header class="category-hero mb-7">
+        <span class="category-kicker">KNOWLEDGE TOPIC</span>
+        <h1 class="category-title">
+          <span>{pageTitle}</span>
         </h1>
-        <p class="text-neutral-600 dark:text-neutral-400">
-          {filteredPosts.length} {i18n(I18nKey.postsCount)}
+        <p class="category-description">
+          <strong>{filteredPosts.length}</strong> {i18n(I18nKey.postsCount)} · {i18n(I18nKey.categories)}
         </p>
         <div class="mt-3 flex flex-wrap gap-3">
           <a
@@ -149,3 +150,48 @@ const pageDescription = `${filteredPosts.length} ${i18n(I18nKey.postsCount)}`;
     </div>
   </div>
 </GridLayout>
+
+<style>
+  .category-page-shell {
+    background:
+      radial-gradient(circle at 12% 8%, color-mix(in oklch, var(--primary) 18%, transparent), transparent 22rem),
+      radial-gradient(circle at 94% 92%, color-mix(in oklch, var(--primary) 10%, transparent), transparent 25rem);
+  }
+  .category-page-card {
+    border: 1px solid color-mix(in srgb, var(--primary) 17%, var(--line-divider));
+    background: linear-gradient(145deg, color-mix(in oklch, var(--primary) 5%, transparent), transparent 42%), var(--card-bg);
+    box-shadow: 0 .9rem 2.6rem color-mix(in srgb, var(--primary) 7%, transparent);
+  }
+  .category-breadcrumb a { text-decoration: none; }
+  .category-hero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: clamp(1.15rem, 3vw, 1.8rem);
+    border: 1px solid color-mix(in oklch, var(--primary) 26%, var(--line-divider));
+    border-radius: 1.1rem;
+    background: linear-gradient(120deg, color-mix(in oklch, var(--primary) 13%, var(--card-bg)), color-mix(in oklch, var(--primary) 3%, var(--card-bg)) 62%, var(--card-bg));
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent), 0 .7rem 1.8rem color-mix(in srgb, var(--primary) 8%, transparent);
+  }
+  .category-hero::before {
+    position: absolute;
+    z-index: -1;
+    top: -4rem;
+    right: -3rem;
+    width: 12rem;
+    height: 12rem;
+    border: 1px solid color-mix(in oklch, var(--primary) 24%, transparent);
+    border-radius: 50%;
+    content: "";
+    box-shadow: 0 0 0 1.2rem color-mix(in oklch, var(--primary) 5%, transparent), 0 0 4rem color-mix(in oklch, var(--primary) 18%, transparent);
+  }
+  .category-kicker { display: block; margin-bottom: .7rem; color: var(--primary); font-size: .68rem; font-weight: 800; letter-spacing: .18em; }
+  .category-title { display: inline-flex; max-width: 100%; margin: 0; padding: .3rem .85rem .42rem; border: 1px solid color-mix(in oklch, var(--primary) 40%, var(--line-divider)); border-radius: .8rem; background: color-mix(in oklch, var(--primary) 12%, var(--card-bg)); color: var(--deep-text); font-size: clamp(1.75rem, 4vw, 2.65rem); font-weight: 850; line-height: 1.15; letter-spacing: -.025em; box-shadow: 0 .35rem 1rem color-mix(in srgb, var(--primary) 10%, transparent); }
+  .category-title span { overflow-wrap: anywhere; }
+  .category-description { margin: .85rem 0 0; color: color-mix(in srgb, currentColor 68%, transparent); font-size: .9rem; }
+  .category-description strong { color: var(--primary); font-size: 1.05rem; }
+  @media (max-width: 640px) {
+    .category-title { width: 100%; }
+    .category-hero { border-radius: .9rem; }
+  }
+</style>
