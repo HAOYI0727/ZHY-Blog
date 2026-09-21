@@ -213,24 +213,26 @@
         flex: 1 1 auto;
         justify-content: flex-start;
         gap: 0.08rem;
+        min-width: 0;
+        overflow: hidden;
     }
 
     #navbar .nav-link-item {
-        width: auto;
+        width: 2.25rem;
+        min-width: 2.25rem;
         height: 2.5rem;
-        padding: 0 0.42rem;
+        padding: 0;
         font-size: 0.76rem;
         white-space: nowrap;
     }
 
     #navbar .nav-link-text {
-        display: inline !important;
-        margin-left: 0;
+        display: none !important;
     }
 
-    #navbar .nav-link-icon,
-    #navbar .dropdown-arrow {
-        display: none;
+    #navbar .nav-link-icon {
+        display: inline-flex;
+        margin-left: 0;
     }
 
     #navbar .nav-link-container:last-child .dropdown-menu {
@@ -240,10 +242,25 @@
 
     #navbar .navbar-buttons {
         flex: 0 0 auto;
+        gap: 0.08rem;
+        overflow: visible;
+        padding: 0.1rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+        border-radius: 0.7rem;
+        background: color-mix(in srgb, var(--card-bg) 88%, var(--primary));
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 12%, transparent);
     }
 
-    #navbar .navbar-buttons > :not(:first-child) {
-        display: none !important;
+    #navbar .navbar-optional-tool {
+        display: block !important;
+        flex: 0 0 auto;
+    }
+
+    #navbar .navbar-buttons > button,
+    #navbar .navbar-buttons > div > button:first-child {
+        width: 2.25rem;
+        min-width: 2.25rem;
+        height: 2.25rem;
     }
 }
 /* 手机端导航栏 - 小屏 */
@@ -260,8 +277,9 @@
     #navbar-buttons { gap: 0 !important; }
     /* Only size the trigger buttons; do not affect nested buttons inside panels */
     #navbar-buttons button:not(.float-panel *) {
-        width: 2.4rem !important;
-        height: 2.4rem !important;
+        width: 2.15rem !important;
+        min-width: 2.15rem !important;
+        height: 2.15rem !important;
         padding: 0 !important;
     }
 
@@ -277,7 +295,7 @@
         padding: 0 !important;
     }
 
-    #navbar .nav-link-item { padding: 0 0.32rem; font-size: 0.71rem; }
+    #navbar .nav-link-item { width: 2rem; min-width: 2rem; padding: 0; font-size: 0.71rem; }
 }
 
 /* 手机端导航栏按钮 -超小屏 */
@@ -287,6 +305,6 @@
         justify-content: flex-end !important;
     }
 
-    #navbar .nav-link-item { padding: 0 0.22rem; font-size: 0.66rem; }
+    #navbar .nav-link-item { width: 1.85rem; min-width: 1.85rem; padding: 0; font-size: 0.66rem; }
     #navbar-buttons button:not(.float-panel *) { width: 2rem !important; min-width: 2rem !important; }
 }

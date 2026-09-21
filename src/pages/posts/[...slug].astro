@@ -610,11 +610,34 @@ const postDesc = entry.data.description || postTitle;
         margin-bottom: 0 !important;
         overflow-wrap: anywhere;
     }
-    #post-container [data-pagefind-body] {
+    /* 仅标题使用平衡换行；正文同样带有 data-pagefind-body 供搜索索引，
+       不能把标题的换行策略传播到整篇 Markdown。 */
+    #post-container .post-title-card__title {
         text-wrap: balance;
+    }
+    #post-container .markdown-content {
+        text-wrap: wrap;
     }
     #post-container .markdown-content :is(h2, h3) {
         scroll-margin-top: 5rem;
+    }
+    /* 中文正文采用两端对齐，保持段落右边界整齐；标题、代码、表格和媒体
+       不参与拉伸，避免英文、等宽内容和复杂组件出现异常间距。 */
+    #post-container .markdown-content :is(p, li, dd) {
+        text-align: justify;
+        text-justify: inter-ideograph;
+        text-align-last: left;
+        overflow-wrap: anywhere;
+    }
+    /* Markdown 内容通常由 section 嵌套包裹，不能只匹配根节点的直接子元素。 */
+    #post-container .markdown-content :is(ul, ol, blockquote) {
+        text-align: left;
+    }
+    #post-container .markdown-content :is(h1, h2, h3, h4, h5, h6, pre, code, table, figure, figcaption) {
+        text-align: left;
+    }
+    #post-container .markdown-content :is(pre, table, figure, img, iframe, .mermaid-wrapper, .mermaid-diagram-container) {
+        max-width: 100%;
     }
     #post-container .markdown-content h2 {
         position: relative;

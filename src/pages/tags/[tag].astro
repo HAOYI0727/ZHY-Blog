@@ -1,0 +1,106 @@
+---
+import { getSortedPostsList } from "@utils/post";
+import { parseTags } from "@utils/tag";
+import { url } from "@utils/url";
+import { i18n } from "@i18n/translation";
+import I18nKey from "@i18n/i18nKey";
+import GridLayout from "@layouts/grid.astro";
+import ArchivePanel from "@components/archivePanel.svelte";
+import BackwardButton from "@components/backwardButton.astro";
+import ContinueReading from "@components/ContinueReading.astro";
+
+function sameTag(left: string, right: string) {
+    return left.trim().toLocaleLowerCase() === right.trim().toLocaleLowerCase();
+}
+
+// 每个标签生成独立静态页面，确保 Vercel/纯静态部署也能稳定筛选。
+export async function getStaticPaths() {
+    const allPosts = await getSortedPostsList();
+    const tagNames = new Map<string, string>();
+    for (const post of allPosts) {
+        for (const tag of parseTags(post.data.tags)) {
+            const name = tag.trim();
+            if (!name) continue;
+            const key = name.toLocaleLowerCase();
+            if (!tagNames.has(key)) tagNames.set(key, name);
+        }
+    }
+
+    return Array.from(tagNames.values()).map((tagName) => ({
+        params: { tag: tagName },
+        props: { tagName },
+    }));
+}
+
+const { tagName } = Astro.props;
+const allPosts = await getSortedPostsList();
+const filteredPosts = allPosts.filter((post) =>
+    parseTags(post.data.tags).some((tag) => sameTag(tag, tagName)),
+);
+const pageTitle = `#${tagName}`;
+const pageDescription = `${filteredPosts.length} ${i18n(filteredPosts.length === 1 ? I18nKey.postCount : I18nKey.postsCount)} · 标签时间线`;
+---
+
+<GridLayout title={pageTitle} description={pageDescription}>
+    <ContinueReading />
+    <div class="tag-page-shell flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+        <div class="tag-page-panel card-base z-10 px-6 md:px-9 py-6 relative w-full">
+            <BackwardButton currentPath={Astro.url.pathname} />
+            <header class="tag-page-header">
+                <div>
+                    <p class="tag-page-eyebrow"><span></span> TAG TIMELINE</p>
+                    <h1>{pageTitle}</h1>
+                    <p>{pageDescription}</p>
+                </div>
+                <div class="tag-page-count" aria-label={`${filteredPosts.length} 篇文章`}>
+                    <strong>{filteredPosts.length}</strong>
+                    <span>篇文章</span>
+                </div>
+            </header>
+
+            <div class="tag-page-actions">
+                <a class="btn-regular" href={url("/posts/")}>查看全部文章</a>
+                <a class="btn-plain" href={url("/archive/")}>打开归档</a>
+            </div>
+
+            <ArchivePanel sortedPosts={filteredPosts} tags={[]} />
+        </div>
+    </div>
+</GridLayout>
+
+<style>
+    .tag-page-shell { isolation: isolate; }
+    .tag-page-panel {
+        border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--line-divider));
+        background:
+            radial-gradient(circle at 8% 0%, color-mix(in oklch, var(--primary) 13%, transparent), transparent 30%),
+            var(--card-bg);
+        box-shadow: 0 1rem 3rem color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+    .tag-page-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: .4rem 0 1.1rem;
+        padding: 1rem 1.1rem 1.05rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--line-divider));
+        border-radius: 1rem;
+        background: linear-gradient(120deg, color-mix(in oklch, var(--primary) 13%, var(--card-bg)), transparent 68%);
+    }
+    .tag-page-eyebrow { display: flex; align-items: center; gap: .45rem; margin: 0 0 .45rem; color: var(--primary); font-size: .68rem; font-weight: 800; letter-spacing: .16em; }
+    .tag-page-eyebrow span { width: .42rem; height: .42rem; border-radius: 999px; background: var(--primary); box-shadow: 0 0 .7rem color-mix(in oklch, var(--primary) 70%, transparent); }
+    .tag-page-header h1 { margin: 0; color: var(--text-color); font-size: clamp(1.65rem, 3vw, 2.35rem); letter-spacing: -.04em; }
+    .tag-page-header p:last-child { margin: .35rem 0 0; color: var(--text-secondary); font-size: .88rem; }
+    .tag-page-count { display: flex; min-width: 5.2rem; min-height: 4.2rem; flex-direction: column; align-items: center; justify-content: center; padding: .55rem .8rem; border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent); border-radius: .85rem; background: color-mix(in srgb, var(--primary) 8%, var(--card-bg)); }
+    .tag-page-count strong { color: var(--primary); font-size: 1.45rem; line-height: 1; }
+    .tag-page-count span { margin-top: .3rem; color: var(--text-tertiary); font-size: .68rem; white-space: nowrap; }
+    .tag-page-actions { display: flex; flex-wrap: wrap; gap: .55rem; margin: 0 0 1.25rem; }
+    .tag-page-actions a { display: inline-flex; align-items: center; min-height: 2.2rem; padding: .4rem .75rem; border-radius: .65rem; font-size: .78rem; font-weight: 650; text-decoration: none; }
+    .tag-page-actions .btn-regular { background: var(--primary); color: white; }
+    .tag-page-actions .btn-plain { border: 1px solid var(--line-divider); background: var(--btn-regular-bg); color: var(--text-secondary); }
+    @media (max-width: 560px) {
+        .tag-page-header { align-items: flex-start; flex-direction: column; }
+        .tag-page-count { align-self: flex-start; }
+    }
+</style>

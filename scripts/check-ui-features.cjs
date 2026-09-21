@@ -188,8 +188,9 @@ const sourceContracts = [
     [
         join(projectRoot, "src", "styles", "navbar.css"),
         [
-            ["#navbar .nav-link-text", "移动端常显导航文字"],
-            ["#navbar .navbar-buttons > :not(:first-child)", "移动端隐藏次要外观工具"],
+            ["#navbar .nav-link-icon", "移动端图标导航"],
+            ["#navbar .navbar-optional-tool", "移动端外观工具入口"],
+            ["color-mix(in srgb, var(--primary)", "导航栏主题色工具组"],
         ],
     ],
     [

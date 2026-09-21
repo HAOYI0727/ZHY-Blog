@@ -49,10 +49,12 @@ let links: NavbarLink[] = navbarConfig.links.map(
         </nav>
         <div class="flex items-center navbar-buttons" id="navbar-buttons">
             <Search client:load></Search>
-            <div class="navbar-optional-tool hidden md:block"><Translator client:media="(min-width: 768px)"></Translator></div>
-            <div class="navbar-optional-tool hidden md:block"><DisplaySettings client:media="(min-width: 768px)"></DisplaySettings></div>
-            <div class="navbar-optional-tool hidden md:block"><LightDarkSwitch client:media="(min-width: 768px)"></LightDarkSwitch></div>
-            <div class="navbar-optional-tool hidden md:block"><WallpaperSwitch client:media="(min-width: 768px)"></WallpaperSwitch></div>
+            <!-- These controls remain available on every viewport. On small screens
+                 they use compact icon triggers and their panels open above the page. -->
+            <div class="navbar-optional-tool"><Translator client:load></Translator></div>
+            <div class="navbar-optional-tool"><DisplaySettings client:load></DisplaySettings></div>
+            <div class="navbar-optional-tool"><LightDarkSwitch client:load></LightDarkSwitch></div>
+            <div class="navbar-optional-tool"><WallpaperSwitch client:load></WallpaperSwitch></div>
         </div>
     </div>
 </div>

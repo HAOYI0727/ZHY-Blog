@@ -56,8 +56,9 @@ export function getCategoryUrl(category: string | string[] | null): string {
 }
 
 export function getTagUrl(tag: string): string {
-    if (!tag) return url("/archive/");
-    return url(`/archive/?tag=${encodeURIComponent(tag.trim())}`);
+    if (!tag) return url("/posts/");
+    // 标签使用独立的静态路由，避免在静态部署中依赖无法预渲染的 query 参数。
+    return url(`/tags/${encodeURIComponent(tag.trim())}/`);
 }
 
 export function getDir(path: string): string {
