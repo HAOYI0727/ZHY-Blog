@@ -8,8 +8,6 @@ import I18nKey from "@i18n/i18nKey";
 import GridLayout from "@layouts/grid.astro";
 import BackwardButton from "@components/backwardButton.astro";
 import ImageWrapper from "@components/common/imageWrapper.astro";
-import { siteConfig } from "@/config";
-import { langToLocaleMap } from "@i18n/language";
 
 const pageTitle = LinkPresets[LinkPreset.Albums].name;
 const pageDescription = LinkPresets[LinkPreset.Albums].description;
@@ -63,6 +61,7 @@ const latestAlbum = visibleAlbums[0];
                             {group.items.map(album => (
                                 <article
                                     class="album-card group rounded-(--radius-large) overflow-hidden shadow-sm transition-all duration-300"
+                                    data-card-view-id={`/albums/${album.id}/`}
                                 >
                                     <a href={`/albums/${album.id}/`} class="block">
                                         <!-- 封面图片 -->
@@ -86,19 +85,17 @@ const latestAlbum = visibleAlbums[0];
                                                 </p>
                                             )}
                                             <!-- 元数据 -->
-                                            <div class="album-meta flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-500">
+                                            <div class="album-meta text-xs text-neutral-500 dark:text-neutral-500">
                                                 <div class="flex items-center gap-4">
                                                     <span>{album.photos.length} {album.photos.length > 1 ? i18n(I18nKey.albumsPhotosCount) : i18n(I18nKey.albumsPhotoCount)}</span>
-                                                    {album.location && (
-                                                        <span class="flex items-center gap-1">
-                                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                                            </svg>
-                                                            {album.location}
-                                                        </span>
-                                                    )}
+                                                    <span class="album-card-views flex items-center gap-1" aria-label="浏览量">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                                                            <circle cx="12" cy="12" r="2.4" />
+                                                        </svg>
+                                                        <span data-view-count>—</span>
+                                                    </span>
                                                 </div>
-                                                <time>{new Date(album.date).toLocaleDateString(langToLocaleMap[siteConfig.lang] || "zh-Hans")}</time>
                                             </div>
                                             <!-- 标签 -->
                                             {album.tags && album.tags.length > 0 && (
@@ -270,6 +267,8 @@ const latestAlbum = visibleAlbums[0];
     .album-card h3 { letter-spacing: -.02em; }
     .album-card p { line-height: 1.55; }
     .album-meta { border-top: 1px solid color-mix(in srgb, var(--line-divider) 75%, transparent); padding-top: .7rem; }
+    .album-card-views { color: var(--primary); font-variant-numeric: tabular-nums; }
+    .album-card-views span { color: var(--text-secondary); }
     .album-card .btn-regular { border: 1px solid color-mix(in srgb, var(--primary) 15%, transparent); background: color-mix(in srgb, var(--primary) 7%, var(--btn-regular-bg)); color: var(--text-secondary); }
     .album-card .btn-regular:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, transparent); }
     @media (prefers-reduced-motion: reduce) {

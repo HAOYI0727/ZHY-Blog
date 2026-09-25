@@ -22,7 +22,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const normalizeEngagementId = (value: unknown) => {
     if (typeof value !== "string") return null;
     const postId = value.trim();
-    if (!/^\/(?:posts|albums)\/[a-z0-9_\-/]+\/$/i.test(postId) || postId.length > 240) return null;
+    if (!/^\/(?:posts|albums|diary)\/[a-z0-9_\-/]+\/$/i.test(postId) || postId.length > 240) return null;
     return postId;
 };
 

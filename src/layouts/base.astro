@@ -342,6 +342,27 @@ const loadingOverlayEnabled = siteConfig.loadingOverlay?.enable ?? true;
         transform: translateZ(0) scaleX(0);
         will-change: transform;
     }
+
+    /* 页面标题统一：保持不同内容页的字号、字体和粗细一致。 */
+    :is(
+        .post-title-card__title,
+        .posts-header h1,
+        .archive-header h1,
+        .album-hero h1,
+        .diary-header h1,
+        .menu-header h1,
+        .portfolio-header h1,
+        .skills-header h1,
+        .timeline-header h1,
+        .category-title,
+        .tag-page-header h1
+    ) {
+        font-family: inherit !important;
+        font-size: clamp(1.75rem, 3vw, 2.35rem) !important;
+        font-weight: 800 !important;
+        line-height: 1.18 !important;
+        letter-spacing: -0.04em !important;
+    }
 </style>
 
 <script>
@@ -366,6 +387,7 @@ import { initReadingLibrary } from "@utils/readingLibrary";
 import { initPostShare } from "@utils/postShare";
 import { initPostBrowseSwitcher } from "@utils/postBrowseSwitcher";
 import { initAlbumExperience } from "@utils/albumExperience";
+import { initContentViews } from "@utils/contentViews";
 
 
 // 初始化Swup
@@ -497,6 +519,7 @@ const setup = () => {
         initPostShare();
         initPostBrowseSwitcher();
         initAlbumExperience();
+        initContentViews();
     });
     initFancybox();
     window.swup.hooks.on("content:replace", () => {
@@ -571,6 +594,7 @@ initPostShare();
 // Bind article browse controls on direct loads and after every Swup navigation.
 initPostBrowseSwitcher();
 initAlbumExperience();
+initContentViews();
 
 // 翻译库体积较大：仅在用户选择过非默认语言或真正点击翻译时加载。
 window.loadTranslateScript = async () => {

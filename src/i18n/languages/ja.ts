@@ -25,6 +25,7 @@ export const ja: Translation = {
     [Key.languageTranslation]: "言語翻訳",
     [Key.selectLanguage]: "言語を選択",
     [Key.homeDescription]: "ホームページと最新コンテンツ。",
+    [Key.exhibitionDescription]: "プロジェクト、スキル、タイムライン、日記への入口。",
     [Key.archiveDescription]: "すべての記事を時系列で閲覧。",
     [Key.postsDescription]: "人工知能とソフトウェア開発に関する記事シリーズ",
     [Key.animeDescription]: "アニメ視聴記録。",

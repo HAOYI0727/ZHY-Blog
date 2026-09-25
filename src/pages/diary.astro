@@ -42,7 +42,7 @@ const totalCount = sortedMoments.length;
                             {group.items.map(moment => {
                                 const cover = getCoverImage(moment);
                                 return (
-                                    <article class="diary-card group rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+                                    <article class="diary-card group rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300" data-card-view-id={`/diary/${moment.folder ? moment.folder + '/' : ''}${moment.id}/`}>
                                         {/* ✅ a 标签包裹整个卡片 */}
                                         <a href={`/diary/${moment.folder ? moment.folder + '/' : ''}${moment.id}/`} class="block">
                                             <!-- 封面 -->
@@ -71,7 +71,16 @@ const totalCount = sortedMoments.length;
                                                     {moment.content.replace(/\n/g, ' ')}
                                                 </p>
                                                 <div class="diary-meta flex items-center justify-between text-xs text-60">
-                                                    <time>{new Date(moment.date).toLocaleDateString('zh-CN')}</time>
+                                                    <div class="flex items-center gap-3">
+                                                        <time>{new Date(moment.date).toLocaleDateString('zh-CN')}</time>
+                                                        <span class="diary-card-views flex items-center gap-1" aria-label="浏览量">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                                                                <circle cx="12" cy="12" r="2.4" />
+                                                            </svg>
+                                                            <span data-view-count>—</span>
+                                                        </span>
+                                                    </div>
                                                     {moment.images && moment.images.length > 0 && (
                                                         <span class="flex items-center gap-1">
                                                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -125,6 +134,8 @@ const totalCount = sortedMoments.length;
     .diary-cover-empty { color:color-mix(in srgb,var(--primary) 55%,var(--text-tertiary)); }
     .diary-meta { color:var(--text-tertiary); }
     .diary-meta svg { color:var(--primary); }
+    .diary-card-views { color: var(--primary); font-variant-numeric: tabular-nums; }
+    .diary-card-views span { color: var(--text-secondary); }
     @media (max-width:520px) { .diary-header { align-items:flex-start; } .diary-count { min-width:4.5rem; } }
     @keyframes fadeInUp {
         from { opacity: 0; translate: 0 20px; }

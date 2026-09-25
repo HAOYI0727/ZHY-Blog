@@ -25,6 +25,7 @@ export const zh_hant: Translation = {
     [Key.languageTranslation]: "語言翻譯",
     [Key.selectLanguage]: "選擇語言",
     [Key.homeDescription]: "網站首頁與最新內容。",
+    [Key.exhibitionDescription]: "專案、技能、時間線與日記的內容入口。",
     [Key.archiveDescription]: "按時間瀏覽全部文章。",
     [Key.postsDescription]: "人工智慧與軟體開發系列文章",
     [Key.animeDescription]: "我的追番記錄。",

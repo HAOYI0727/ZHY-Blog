@@ -25,6 +25,7 @@ export const en: Translation = {
     [Key.languageTranslation]: "Language translation",
     [Key.selectLanguage]: "Select language",
     [Key.homeDescription]: "The homepage and latest content.",
+    [Key.exhibitionDescription]: "Explore projects, skills, timeline, and diary.",
     [Key.archiveDescription]: "Browse all posts chronologically.",
     [Key.postsDescription]: "A series of posts on artificial intelligence and software development",
     [Key.animeDescription]: "My anime watchlist.",

@@ -5,6 +5,8 @@ import { type NavbarLink } from "@/types/config";
 import { navbarConfig } from "@/config";
 import { LinkPresets } from "@constants/link-presets";
 import { url } from "@utils/url";
+import { i18n } from "@i18n/translation";
+import I18nKey from "@i18n/i18nKey";
 import GridLayout from "@layouts/grid.astro";
 import BackwardButton from "@components/backwardButton.astro";
 
@@ -40,8 +42,11 @@ const processedLinks = childrenLinks.map(child => {
     return child;
 });
 
-const pageTitle = link.name;
-const pageDescription = link.description || "";
+const pageTitle = link.i18nKey === "exhibition" ? i18n(I18nKey.exhibition) : link.name;
+const pageEyebrow = link.i18nKey === "exhibition" ? "EXHIBITION" : pageTitle;
+const pageDescription = link.i18nKey === "exhibition"
+    ? i18n(I18nKey.exhibitionDescription)
+    : link.description || "";
 ---
 
 <GridLayout title={pageTitle} description={pageDescription}>
@@ -51,7 +56,7 @@ const pageDescription = link.description || "";
             <!-- 标题 -->
             <header class="menu-header mb-8">
                 <div>
-                    <p class="menu-eyebrow"><span></span> EXHIBITION · EXPLORE</p>
+                    <p class="menu-eyebrow"><span></span> {pageEyebrow}</p>
                     <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
                         {pageTitle}
                     </h1>

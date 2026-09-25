@@ -37,7 +37,8 @@ const allPosts = await getSortedPostsList();
 const filteredPosts = allPosts.filter((post) =>
     parseTags(post.data.tags).some((tag) => sameTag(tag, tagName)),
 );
-const pageTitle = `#${tagName}`;
+// 标签页本身已经使用 h1，不需要把 Markdown 的 # 符号混进标题文本。
+const pageTitle = tagName;
 const pageDescription = `${filteredPosts.length} ${i18n(filteredPosts.length === 1 ? I18nKey.postCount : I18nKey.postsCount)} · 标签时间线`;
 ---
 
@@ -90,7 +91,7 @@ const pageDescription = `${filteredPosts.length} ${i18n(filteredPosts.length ===
     }
     .tag-page-eyebrow { display: flex; align-items: center; gap: .45rem; margin: 0 0 .45rem; color: var(--primary); font-size: .68rem; font-weight: 800; letter-spacing: .16em; }
     .tag-page-eyebrow span { width: .42rem; height: .42rem; border-radius: 999px; background: var(--primary); box-shadow: 0 0 .7rem color-mix(in oklch, var(--primary) 70%, transparent); }
-    .tag-page-header h1 { margin: 0; color: var(--text-color); font-size: clamp(1.65rem, 3vw, 2.35rem); letter-spacing: -.04em; }
+    .tag-page-header h1 { margin: 0; color: var(--text-color); font-size: clamp(1.65rem, 3vw, 2.35rem); font-weight: 800; letter-spacing: -.04em; }
     .tag-page-header p:last-child { margin: .35rem 0 0; color: var(--text-secondary); font-size: .88rem; }
     .tag-page-count { display: flex; min-width: 5.2rem; min-height: 4.2rem; flex-direction: column; align-items: center; justify-content: center; padding: .55rem .8rem; border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent); border-radius: .85rem; background: color-mix(in srgb, var(--primary) 8%, var(--card-bg)); }
     .tag-page-count strong { color: var(--primary); font-size: 1.45rem; line-height: 1; }

@@ -242,7 +242,13 @@ const allIcons = skillsData.map((skill) => skill.icon).filter(Boolean);
 </script>
 
 <style>
-    .skills-header { padding:.25rem 0; }
+    .skills-header {
+        padding: 1rem 1.1rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--line-divider));
+        border-radius: 1rem;
+        background: color-mix(in srgb, var(--primary) 6%, var(--card-bg));
+    }
+    .skills-header h1 { font-weight: 800; letter-spacing: -.04em; }
     .skills-eyebrow { display:flex; align-items:center; gap:.45rem; margin:0 0 .45rem; color:var(--primary); font-size:.68rem; font-weight:800; letter-spacing:.15em; }
     .skills-eyebrow span { width:.42rem; height:.42rem; border-radius:999px; background:var(--primary); box-shadow:0 0 .7rem color-mix(in oklch,var(--primary) 65%,transparent); }
 </style>

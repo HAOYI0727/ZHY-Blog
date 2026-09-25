@@ -25,6 +25,7 @@ export const zh_hans: Translation = {
     [Key.languageTranslation]: "语言翻译",
     [Key.selectLanguage]: "选择语言",
     [Key.homeDescription]: "网站首页与最新内容。",
+    [Key.exhibitionDescription]: "项目、技能、时间线与日记的内容入口。",
     [Key.archiveDescription]: "按时间浏览全部文章。",
     [Key.postsDescription]: "人工智能与软件开发系列文章",
     [Key.animeDescription]: "我的追番记录。",

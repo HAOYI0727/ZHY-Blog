@@ -20,6 +20,7 @@ enum I18nKey {
     languageTranslation = "languageTranslation",
     selectLanguage = "selectLanguage",
     homeDescription = "homeDescription",
+    exhibitionDescription = "exhibitionDescription",
     archiveDescription = "archiveDescription",
     postsDescription = "postsDescription",
     animeDescription = "animeDescription",

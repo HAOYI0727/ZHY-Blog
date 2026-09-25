@@ -313,21 +313,19 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
         const normalizePath = (path: string) => path.replace(/^\/+|\/+$/g, "").toLowerCase();
         const isHomePath = () => normalizePath(window.location.pathname) === normalizePath(gateway.dataset.homePath || "/");
 
-        const hideGateway = (moveFocus = false, immediate = false, usePortalReveal = false) => {
+        const hideGateway = (moveFocus = false, immediate = false) => {
             window.clearTimeout(closeTimer);
             if (!immediate) {
-                gateway.classList.add(usePortalReveal ? "is-opening" : "is-leaving");
-                if (usePortalReveal) document.documentElement.classList.add("welcome-revealing");
+                gateway.classList.add("is-leaving");
             }
             const finish = () => {
                 gateway.hidden = true;
                 gateway.classList.remove("is-leaving", "is-opening");
                 document.body.classList.remove("welcome-open");
-                window.setTimeout(() => document.documentElement.classList.remove("welcome-revealing"), 680);
                 if (moveFocus) document.getElementById("swup-container")?.focus({ preventScroll: true });
             };
             if (immediate) finish();
-            else closeTimer = window.setTimeout(finish, usePortalReveal ? 440 : 320);
+            else closeTimer = window.setTimeout(finish, 2000);
         };
 
         const showGateway = () => {
@@ -373,7 +371,7 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
             const rect = button.getBoundingClientRect();
             gateway.style.setProperty("--exit-x", `${rect.left + rect.width / 2}px`);
             gateway.style.setProperty("--exit-y", `${rect.top + rect.height / 2}px`);
-            hideGateway(true, false, true);
+            hideGateway(true, false);
         });
         document.getElementById("welcome-skip")?.addEventListener("click", () => hideGateway(true));
         gateway.querySelectorAll<HTMLAnchorElement>("[data-welcome-link]").forEach((link) => {
@@ -1140,5 +1138,332 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
         .welcome-primary,
         .welcome-portal-major,
         .welcome-portal-minor { transition-duration: 0.01ms; }
+    }
+
+    /* 导航作为主页上的浮层卡片，沿用站点主题色与系统表面色。 */
+    .welcome-gateway {
+        background: color-mix(in srgb, var(--page-bg) 58%, transparent);
+        -webkit-backdrop-filter: blur(12px) saturate(1.05);
+        backdrop-filter: blur(12px) saturate(1.05);
+    }
+
+    .welcome-slides,
+    .welcome-dreamscape,
+    .welcome-aurora,
+    .welcome-sparkles { display: none; }
+
+    .welcome-shell-wrap {
+        width: min(100%, 68rem);
+        max-height: min(82svh, 48rem);
+        background: linear-gradient(125deg, var(--primary), color-mix(in srgb, var(--primary) 35%, var(--line-divider)) 52%, var(--line-divider));
+        box-shadow: 0 1.5rem 5rem color-mix(in srgb, var(--primary) 22%, transparent), 0 0 3.5rem color-mix(in srgb, var(--primary) 12%, transparent);
+    }
+
+    .welcome-shell {
+        max-height: min(82svh, 48rem);
+        overflow: auto;
+        background: color-mix(in srgb, var(--card-bg) 94%, transparent);
+        color: var(--text-color);
+    }
+
+    .welcome-content { grid-template-columns: minmax(0, 1.05fr) minmax(20rem, .95fr); }
+    .welcome-hero { min-height: 0 !important; padding: 2.25rem 2.5rem !important; }
+    .welcome-explore { padding: 2.25rem !important; }
+    .welcome-title { font-size: clamp(2.35rem, 4.2vw, 4.5rem); }
+    .welcome-lead { margin-top: 1rem; font-size: .9rem; line-height: 1.6; }
+    .welcome-stats { margin-top: 1.15rem; }
+    .welcome-topics { margin-top: 1.4rem; }
+    .welcome-topic-bubbles { min-height: 4.2rem; }
+    .welcome-topic,
+    .welcome-topic:nth-child(n) { height: 3.65rem; width: 3.65rem; }
+    .welcome-portal-major { min-height: 7.4rem; }
+
+    .welcome-gateway :is(.welcome-topbar, .welcome-explore, .welcome-topics) {
+        border-color: color-mix(in srgb, var(--line-divider) 80%, var(--primary));
+    }
+
+    .welcome-gateway :is(.welcome-skip, .welcome-secondary, .welcome-stats > div, .welcome-portal-major, .welcome-portal-minor, .welcome-search-tip) {
+        border-color: color-mix(in srgb, var(--line-divider) 76%, var(--primary));
+        background: color-mix(in srgb, var(--btn-regular-bg) 84%, var(--primary));
+        color: var(--text-color);
+    }
+
+    .welcome-gateway :is(.welcome-skip, .welcome-secondary, .welcome-portal-major, .welcome-portal-minor):hover {
+        border-color: color-mix(in srgb, var(--primary) 62%, var(--line-divider));
+        background: color-mix(in srgb, var(--btn-regular-bg) 68%, var(--primary));
+    }
+
+    .welcome-primary {
+        border-color: color-mix(in srgb, var(--primary) 70%, var(--line-divider));
+        background: linear-gradient(105deg, var(--primary), color-mix(in srgb, var(--primary) 72%, var(--text-color)) 62%, color-mix(in srgb, var(--primary) 58%, var(--card-bg)));
+        box-shadow: 0 .8rem 2.2rem color-mix(in srgb, var(--primary) 28%, transparent), inset 0 1px 0 rgb(255 255 255 / 34%);
+    }
+
+    .welcome-title-gradient {
+        background: linear-gradient(100deg, var(--primary), color-mix(in srgb, var(--primary) 62%, var(--text-color)) 58%, var(--primary));
+    }
+
+    .welcome-theme-ribbon span,
+    .welcome-theme-ribbon span:nth-child(2),
+    .welcome-theme-ribbon span:nth-child(3) { background: var(--primary); }
+
+    .welcome-gateway :is(.welcome-badge, .welcome-floating-orb, .welcome-search-tip > span) {
+        border-color: color-mix(in srgb, var(--line-divider) 72%, var(--primary));
+        background: color-mix(in srgb, var(--btn-regular-bg) 74%, var(--primary));
+        color: var(--text-color);
+    }
+
+    .welcome-gateway :is(.welcome-portal-icon, .welcome-portal-minor > i) {
+        background: color-mix(in srgb, var(--primary) 28%, var(--btn-regular-bg));
+        color: var(--primary);
+    }
+
+    /* 紧凑比例：让卡片在主页上保持呼吸感，文字层级也更克制。 */
+    .welcome-gateway {
+        transition: opacity 2s cubic-bezier(0.22, 1, 0.36, 1), visibility 2s ease;
+    }
+
+    .welcome-gateway.is-leaving,
+    .welcome-gateway.is-opening { opacity: 0; pointer-events: none; }
+
+    .welcome-gateway.is-leaving .welcome-shell-wrap,
+    .welcome-gateway.is-opening .welcome-shell-wrap {
+        opacity: 0;
+        transform: translateY(0.35rem) scale(0.985);
+        animation: none;
+        transition: opacity 2s ease, transform 2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* 只保留一张干净的导航卡片，主页背景作为自然衬底。 */
+    .welcome-gateway {
+        overflow: hidden !important;
+        background: color-mix(in srgb, var(--page-bg) 34%, transparent);
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+        color: var(--text-color);
+    }
+
+    .welcome-glass-shine,
+    .welcome-inner-glow,
+    .welcome-scanline,
+    .welcome-corner,
+    .welcome-theme-ribbon,
+    .welcome-floating-orb,
+    .welcome-hero-grid,
+    .welcome-live { display: none !important; }
+
+    .welcome-shell-wrap {
+        width: min(100%, 60rem);
+        max-height: none;
+        padding: 1px;
+        border-radius: 1.55rem;
+        background: color-mix(in srgb, var(--primary) 36%, var(--line-divider));
+        box-shadow: 0 0.9rem 2.2rem rgb(15 23 42 / 10%);
+        animation: welcome-card-float 2s ease-in-out infinite;
+    }
+
+    @keyframes welcome-card-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-0.3rem); }
+    }
+
+    .welcome-shell {
+        max-height: none;
+        border-radius: calc(1.55rem - 1px);
+        overflow: hidden;
+        background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .welcome-topbar { padding: 0.72rem 1.5rem !important; background: color-mix(in srgb, var(--card-bg) 88%, transparent); }
+    .welcome-explore { background: color-mix(in srgb, var(--btn-regular-bg) 74%, transparent) !important; }
+    .welcome-avatar img { height: 2.35rem; width: 2.35rem; }
+    .welcome-avatar span { height: 0.6rem; width: 0.6rem; }
+    .welcome-topbar p.text-sm { font-size: 0.78rem; }
+    .welcome-topbar p.text-\[0\.65rem\] { font-size: 0.56rem; }
+
+    .welcome-content { grid-template-columns: 1fr; }
+    .welcome-hero { padding: 1.7rem 1.9rem !important; }
+    .welcome-explore { padding: 1.7rem !important; }
+    .welcome-title {
+        margin-top: 1.05rem;
+        font-size: clamp(2rem, 3.55vw, 3.45rem);
+        line-height: 1.02;
+    }
+    .welcome-lead { margin-top: 0.85rem; font-size: 0.82rem; line-height: 1.62; }
+    .welcome-stats { gap: 0.5rem; margin-top: 1rem; }
+    .welcome-stats > div { border-radius: 0.8rem; padding: 0.65rem 0.72rem; }
+    .welcome-stats strong { font-size: clamp(1.1rem, 1.7vw, 1.45rem); }
+    .welcome-topics { margin-top: 1.1rem; padding-top: 0.7rem; }
+    .welcome-topic-bubbles { min-height: 3.55rem; gap: 0.4rem; }
+    .welcome-topic,
+    .welcome-topic:nth-child(n) {
+        height: auto;
+        width: auto;
+        min-width: 0;
+        border-color: var(--line-divider);
+        border-radius: 999px;
+        background: var(--btn-regular-bg);
+        padding: 0.34rem 0.58rem;
+        color: var(--text-secondary);
+        font-size: 0.54rem;
+        box-shadow: none;
+        animation: none;
+    }
+    .welcome-topic::after,
+    .welcome-topic i { display: none; }
+    .welcome-topic span { color: var(--primary); }
+    .welcome-actions { gap: 0.55rem; margin-top: 1rem; }
+    .welcome-primary { min-width: 13.5rem; padding-left: 1.05rem; }
+    .welcome-primary > i { height: 2.65rem; width: 2.65rem; font-size: 1.15rem; }
+    .welcome-primary strong { font-size: 0.84rem; }
+    .welcome-secondary { min-height: 3.35rem; padding: 0 0.85rem; font-size: 0.68rem; }
+
+    .welcome-path-head h2 { font-size: clamp(1.3rem, 2.2vw, 1.7rem); }
+    .welcome-path-intro { margin-top: 0.5rem; font-size: 0.68rem; line-height: 1.55; }
+    .welcome-portals { margin-top: 0.85rem; }
+    .welcome-primary-portals,
+    .welcome-secondary-portals { gap: 0.5rem; }
+    .welcome-portal-major {
+        min-height: 6.55rem !important;
+        gap: 0.55rem;
+        border-radius: 0.9rem;
+        padding: 0.72rem !important;
+        background: var(--btn-regular-bg);
+        box-shadow: none;
+    }
+    .welcome-portal-major::after { display: none; }
+    .welcome-portal-icon { height: 2.45rem; width: 2.45rem; font-size: 1.2rem; }
+    .welcome-portal-copy strong { font-size: 0.86rem; }
+    .welcome-portal-copy small { font-size: 0.56rem; line-height: 1.35; }
+    .welcome-portal-meta { font-size: 0.53rem; }
+    .welcome-portal-arrow { height: 1.75rem; width: 1.75rem; }
+    .welcome-secondary-label { margin: 0.75rem 0 0.45rem; }
+    .welcome-portal-minor { padding: 0.5rem; }
+    .welcome-portal-minor > i { height: 2rem; width: 2rem; font-size: 0.95rem; }
+    .welcome-portal-minor strong { font-size: 0.66rem; }
+    .welcome-portal-minor small { font-size: 0.51rem; }
+    .welcome-search-tip { margin-top: 0.55rem; padding: 0.5rem 0.6rem; }
+    .welcome-search-tip > span { height: 1.8rem; width: 1.8rem; }
+    .welcome-search-tip strong { font-size: 0.64rem; }
+    .welcome-search-tip small { font-size: 0.52rem; }
+
+    .welcome-stats > div,
+    .welcome-portal-minor,
+    .welcome-search-tip,
+    .welcome-secondary,
+    .welcome-skip {
+        background: var(--btn-regular-bg);
+        box-shadow: none;
+    }
+
+    .welcome-primary {
+        background: var(--primary);
+        box-shadow: none;
+    }
+    .welcome-primary::before { display: none; }
+    .welcome-primary > i { color: var(--primary); }
+
+    .welcome-title-gradient {
+        background: none;
+        color: var(--primary) !important;
+        -webkit-text-fill-color: var(--primary);
+        -webkit-background-clip: border-box;
+        background-clip: border-box;
+        animation: none;
+    }
+
+    .welcome-gateway :is(.welcome-badge, .welcome-skip, .welcome-secondary, .welcome-stats > div, .welcome-portal-major, .welcome-portal-minor, .welcome-search-tip) {
+        border-color: var(--line-divider);
+    }
+
+    .welcome-gateway :is(.welcome-portal-icon, .welcome-portal-minor > i) {
+        background: color-mix(in srgb, var(--primary) 10%, var(--btn-regular-bg));
+        color: var(--primary);
+        box-shadow: none;
+    }
+
+    /* 所有导航框统一提供清晰的悬停反馈。 */
+    .welcome-gateway :is(
+        .welcome-topic,
+        .welcome-primary,
+        .welcome-secondary,
+        .welcome-portal-major,
+        .welcome-portal-minor,
+        .welcome-skip,
+        .welcome-search-tip,
+        .welcome-stats > div
+    ) {
+        transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+    }
+
+    .welcome-gateway :is(
+        .welcome-topic,
+        .welcome-primary,
+        .welcome-secondary,
+        .welcome-portal-major,
+        .welcome-portal-minor,
+        .welcome-skip,
+        .welcome-search-tip,
+        .welcome-stats > div
+    ):hover {
+        border-color: color-mix(in srgb, var(--primary) 58%, var(--line-divider));
+        background: color-mix(in srgb, var(--btn-regular-bg) 86%, var(--primary));
+        box-shadow: 0 0.45rem 1.1rem color-mix(in srgb, var(--primary) 12%, transparent);
+        transform: translateY(-0.16rem);
+    }
+
+    .welcome-gateway :is(
+        .welcome-topic,
+        .welcome-primary,
+        .welcome-secondary,
+        .welcome-portal-major,
+        .welcome-portal-minor,
+        .welcome-skip
+    ) { cursor: pointer; }
+
+    .welcome-gateway .welcome-topic:hover {
+        color: var(--primary);
+        background: color-mix(in srgb, var(--btn-regular-bg) 78%, var(--primary));
+    }
+
+    .welcome-gateway .welcome-primary:hover {
+        background: var(--primary);
+        box-shadow: 0 0.55rem 1.2rem color-mix(in srgb, var(--primary) 24%, transparent);
+    }
+
+    @media (min-width: 1024px) {
+        .welcome-content { grid-template-columns: minmax(0, 1.06fr) minmax(18rem, 0.94fr); }
+    }
+
+    @media (max-width: 639px) {
+        .welcome-shell-wrap,
+        .welcome-shell { max-height: calc(100svh - 1.5rem); }
+        .welcome-shell-wrap { width: min(100%, 34rem); border-radius: 1.25rem; }
+        .welcome-shell { border-radius: calc(1.25rem - 1px); }
+        .welcome-topbar { padding: 0.62rem 1rem !important; }
+        .welcome-content { grid-template-columns: 1fr; }
+        .welcome-hero,
+        .welcome-explore { padding: 1.2rem !important; }
+        .welcome-title { font-size: clamp(1.85rem, 10vw, 2.8rem); }
+        .welcome-lead { font-size: 0.76rem; }
+        .welcome-topics,
+        .welcome-secondary-label,
+        .welcome-secondary-portals,
+        .welcome-search-tip { display: none; }
+        .welcome-primary-portals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .welcome-portal-major { min-height: 5.3rem !important; }
+        .welcome-primary { min-width: min(100%, 13.5rem); }
+    }
+
+    @media (max-width: 420px) {
+        .welcome-primary-portals { grid-template-columns: 1fr; }
+        .welcome-portal-major { min-height: 4.65rem !important; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .welcome-shell-wrap { animation: none; }
     }
 </style>

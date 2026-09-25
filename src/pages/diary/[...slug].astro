@@ -39,7 +39,7 @@ const formattedDate = new Date(moment.date).toLocaleDateString('zh-CN', {
     title={moment.title || i18n(I18nKey.diaryDefaultTitle)} 
     description={moment.content.slice(0, 120)}
 >
-    <div class="flex w-full relative min-h-screen pb-16">
+    <div class="diary-detail-shell flex w-full relative min-h-screen pb-16" data-view-track data-view-id={`/diary/${moment.folder ? moment.folder + '/' : ''}${moment.id}/`}>
         <div class="card-base z-10 px-6 py-8 md:px-12 md:py-12 relative w-full rounded-(--radius-large)">
             
             <!-- 返回按钮 -->
@@ -47,20 +47,28 @@ const formattedDate = new Date(moment.date).toLocaleDateString('zh-CN', {
                 <BackwardButton href="/diary/" text={i18n(I18nKey.diaryBackToList)} />
             </div>
 
-            <article class="max-w-3xl mx-auto space-y-10">
+            <article class="diary-detail-article max-w-3xl mx-auto space-y-10">
                 
                 <!-- 头部区域：标题与日期 -->
-                <header class="border-b border-neutral-200 dark:border-neutral-800 pb-8">
+                <header class="diary-detail-header pb-8">
                     {moment.title && (
                         <h1 class="text-3xl md:text-5xl font-extrabold text-90 tracking-tight mb-4 leading-tight">
                             {moment.title}
                         </h1>
                     )}
-                    <div class="flex items-center text-50 font-medium text-sm">
+                    <div class="flex flex-wrap items-center gap-3 text-50 font-medium text-sm">
                         <span class="mr-2 opacity-60">📅</span>
                         <time datetime={moment.date} class="font-mono tracking-wide">
                             {formattedDate}
                         </time>
+                        <span class="diary-detail-view-badge" aria-label="浏览量">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+                                <circle cx="12" cy="12" r="2.4" />
+                            </svg>
+                            <span>浏览</span>
+                            <strong data-view-count>—</strong>
+                        </span>
                     </div>
                 </header>
 
@@ -97,6 +105,46 @@ const formattedDate = new Date(moment.date).toLocaleDateString('zh-CN', {
 </GridLayout>
 
 <style>
+    .diary-detail-shell > .card-base {
+        border: 1px solid color-mix(in srgb, var(--primary) 16%, var(--line-divider));
+        background:
+            radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 26rem),
+            var(--card-bg);
+        box-shadow: 0 1.5rem 3.5rem color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+
+    .diary-detail-header {
+        border-bottom: 1px solid color-mix(in srgb, var(--primary) 20%, var(--line-divider));
+        background: linear-gradient(120deg, color-mix(in srgb, var(--primary) 8%, transparent), transparent 65%);
+        border-radius: 1.25rem;
+        padding: 1.4rem 1.35rem 1.6rem;
+    }
+
+    .diary-detail-view-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .38rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--line-divider));
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--primary) 8%, var(--btn-regular-bg));
+        padding: .35rem .65rem;
+        color: var(--text-secondary);
+        font-size: .72rem;
+    }
+
+    .diary-detail-view-badge svg { color: var(--primary); }
+    .diary-detail-view-badge strong { color: var(--primary); font-variant-numeric: tabular-nums; }
+
+    .diary-detail-article :global(.moment-content) {
+        border-left: 3px solid color-mix(in srgb, var(--primary) 48%, transparent);
+        padding-left: 1.1rem;
+    }
+
+    .diary-detail-article :global(.image-item) {
+        border: 1px solid color-mix(in srgb, var(--primary) 14%, var(--line-divider));
+        box-shadow: 0 .7rem 1.8rem color-mix(in srgb, var(--primary) 9%, transparent);
+    }
+
     /* 额外的微调 */
     .moment-content p {
         margin-bottom: 1.5rem;
