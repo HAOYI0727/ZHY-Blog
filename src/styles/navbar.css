@@ -9,7 +9,51 @@
 .navbar-nav-links {
     min-width: 0;
     flex-shrink: 1;
+    max-width: 100%;
     transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s, gap 0.3s ease;
+}
+
+/* 下拉卡片在平板和手机上以视口为边界，内容过长时在卡片内部滚动。 */
+.dropdown-content {
+    box-sizing: border-box;
+    width: min(24rem, calc(100vw - 1rem));
+    max-width: calc(100vw - 1rem);
+    max-height: min(68dvh, 34rem);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.dropdown-menu {
+    max-width: calc(100vw - 1rem);
+    max-height: min(76dvh, 38rem);
+    overflow: hidden;
+    overscroll-behavior: contain;
+}
+
+.dropdown-content::-webkit-scrollbar,
+#nav-menu-panel::-webkit-scrollbar,
+.mobile-sidebar-panel::-webkit-scrollbar,
+.welcome-shell::-webkit-scrollbar {
+    width: .45rem;
+}
+
+.dropdown-content::-webkit-scrollbar-thumb,
+#nav-menu-panel::-webkit-scrollbar-thumb,
+.mobile-sidebar-panel::-webkit-scrollbar-thumb,
+.welcome-shell::-webkit-scrollbar-thumb {
+    border: .12rem solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 48%, transparent);
+    background-clip: padding-box;
+}
+
+.dropdown-content a,
+.mobile-menu-item,
+.mobile-menu-item a {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 /* 导航链接样式 */
@@ -188,6 +232,11 @@
         gap: 0.2rem;
     }
 
+    #navbar .navbar-nav-links {
+        max-width: min(42vw, 28rem);
+        overflow: visible;
+    }
+
     /* 搜索状态下的避让逻辑以防重叠 */
     #navbar.is-searching .navbar-nav-links {
         opacity: 0;
@@ -214,7 +263,11 @@
         justify-content: flex-start;
         gap: 0.08rem;
         min-width: 0;
-        overflow: hidden;
+        overflow: visible;
+    }
+
+    #navbar .navbar-nav-links {
+        max-width: calc(100vw - 12.2rem);
     }
 
     #navbar .nav-link-item {
@@ -261,6 +314,25 @@
         width: 2.25rem;
         min-width: 2.25rem;
         height: 2.25rem;
+    }
+}
+
+@media (max-width: 767px) {
+    #nav-menu-panel {
+        box-sizing: border-box;
+        max-width: calc(100vw - 1rem);
+        max-height: min(82dvh, 42rem);
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+    }
+
+    #nav-menu-panel .mobile-submenu {
+        max-height: min(42dvh, 22rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
     }
 }
 /* 手机端导航栏 - 小屏 */

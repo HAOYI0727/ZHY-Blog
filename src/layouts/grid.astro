@@ -242,7 +242,7 @@ const groupedTags = await getTagsGroupedByCategory();
                 <Icon name="material-symbols:widgets-rounded" class="drawer-open-icon text-[1.4rem] text-(--primary)" />
                 <Icon name="material-symbols:close-rounded" class="drawer-close-icon hidden text-[1.4rem] text-(--primary)" />
             </summary>
-            <div class="mobile-sidebar-panel fixed bottom-19 left-3 right-3 z-[101] max-h-[72vh] overflow-y-auto overscroll-contain rounded-(--radius-large) border border-black/5 bg-(--float-panel-bg) p-2 shadow-2xl backdrop-blur-md dark:border-white/10">
+            <div class="mobile-sidebar-panel fixed bottom-19 left-3 right-3 z-[101] max-h-[min(72dvh,42rem)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-(--radius-large) border border-black/5 bg-(--float-panel-bg) p-2 shadow-2xl backdrop-blur-md dark:border-white/10">
                 <Sidebar
                     id="middle-sidebar"
                     side="middle"
@@ -300,6 +300,8 @@ const groupedTags = await getTagsGroupedByCategory();
             z-index: 101 !important;
             isolation: isolate;
             scroll-padding-block: .5rem;
+            max-width: calc(100vw - 1.5rem);
+            scrollbar-gutter: stable;
         }
 
         .mobile-sidebar-panel #middle-sidebar {
@@ -334,6 +336,7 @@ const groupedTags = await getTagsGroupedByCategory();
             opacity: 1 !important;
             z-index: 1 !important;
             isolation: isolate;
+            overflow-wrap: anywhere;
         }
 
         .mobile-sidebar-panel #middle-sidebar > .sidebar-scroll-region > [id^="statistics-"] {

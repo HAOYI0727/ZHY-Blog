@@ -29,6 +29,7 @@ import LoadingOverlay from "@components/loadingOverlay.astro";
 import ConfigCarrier from "@components/configCarrier.astro";
 import MusicPlayer from "@components/musicPlayer.svelte";
 import Pio from "@components/pio.svelte";
+import LuluPet from "@components/LuluPet.astro";
 import "@styles/navbar.css";
 import "@styles/banner.css";
 import "@styles/fancybox.css";
@@ -273,6 +274,8 @@ const loadingOverlayEnabled = siteConfig.loadingOverlay?.enable ?? true;
         {analyticsEnabled && analyticsCode && <Fragment set:html={analyticsCode} />}
         <!-- Music Player - 仅在启用时加载 -->
         {musicPlayerConfig.enable && <MusicPlayer client:idle />}
+        <!-- 水豚噜噜看板娘：常驻在 Swup 容器外，页面切换时保持状态。 -->
+        <LuluPet />
         <!-- Pio 看板娘组件 - 如果启用了侧边栏，可能需要调整 z-index -->
         {pioConfig.enable && <Pio client:visible />}
         <!-- increase the page height during page transition to prevent the scrolling animation from jumping -->

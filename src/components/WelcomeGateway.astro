@@ -1236,7 +1236,15 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
 
     /* 只保留一张干净的导航卡片，主页背景作为自然衬底。 */
     .welcome-gateway {
-        overflow: hidden !important;
+        height: 100dvh;
+        min-height: 100dvh;
+        align-items: flex-start !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        scrollbar-gutter: stable;
+        overscroll-behavior: contain;
+        padding-top: max(0.75rem, env(safe-area-inset-top)) !important;
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom)) !important;
         background: color-mix(in srgb, var(--page-bg) 34%, transparent);
         -webkit-backdrop-filter: blur(2px);
         backdrop-filter: blur(2px);
@@ -1255,6 +1263,8 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
     .welcome-shell-wrap {
         width: min(100%, 60rem);
         max-height: none;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
         padding: 1px;
         border-radius: 1.55rem;
         background: color-mix(in srgb, var(--primary) 36%, var(--line-divider));
@@ -1270,7 +1280,10 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
     .welcome-shell {
         max-height: none;
         border-radius: calc(1.55rem - 1px);
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: visible;
+        scrollbar-gutter: auto;
+        overscroll-behavior: auto;
         background: color-mix(in srgb, var(--card-bg) 90%, transparent);
         box-shadow: none;
         backdrop-filter: none;
@@ -1440,19 +1453,20 @@ const slides = desktopImages.slice(0, 1).map((desktop, index) => ({
 
     @media (max-width: 639px) {
         .welcome-shell-wrap,
-        .welcome-shell { max-height: calc(100svh - 1.5rem); }
+        .welcome-shell { max-height: none; }
         .welcome-shell-wrap { width: min(100%, 34rem); border-radius: 1.25rem; }
-        .welcome-shell { border-radius: calc(1.25rem - 1px); }
+        .welcome-shell { border-radius: calc(1.25rem - 1px); overflow-y: visible; }
         .welcome-topbar { padding: 0.62rem 1rem !important; }
         .welcome-content { grid-template-columns: 1fr; }
         .welcome-hero,
         .welcome-explore { padding: 1.2rem !important; }
         .welcome-title { font-size: clamp(1.85rem, 10vw, 2.8rem); }
         .welcome-lead { font-size: 0.76rem; }
-        .welcome-topics,
-        .welcome-secondary-label,
-        .welcome-secondary-portals,
-        .welcome-search-tip { display: none; }
+        /* 保留全部导航入口，由外层欢迎页统一滚动，避免 Safari 的嵌套滚动丢失内容。 */
+        .welcome-topics { display: block; }
+        .welcome-secondary-label { display: flex; }
+        .welcome-secondary-portals { display: grid; }
+        .welcome-search-tip { display: grid; }
         .welcome-primary-portals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .welcome-portal-major { min-height: 5.3rem !important; }
         .welcome-primary { min-width: min(100%, 13.5rem); }

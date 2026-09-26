@@ -1,0 +1,793 @@
+<aside class="lulu-pet" data-lulu-pet data-lulu-persona="lulu" aria-label="看板娘">
+    <button class="lulu-dialog" data-lulu-dialog type="button" aria-label="点击切换对话" aria-live="polite"></button>
+
+    <button class="lulu-close" data-lulu-close type="button" aria-label="暂时隐藏看板娘" title="暂时隐藏看板娘">×</button>
+    <button class="lulu-info-toggle" data-lulu-info-toggle type="button" aria-label="查看看板娘信息" aria-controls="lulu-info-panel" aria-expanded="false" title="查看看板娘信息">ⓘ</button>
+    <button class="lulu-character" data-lulu-character type="button" aria-label="拖动或和看板娘互动" title="按住角色拖动，点击可以切换形象">
+        <img class="lulu-body" data-lulu-image src="/lulu/lulu-1.png" alt="看板娘" draggable="false" />
+    </button>
+
+    <section id="lulu-info-panel" class="lulu-panel" data-lulu-panel hidden aria-label="看板娘信息">
+        <header class="lulu-panel-header">
+            <strong data-lulu-panel-title>看板娘小窗</strong>
+            <button class="lulu-panel-close" data-lulu-panel-close type="button" aria-label="关闭看板娘信息">×</button>
+        </header>
+        <div class="lulu-persona-choice" data-lulu-persona-choice role="group" aria-label="选择看板娘">
+            <button type="button" data-lulu-persona="lulu" aria-pressed="true">🍊 噜噜</button>
+            <button type="button" data-lulu-persona="nailong" aria-pressed="false">🌿 奶龙</button>
+        </div>
+        <p class="lulu-appearance" data-lulu-appearance>当前形象：元气果果</p>
+        <p class="lulu-panel-context" data-lulu-context>今天想探索什么？看板娘会陪你一起浏览。</p>
+        <dl class="lulu-panel-meta">
+            <div><dt>当前状态</dt><dd data-lulu-state-label>闲逛中</dd></div>
+            <div><dt>阅读进度</dt><dd data-lulu-progress>—</dd></div>
+        </dl>
+        <p class="lulu-panel-tip" data-lulu-tip>慢慢浏览，发现一点有趣的东西吧～</p>
+    </section>
+</aside>
+
+<button class="lulu-reopen" data-lulu-reopen type="button" aria-label="显示看板娘" title="显示看板娘">🍊</button>
+
+<style>
+    .lulu-pet,
+    .lulu-reopen {
+        --lulu-accent: #f39b36;
+        --lulu-panel: color-mix(in srgb, var(--card-bg, #fff) 90%, transparent);
+        position: fixed;
+        z-index: 80;
+    }
+
+    .lulu-pet {
+        left: max(1rem, env(safe-area-inset-left));
+        bottom: max(1rem, env(safe-area-inset-bottom));
+        width: clamp(96px, 10vw, 154px);
+        display: grid;
+        justify-items: start;
+        animation: lulu-float 4.2s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    .lulu-pet.is-dragging { animation: none; }
+
+    .lulu-character {
+        --lulu-tilt: 0deg;
+        --lulu-shift-x: 0px;
+        --lulu-shift-y: 0px;
+        position: relative;
+        display: block;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: grab;
+        pointer-events: auto;
+        touch-action: none;
+        filter: drop-shadow(0 0.6rem 0.9rem rgb(117 67 20 / 18%));
+        transform: translate(var(--lulu-shift-x), var(--lulu-shift-y)) rotate(var(--lulu-tilt));
+        will-change: transform;
+        transition: transform 180ms ease, filter 180ms ease;
+    }
+
+    .lulu-character:hover,
+    .lulu-character:focus-visible {
+        transform: translate(var(--lulu-shift-x), calc(var(--lulu-shift-y) - 4px)) rotate(var(--lulu-tilt)) scale(1.035);
+        filter: drop-shadow(0 0.85rem 1.1rem rgb(117 67 20 / 28%));
+        outline: none;
+    }
+
+    .lulu-character:active { transform: translate(var(--lulu-shift-x), calc(var(--lulu-shift-y) - 1px)) rotate(var(--lulu-tilt)) scale(.98); }
+    .lulu-character.is-dragging { cursor: grabbing; transition: none; }
+
+    .lulu-body {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: bottom center;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
+
+    .lulu-dialog {
+        position: absolute;
+        left: 70%;
+        bottom: 80%;
+        width: max-content;
+        max-width: min(215px, 60vw);
+        padding: .55rem .7rem;
+        border: 1.5px solid color-mix(in srgb, var(--primary) 58%, transparent);
+        border-radius: 1rem 1rem 1rem .35rem;
+        background: color-mix(in srgb, var(--card-bg) 96%, var(--primary) 4%);
+        color: color-mix(in srgb, var(--primary) 72%, var(--text-color));
+        font-weight: 700;
+        box-shadow: 0 .75rem 2rem color-mix(in srgb, var(--primary) 18%, transparent);
+        backdrop-filter: blur(12px);
+        font: inherit;
+        font-size: .70rem;
+        line-height: 1.5;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(8px) scale(.96);
+        transform-origin: bottom left;
+        transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+        pointer-events: none;
+        cursor: pointer;
+        border-width: 1.5px;
+        text-align: left;
+    }
+
+    .lulu-dialog.is-visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+
+    .lulu-dialog:hover,
+    .lulu-dialog:focus-visible {
+        border-color: color-mix(in srgb, var(--primary) 78%, transparent);
+        box-shadow: 0 .85rem 2.2rem color-mix(in srgb, var(--primary) 26%, transparent);
+        outline: none;
+    }
+
+    .lulu-close {
+        position: absolute;
+        top: 17%;
+        right: -3px;
+        z-index: 2;
+        width: 1.45rem;
+        height: 1.45rem;
+        padding: 0;
+        border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
+        border-radius: 50%;
+        background: var(--lulu-panel);
+        color: var(--primary);
+        cursor: pointer;
+        pointer-events: auto;
+        opacity: 0;
+        transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .lulu-pet:hover .lulu-close,
+    .lulu-close:focus-visible { opacity: 1; }
+    .lulu-close:hover { transform: scale(1.1); }
+
+    .lulu-info-toggle {
+        position: absolute;
+        top: 17%;
+        right: 1.85rem;
+        z-index: 2;
+        width: 1.45rem;
+        height: 1.45rem;
+        padding: 0;
+        border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
+        border-radius: 50%;
+        background: var(--lulu-panel);
+        color: var(--primary);
+        cursor: pointer;
+        pointer-events: auto;
+        opacity: 0;
+        font-size: .72rem;
+        line-height: 1;
+        transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .lulu-pet:hover .lulu-info-toggle,
+    .lulu-info-toggle:focus-visible { opacity: 1; }
+    .lulu-info-toggle:hover { transform: scale(1.1); }
+
+    .lulu-panel {
+        position: absolute;
+        left: 0;
+        bottom: calc(100% + .6rem);
+        z-index: 4;
+        width: min(16rem, 72vw);
+        padding: .65rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 38%, transparent);
+        border-radius: 1rem;
+        background: color-mix(in srgb, var(--card-bg, #fff) 96%, var(--primary) 4%);
+        color: var(--text-color);
+        box-shadow: 0 .8rem 2rem color-mix(in srgb, var(--primary) 22%, transparent);
+        backdrop-filter: blur(16px);
+        pointer-events: auto;
+    }
+
+    .lulu-panel[hidden] { display: none; }
+
+    .lulu-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        color: color-mix(in srgb, var(--primary) 78%, var(--text-color));
+        font-size: .78rem;
+    }
+
+    .lulu-persona-choice {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .4rem;
+        margin: .7rem 0 .45rem;
+    }
+
+    .lulu-persona-choice button {
+        min-width: 0;
+        padding: .42rem .5rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+        border-radius: .65rem;
+        background: color-mix(in srgb, var(--primary) 5%, transparent);
+        color: color-mix(in srgb, var(--primary) 74%, var(--text-color));
+        cursor: pointer;
+        font: inherit;
+        font-size: .7rem;
+        transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .lulu-persona-choice button:hover,
+    .lulu-persona-choice button:focus-visible {
+        border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+        transform: translateY(-1px);
+        outline: none;
+    }
+
+    .lulu-persona-choice button.is-active,
+    .lulu-persona-choice button[aria-pressed="true"] {
+        border-color: color-mix(in srgb, var(--primary) 66%, transparent);
+        background: color-mix(in srgb, var(--primary) 15%, transparent);
+        color: color-mix(in srgb, var(--primary) 92%, var(--text-color));
+        font-weight: 700;
+    }
+
+    .lulu-appearance {
+        margin: 0 0 .45rem;
+        color: color-mix(in srgb, var(--primary) 62%, var(--text-color));
+        font-size: .68rem;
+    }
+
+    .lulu-panel-close {
+        width: 1.35rem;
+        height: 1.35rem;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--primary) 9%, transparent);
+        color: var(--primary);
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .lulu-panel-context {
+        margin: .55rem 0;
+        color: color-mix(in srgb, var(--primary) 60%, var(--text-color));
+        font-size: .68rem;
+        line-height: 1.5;
+    }
+
+    .lulu-panel-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .45rem;
+        margin: .65rem 0 .45rem;
+    }
+
+    .lulu-panel-meta div {
+        padding: .45rem .5rem;
+        border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+        border-radius: .6rem;
+        background: color-mix(in srgb, var(--primary) 5%, transparent);
+    }
+
+    .lulu-panel-meta dt {
+        color: color-mix(in srgb, var(--primary) 50%, var(--text-color));
+        font-size: .62rem;
+    }
+
+    .lulu-panel-meta dd {
+        margin: .15rem 0 0;
+        color: color-mix(in srgb, var(--primary) 78%, var(--text-color));
+        font-size: .68rem;
+        font-weight: 700;
+    }
+
+    .lulu-panel-tip {
+        margin: .45rem 0 0;
+        color: color-mix(in srgb, var(--primary) 62%, var(--text-color));
+        font-size: .64rem;
+        line-height: 1.5;
+    }
+
+    .lulu-pet[data-lulu-state="happy"] .lulu-body { filter: saturate(1.1) brightness(1.03); }
+    .lulu-pet[data-lulu-state="thinking"] .lulu-body { filter: saturate(.9) brightness(.98); }
+    .lulu-pet[data-lulu-state="reading"] .lulu-body { filter: saturate(1.04) sepia(.08); }
+    .lulu-pet[data-lulu-state="sleeping"] .lulu-body { filter: saturate(.7) brightness(.92); }
+    .lulu-pet[data-lulu-state="confused"] .lulu-character { animation: lulu-confused 520ms ease-in-out 2; }
+    .lulu-pet[data-lulu-persona="nailong"] { --lulu-accent: #4fbfaf; }
+
+    @keyframes lulu-confused {
+        0%, 100% { rotate: 0deg; }
+        35% { rotate: -2deg; }
+        70% { rotate: 2deg; }
+    }
+
+    .lulu-reopen {
+        display: none;
+        left: max(.75rem, env(safe-area-inset-left));
+        bottom: max(.75rem, env(safe-area-inset-bottom));
+        width: 2.8rem;
+        height: 2.8rem;
+        border: 1px solid rgb(243 155 54 / 38%);
+        border-radius: 50%;
+        background: var(--lulu-panel);
+        box-shadow: 0 .5rem 1.25rem rgb(90 55 20 / 16%);
+        cursor: pointer;
+        font-size: 1.2rem;
+        transition: transform 180ms ease;
+    }
+
+    .lulu-reopen:hover,
+    .lulu-reopen:focus-visible { transform: translateY(-3px); outline: none; }
+
+    body.lulu-hidden .lulu-pet { display: none; }
+    body.lulu-hidden .lulu-reopen { display: block; }
+
+    @keyframes lulu-float {
+        0%, 100% { transform: translateY(0) rotate(-1deg); }
+        50% { transform: translateY(-7px) rotate(1deg); }
+    }
+
+    @keyframes lulu-blink {
+        0%, 42%, 100% { transform: scaleY(1); }
+        46%, 52% { transform: scaleY(.965); }
+    }
+
+    .lulu-character.is-blinking .lulu-body {
+        animation: lulu-blink 180ms ease-in-out both;
+    }
+
+    @media (max-width: 768px) {
+        .lulu-pet { width: 88px; bottom: max(.65rem, env(safe-area-inset-bottom)); }
+        .lulu-dialog { left: 50%; bottom: 88%; max-width: 155px; font-size: .70rem; }
+        .lulu-close { top: 5%; }
+        .lulu-info-toggle { top: 5%; right: 1.85rem; }
+        .lulu-panel { left: -.25rem; width: min(15rem, calc(100vw - 1.5rem)); }
+    }
+
+    @media (hover: none), (max-width: 768px) {
+        .lulu-close,
+        .lulu-info-toggle { opacity: .9; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .lulu-pet { animation: none; }
+        .lulu-character, .lulu-dialog, .lulu-close, .lulu-info-toggle, .lulu-reopen { transition: none; }
+        .lulu-character.is-blinking .lulu-body { animation: none; }
+    }
+</style>
+
+<script>
+    const pet = document.querySelector<HTMLElement>('[data-lulu-pet]');
+    const character = document.querySelector<HTMLElement>('[data-lulu-character]');
+    const image = document.querySelector<HTMLImageElement>('[data-lulu-image]');
+    const dialog = document.querySelector('[data-lulu-dialog]');
+    const close = document.querySelector('[data-lulu-close]');
+    const reopen = document.querySelector('[data-lulu-reopen]');
+    const infoToggle = document.querySelector<HTMLButtonElement>('[data-lulu-info-toggle]');
+    const panel = document.querySelector<HTMLElement>('[data-lulu-panel]');
+    const panelClose = document.querySelector<HTMLButtonElement>('[data-lulu-panel-close]');
+    const context = document.querySelector<HTMLElement>('[data-lulu-context]');
+    const stateLabel = document.querySelector<HTMLElement>('[data-lulu-state-label]');
+    const progressLabel = document.querySelector<HTMLElement>('[data-lulu-progress]');
+    const tip = document.querySelector<HTMLElement>('[data-lulu-tip]');
+    const appearanceLabel = document.querySelector<HTMLElement>('[data-lulu-appearance]');
+    const panelTitle = document.querySelector<HTMLElement>('[data-lulu-panel-title]');
+    const personaButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-lulu-persona-choice] [data-lulu-persona]'));
+    let dialogTimer: number | undefined;
+    let scrollTimer: number | undefined;
+    let blinkTimer: number | undefined;
+    let idleTimer: number | undefined;
+    let lastProgressMessage = 0;
+    let lastScrollY = window.scrollY;
+    let lastScrollMessage = 0;
+    let poseFrame: number | undefined;
+    let pointerX = window.innerWidth / 2;
+    let pointerY = window.innerHeight / 2;
+    let dragState: { pointerId: number; startX: number; startY: number; startLeft: number; startTop: number; moved: boolean } | undefined;
+    let suppressNextClick = false;
+    let appearanceOffset = 0;
+    type Persona = 'lulu' | 'nailong';
+    type CharacterState = 'idle' | 'happy' | 'thinking' | 'reading' | 'sleeping' | 'confused';
+    const personaNames: Record<Persona, string> = { lulu: '噜噜', nailong: '奶龙' };
+    const personaIcons: Record<Persona, string> = { lulu: '🍊', nailong: '🌿' };
+    const personaAssets: Record<Persona, string[]> = {
+        lulu: ['/lulu/lulu-1.png', '/lulu/lulu-2.png', '/lulu/lulu-3.png', '/lulu/lulu-4.png'],
+        nailong: ['/lulu/nailong-1.png', '/lulu/nailong-2.png', '/lulu/nailong-3.png', '/lulu/nailong-4.png'],
+    };
+    const appearanceNames: Record<Persona, string[]> = {
+        lulu: ['元气果果', '花园伸展', '假日墨镜', '开心蹦蹦'],
+        nailong: ['挥手欢迎', '草地散步', '惊喜探险', '眯眼微笑'],
+    };
+    const personaStorageKey = 'lulu-persona';
+    let persona: Persona;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const stateNames: Record<string, string> = {
+        idle: '闲逛中',
+        happy: '心情不错',
+        thinking: '思考中',
+        reading: '陪你阅读',
+        sleeping: '休息中',
+        confused: '有点迷路',
+    };
+    const dialogueSets: Record<Persona, Record<CharacterState, string[]>> = {
+        lulu: {
+            idle: ['你好呀～我是噜噜 🍊', '今天想去哪里逛逛？我来给你带路～', '慢慢浏览，知识会在路上发光。'],
+            happy: ['嘿嘿，看到你读到这里，我也开心起来啦！', '这页内容很有意思，我们继续往下探索吧～', '今天的状态不错，给自己一个小小的赞！'],
+            thinking: ['这里有好多知识线索，先从感兴趣的地方开始吧。', '让我想想……这个分类里一定藏着宝藏。', '不着急，整理思路后再继续阅读。'],
+            reading: ['我陪你一起读，慢一点也没关系～', '看到喜欢的段落，可以收藏起来以后再看。', '阅读进度交给我，你专心享受内容吧！'],
+            sleeping: ['休息一下再继续吧，眼睛也需要透透气 🍊', '站起来伸个懒腰，回来我们再一起看。', '学习很努力，短暂休息也是进步。'],
+            confused: ['这条路好像走丢啦，我们回首页重新出发？', '页面暂时没有找到，我陪你换条路看看。', '别担心，迷路也是探索的一部分～'],
+        },
+        nailong: {
+            idle: ['嗨～我是奶龙，今天也来陪你逛逛！', '奶龙发现了一片知识小花园，要一起看看吗？', '慢慢走、慢慢看，奶龙会在旁边陪着你。'],
+            happy: ['奶龙今天心情超好，和你一起分享这份开心！', '发现有趣内容啦，奶龙给你比个心～', '读到精彩的地方，奶龙也忍不住笑起来了！'],
+            thinking: ['奶龙正在认真思考，这些线索可以串成一条路。', '先挑一个最想了解的主题，我们一步一步来。', '奶龙的小脑袋转起来啦，马上找到重点～'],
+            reading: ['奶龙陪你安静阅读，看到喜欢的内容就收藏吧。', '一段一段读，奶龙帮你守住这份专注。', '别急着翻页，精彩内容值得慢慢品味。'],
+            sleeping: ['奶龙有点困啦，休息好再继续探索吧。', '眯一会儿眼睛，回来还有好多内容等着我们。', '给自己一点休息时间，奶龙会在这里等你。'],
+            confused: ['咦，奶龙好像走错路了，我们回首页看看？', '这里暂时找不到内容，换条路继续探险吧！', '奶龙不怕迷路，重新出发就好啦～'],
+        },
+    };
+
+    const readStorage = (key: string) => {
+        try { return window.localStorage.getItem(key); } catch { return null; }
+    };
+    const writeStorage = (key: string, value: string) => {
+        try { window.localStorage.setItem(key, value); } catch { /* 隐私模式下存储可能不可用 */ }
+    };
+    const removeStorage = (key: string) => {
+        try { window.localStorage.removeItem(key); } catch { /* 隐私模式下存储可能不可用 */ }
+    };
+    persona = readStorage(personaStorageKey) === 'nailong' ? 'nailong' : 'lulu';
+    let dialogueIndex = 0;
+
+    const speak = (text: string, duration = 3600) => {
+        if (!dialog) return;
+        dialog.textContent = text;
+        dialog.classList.add('is-visible');
+        window.clearTimeout(dialogTimer);
+        dialogTimer = window.setTimeout(() => dialog.classList.remove('is-visible'), duration);
+    };
+
+    const getDialogueState = () => (pet?.dataset.luluState as CharacterState) || 'idle';
+    const nextDialogue = (duration = 3600) => {
+        const lines = dialogueSets[persona][getDialogueState()];
+        const text = lines[dialogueIndex % lines.length];
+        dialogueIndex += 1;
+        speak(text, duration);
+    };
+
+    const getAppearanceIndex = (state: CharacterState) => {
+        const byState: Record<CharacterState, number> = {
+            idle: 0,
+            reading: 1,
+            happy: 2,
+            thinking: 3,
+            sleeping: 3,
+            confused: 2,
+        };
+        const viewportOffset = window.matchMedia('(max-width: 768px)').matches ? 1 : 0;
+        return (byState[state] + viewportOffset + appearanceOffset) % 4;
+    };
+
+    const updateAppearance = (state?: CharacterState) => {
+        const currentState = state || (pet?.dataset.luluState as CharacterState) || 'idle';
+        const index = getAppearanceIndex(currentState);
+        if (image) {
+            image.src = personaAssets[persona][index];
+            image.alt = persona === 'lulu' ? `水豚噜噜，${appearanceNames[persona][index]}` : `奶龙，${appearanceNames[persona][index]}`;
+        }
+        pet?.setAttribute('data-lulu-persona', persona);
+        pet?.setAttribute('aria-label', `看板娘${personaNames[persona]}`);
+        character?.setAttribute('aria-label', `拖动或和${personaNames[persona]}互动`);
+        close?.setAttribute('aria-label', `暂时隐藏${personaNames[persona]}`);
+        close?.setAttribute('title', `暂时隐藏${personaNames[persona]}`);
+        infoToggle?.setAttribute('aria-label', `查看${personaNames[persona]}信息`);
+        panel?.setAttribute('aria-label', `${personaNames[persona]}信息`);
+        panelClose?.setAttribute('aria-label', `关闭${personaNames[persona]}信息`);
+        reopen?.setAttribute('aria-label', `显示看板娘${personaNames[persona]}`);
+        reopen?.setAttribute('title', `显示${personaNames[persona]}`);
+        dialog?.setAttribute('aria-label', `点击切换${personaNames[persona]}的对话`);
+        if (panelTitle) panelTitle.textContent = `${personaIcons[persona]} ${personaNames[persona]}小窗`;
+        if (appearanceLabel) appearanceLabel.textContent = `当前形象：${appearanceNames[persona][index]} · 点击角色换形象，对话框换话`;
+        personaButtons.forEach((button) => {
+            const active = button.dataset.luluPersona === persona;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', String(active));
+        });
+    };
+
+    const setPersona = (next: Persona, announce = true) => {
+        persona = next;
+        appearanceOffset = 0;
+        dialogueIndex = 0;
+        writeStorage(personaStorageKey, persona);
+        updateAppearance();
+        if (announce) speak(persona === 'lulu' ? '噜噜回来啦～今天也请多多关照！🍊' : '奶龙来报到～一起去发现新鲜事吧！🌿', 3000);
+    };
+
+    const cycleAppearance = () => {
+        appearanceOffset = (appearanceOffset + 1) % 4;
+        updateAppearance();
+    };
+
+    const setState = (state: CharacterState) => {
+        document.querySelector<HTMLElement>('[data-lulu-pet]')?.setAttribute('data-lulu-state', state);
+        if (stateLabel) stateLabel.textContent = stateNames[state] || stateNames.idle;
+        if (tip) tip.textContent = state === 'reading' ? `慢慢读，${personaNames[persona]}会陪你把这一页看完～` : '慢慢浏览，发现一点有趣的东西吧～';
+        updateAppearance(state);
+    };
+
+    const getArticleTitle = () => {
+        const heading = document.querySelector<HTMLElement>('[data-pagefind-body] h1, article h1, main h1');
+        return heading?.textContent?.replace(/\s+/g, ' ').trim() || document.title.replace(/\s+-\s+ZHY's Blog$/, '');
+    };
+
+    const getCurrentContext = () => {
+        const path = window.location.pathname;
+        if (path === '/404' || path.includes('/404')) {
+            return { state: 'confused' as const, text: `这里好像没有这条路……${personaNames[persona]}可以带你回首页。` };
+        }
+        if (/^\/posts\/[^/]+\//.test(path) || /^\/diary\/[^/]+\//.test(path)) {
+            return { state: 'reading' as const, text: `正在阅读《${getArticleTitle()}》，${personaNames[persona]}陪你慢慢看。` };
+        }
+        if (path.includes('category') || path.includes('archive') || path.includes('posts')) {
+            return { state: 'thinking' as const, text: `这里有很多知识线索，${personaNames[persona]}陪你一起浏览。` };
+        }
+        return { state: 'idle' as const, text: `今天想探索什么？${personaNames[persona]}会陪你一起浏览。` };
+    };
+
+    const syncPageContext = () => {
+        const page = getCurrentContext();
+        setState(page.state);
+        if (context) context.textContent = page.text;
+        updateInfo();
+        if (page.state === 'confused') nextDialogue(3000);
+    };
+
+    const updateInfo = () => {
+        const state = document.querySelector<HTMLElement>('[data-lulu-pet]')?.dataset.luluState || 'idle';
+        if (stateLabel) stateLabel.textContent = stateNames[state] || stateNames.idle;
+        const total = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = total > 0 ? Math.round((window.scrollY / total) * 100) : 0;
+        if (progressLabel) progressLabel.textContent = total > 0 ? `${Math.max(0, Math.min(100, progress))}%` : '当前页';
+        if (tip) tip.textContent = state === 'reading' ? `慢慢读，${personaNames[persona]}会陪你把这一页看完～` : '慢慢浏览，发现一点有趣的东西吧～';
+    };
+
+    const openPanel = () => {
+        if (!panel) return;
+        panel.hidden = false;
+        infoToggle?.setAttribute('aria-expanded', 'true');
+        syncPageContext();
+    };
+
+    const closePanel = () => {
+        if (!panel) return;
+        panel.hidden = true;
+        infoToggle?.setAttribute('aria-expanded', 'false');
+    };
+
+    const resetIdleTimer = () => {
+        window.clearTimeout(idleTimer);
+        idleTimer = window.setTimeout(() => {
+            if (!document.body.classList.contains('lulu-hidden')) {
+                setState('sleeping');
+                nextDialogue(3600);
+            }
+        }, 30 * 60 * 1000);
+    };
+
+    // 只让角色整体做极轻微的方向反馈，不移动瞳孔，避免出现贴图漂浮感。
+    const updatePose = () => {
+        poseFrame = undefined;
+        if (!character) return;
+        const rect = character.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height * 0.37;
+        const tilt = Math.max(-1.2, Math.min(1.2, Math.tanh((pointerX - centerX) / 260) * 1.2));
+        const shiftX = Math.max(-2.5, Math.min(2.5, Math.tanh((pointerX - centerX) / 260) * 2.5));
+        const shiftY = Math.max(-1.5, Math.min(1.5, Math.tanh((pointerY - centerY) / 220) * 1.5));
+        character.style.setProperty('--lulu-tilt', `${tilt}deg`);
+        character.style.setProperty('--lulu-shift-x', `${shiftX}px`);
+        character.style.setProperty('--lulu-shift-y', `${shiftY}px`);
+    };
+
+    const trackPointer = (event: PointerEvent) => {
+        pointerX = event.clientX;
+        pointerY = event.clientY;
+        if (poseFrame === undefined) poseFrame = window.requestAnimationFrame(updatePose);
+    };
+
+    const resetPose = () => {
+        pointerX = window.innerWidth / 2;
+        pointerY = window.innerHeight / 2;
+        if (poseFrame === undefined) poseFrame = window.requestAnimationFrame(updatePose);
+    };
+
+    const blink = () => {
+        if (!character || document.hidden || document.body.classList.contains('lulu-hidden')) return;
+        character.classList.remove('is-blinking');
+        // Force a reflow so consecutive blinks always replay the short animation.
+        void character.offsetWidth;
+        character.classList.add('is-blinking');
+        window.setTimeout(() => character.classList.remove('is-blinking'), 220);
+        blinkTimer = window.setTimeout(blink, 3600 + Math.random() * 4200);
+    };
+
+    const setPetPosition = (left: number, top: number) => {
+        if (!pet) return;
+        const margin = 8;
+        const maxLeft = Math.max(margin, window.innerWidth - pet.offsetWidth - margin);
+        const maxTop = Math.max(margin, window.innerHeight - pet.offsetHeight - margin);
+        pet.style.left = `${Math.max(margin, Math.min(maxLeft, left))}px`;
+        pet.style.top = `${Math.max(margin, Math.min(maxTop, top))}px`;
+        pet.style.right = 'auto';
+        pet.style.bottom = 'auto';
+    };
+
+    const restorePetPosition = () => {
+        if (!pet) return;
+        try {
+            const saved = JSON.parse(readStorage('lulu-position') || 'null') as { left?: number; top?: number } | null;
+            if (saved && Number.isFinite(saved.left) && Number.isFinite(saved.top)) setPetPosition(saved.left as number, saved.top as number);
+        } catch {
+            removeStorage('lulu-position');
+        }
+    };
+
+    const startDrag = (event: PointerEvent) => {
+        if (!pet || !character || (event.pointerType === 'mouse' && event.button !== 0)) return;
+        pet.classList.add('is-dragging');
+        const rect = pet.getBoundingClientRect();
+        dragState = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startLeft: rect.left, startTop: rect.top, moved: false };
+        character.setPointerCapture?.(event.pointerId);
+    };
+
+    const moveDrag = (event: PointerEvent) => {
+        if (!dragState || event.pointerId !== dragState.pointerId || !pet) return;
+        const deltaX = event.clientX - dragState.startX;
+        const deltaY = event.clientY - dragState.startY;
+        if (!dragState.moved && Math.hypot(deltaX, deltaY) < 6) return;
+        dragState.moved = true;
+        event.preventDefault();
+        setPetPosition(dragState.startLeft + deltaX, dragState.startTop + deltaY);
+    };
+
+    const endDrag = (event: PointerEvent) => {
+        if (!dragState || event.pointerId !== dragState.pointerId || !pet) return;
+        const didMove = dragState.moved;
+        dragState = undefined;
+        pet.classList.remove('is-dragging');
+        if (character?.hasPointerCapture?.(event.pointerId)) character.releasePointerCapture(event.pointerId);
+        if (!didMove) return;
+        suppressNextClick = true;
+        writeStorage('lulu-position', JSON.stringify({ left: Number.parseFloat(pet.style.left), top: Number.parseFloat(pet.style.top) }));
+        window.setTimeout(() => { suppressNextClick = false; }, 250);
+    };
+
+    character?.addEventListener('pointerdown', startDrag);
+    character?.addEventListener('click', () => {
+        if (suppressNextClick) return;
+        resetIdleTimer();
+        cycleAppearance();
+        nextDialogue();
+    });
+    character?.addEventListener('pointerenter', () => nextDialogue(2400));
+    dialog?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        nextDialogue(3600);
+    });
+    dialog?.addEventListener('keydown', (event) => {
+        const keyboardEvent = event as KeyboardEvent;
+        if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+            keyboardEvent.preventDefault();
+            nextDialogue(3600);
+        }
+    });
+    infoToggle?.addEventListener('click', openPanel);
+    panelClose?.addEventListener('click', closePanel);
+    personaButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const next = button.dataset.luluPersona;
+            if (next === 'lulu' || next === 'nailong') setPersona(next);
+        });
+    });
+    document.addEventListener('click', (event) => {
+        if (!panel || panel.hidden) return;
+        const target = event.target as Node;
+        if (!panel.contains(target) && !infoToggle?.contains(target)) closePanel();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closePanel();
+    });
+    if (!prefersReducedMotion) {
+        window.addEventListener('pointermove', trackPointer, { passive: true });
+        window.addEventListener('resize', resetPose, { passive: true });
+        character?.addEventListener('pointerleave', resetPose);
+    }
+    window.addEventListener('pointermove', moveDrag, { passive: false });
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+    window.addEventListener('resize', () => {
+        if (pet && pet.style.top && pet.style.left) setPetPosition(pet.offsetLeft, pet.offsetTop);
+        updateInfo();
+        updateAppearance();
+    }, { passive: true });
+    close?.addEventListener('click', () => {
+        document.body.classList.add('lulu-hidden');
+        writeStorage('lulu-hidden', '1');
+    });
+    reopen?.addEventListener('click', () => {
+        document.body.classList.remove('lulu-hidden');
+        removeStorage('lulu-hidden');
+        nextDialogue(2600);
+        window.clearTimeout(blinkTimer);
+        blinkTimer = window.setTimeout(blink, 1800);
+    });
+
+    if (readStorage('lulu-hidden') === '1') {
+        document.body.classList.add('lulu-hidden');
+    } else {
+        window.setTimeout(() => nextDialogue(4200), 1100);
+        blinkTimer = window.setTimeout(blink, 2800);
+    }
+
+    syncPageContext();
+    updateAppearance();
+    window.setTimeout(restorePetPosition, 0);
+    resetIdleTimer();
+
+    window.addEventListener('scroll', () => {
+        window.clearTimeout(scrollTimer);
+        scrollTimer = window.setTimeout(() => {
+            const currentY = window.scrollY;
+            const now = Date.now();
+            updateInfo();
+            if (document.body.classList.contains('lulu-hidden')) {
+                lastScrollY = currentY;
+                return;
+            }
+            if (now - lastScrollMessage < 12000) {
+                lastScrollY = currentY;
+                return;
+            }
+            if (Math.abs(currentY - lastScrollY) > 220) {
+                nextDialogue(3000);
+                lastScrollMessage = now;
+            }
+            const viewportBottom = currentY + window.innerHeight;
+            const pageHeight = document.documentElement.scrollHeight;
+            const progress = pageHeight > window.innerHeight ? viewportBottom / pageHeight : 0;
+            if (progress > .8 && now - lastProgressMessage > 20000) {
+                setState('happy');
+                nextDialogue(3000);
+                lastProgressMessage = now;
+            }
+            lastScrollY = currentY;
+        }, 180);
+    }, { passive: true });
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !document.body.classList.contains('lulu-hidden')) {
+            nextDialogue(2800);
+            window.clearTimeout(blinkTimer);
+            blinkTimer = window.setTimeout(blink, 1200);
+        }
+    });
+
+    // Swup replaces article content but leaves this BaseLayout-mounted widget alive.
+    window.addEventListener('swup:page:view', () => {
+        if (!document.body.classList.contains('lulu-hidden')) {
+            syncPageContext();
+            nextDialogue(2800);
+        }
+    });
+</script>
