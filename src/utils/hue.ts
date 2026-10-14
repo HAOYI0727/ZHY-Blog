@@ -1,11 +1,11 @@
 import { siteConfig } from "@/config";
+import { getPreference, setPreference } from "@utils/storage";
 
 
 // Function to set hue
 export function setHue(hue: number): void {
-    if (typeof localStorage !== "undefined") {
-        localStorage.setItem("hue", String(hue));
-    }
+    if (!Number.isFinite(hue)) return;
+    setPreference("hue", String(hue));
     if (typeof document !== "undefined") {
         const r = document.querySelector(":root") as HTMLElement;
         if (!r) {
@@ -27,11 +27,9 @@ export function getDefaultHue(): number {
 
 // Function to get hue from local storage or default
 export function getHue(): number {
-    if (typeof localStorage !== "undefined") {
-        const stored = localStorage.getItem("hue");
-        return stored ? Number.parseInt(stored) : getDefaultHue();
-    }
-    return getDefaultHue();
+    const stored = getPreference("hue");
+    const hue = stored?.trim() ? Number(stored) : NaN;
+    return Number.isFinite(hue) && hue >= 0 && hue <= 360 ? hue : getDefaultHue();
 }
 
 // Function to initialize hue from local storage or default

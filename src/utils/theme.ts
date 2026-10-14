@@ -1,3 +1,4 @@
+import { getPreference, setPreference } from "@utils/storage";
 import {
     SYSTEM_MODE,
     DARK_MODE,
@@ -69,9 +70,7 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE, force = false) {
 
 // Function to set theme
 export function setTheme(theme: LIGHT_DARK_MODE): void {
-    if (typeof localStorage !== "undefined") {
-        localStorage.setItem("theme", theme);
-    }
+    setPreference("theme", theme);
     applyThemeToDocument(theme);
 }
 
@@ -87,10 +86,8 @@ export function getDefaultTheme(): LIGHT_DARK_MODE {
 
 // Function to get stored theme from local storage or default
 export function getStoredTheme(): LIGHT_DARK_MODE {
-    if (typeof localStorage !== "undefined") {
-        return (localStorage.getItem("theme") as LIGHT_DARK_MODE) || getDefaultTheme();
-    }
-    return getDefaultTheme();
+    const theme = getPreference("theme");
+    return theme === LIGHT_MODE || theme === DARK_MODE || theme === SYSTEM_MODE ? theme : getDefaultTheme();
 }
 
 // Function to initialize theme from local storage or default

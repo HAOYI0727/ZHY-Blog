@@ -201,7 +201,9 @@ const loadingOverlayEnabled = siteConfig.loadingOverlay?.enable ?? true;
         <!-- Set the theme before the page is rendered to avoid a flash -->
         <script is:inline define:vars={{LIGHT_MODE, DARK_MODE, SYSTEM_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, NAVBAR_HEIGHT, configHue, defaultTheme: siteConfig.defaultTheme}}>
             // Load the theme from local storage
-            const theme = localStorage.getItem('theme') || defaultTheme;
+            const readPreference = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+            const savedTheme = readPreference('theme');
+            const theme = [LIGHT_MODE, DARK_MODE, SYSTEM_MODE].includes(savedTheme) ? savedTheme : defaultTheme;
             // Apply the theme to the document
             let isDark = false;
             switch (theme) {
@@ -225,7 +227,9 @@ const loadingOverlayEnabled = siteConfig.loadingOverlay?.enable ?? true;
             const expressiveTheme = isDark ? "github-dark" : "github-light";
             document.documentElement.setAttribute("data-theme", expressiveTheme);
             // Load the hue from local storage
-            const hue = localStorage.getItem('hue') || configHue;
+            const savedHue = readPreference('hue');
+            const hueNumber = savedHue?.trim() ? Number(savedHue) : NaN;
+            const hue = Number.isFinite(hueNumber) && hueNumber >= 0 && hueNumber <= 360 ? hueNumber : configHue;
             // Apply the hue to the document
             document.documentElement.style.setProperty('--hue', hue);
             // calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
@@ -383,6 +387,7 @@ import { pathsEqual, url } from "@utils/url";
 import { initWallpaperMode } from "@utils/wallpaper";
 import { initTheme } from "@utils/theme";
 import { initHue } from "@utils/hue";
+import { getPreference } from "@utils/storage";
 import { initMarkdownActions } from "@/utils/markdown";
 import { initFancybox, cleanupFancybox } from "@utils/fancybox";
 import { initReadingContinuity } from "@utils/readingContinuity";
@@ -604,7 +609,7 @@ window.loadTranslateScript = async () => {
     const { loadAndInitTranslate } = await import("@utils/language");
     await loadAndInitTranslate();
 };
-if (localStorage.getItem("selected-language")) {
+if (getPreference("selected-language")) {
     const restoreTranslation = () => window.loadTranslateScript?.();
     const requestIdle = (window as any).requestIdleCallback;
     if (typeof requestIdle === "function") {

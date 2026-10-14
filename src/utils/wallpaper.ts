@@ -1,3 +1,4 @@
+import { getPreference, setPreference } from "@utils/storage";
 import {
     WALLPAPER_FULLSCREEN,
     WALLPAPER_BANNER,
@@ -332,9 +333,7 @@ function adjustMainContentTransparency(enable: boolean) {
 
 // Function to set wallpaper mode and apply it to document
 export function setWallpaperMode(mode: WALLPAPER_MODE): void {
-    if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('wallpaperMode', mode);
-    }
+    setPreference('wallpaperMode', mode);
     applyWallpaperModeToDocument(mode);
 }
 
@@ -350,10 +349,8 @@ export function getDefaultWallpaperMode(): WALLPAPER_MODE {
 
 // Function to get stored wallpaper mode from local storage
 export function getStoredWallpaperMode(): WALLPAPER_MODE {
-    if (typeof localStorage !== 'undefined') {
-        return (localStorage.getItem('wallpaperMode') as WALLPAPER_MODE) || getDefaultWallpaperMode();
-    }
-    return getDefaultWallpaperMode();
+    const mode = getPreference('wallpaperMode');
+    return mode === WALLPAPER_FULLSCREEN || mode === WALLPAPER_BANNER || mode === WALLPAPER_NONE ? mode : getDefaultWallpaperMode();
 }
 
 // A page can request a presentation mode without overwriting the visitor's saved preference.

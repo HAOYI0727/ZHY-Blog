@@ -43,6 +43,7 @@ const redisCommand = async (command: Array<string | number>) => {
             "content-type": "application/json",
         },
         body: JSON.stringify(command),
+        signal: AbortSignal.timeout(8_000),
     });
     const payload = await response.json() as { result?: unknown; error?: string };
     if (!response.ok || payload.error) throw new Error(payload.error || "Redis request failed");
@@ -94,6 +95,7 @@ const updateDevelopmentCounts = (postId: string, action: EngagementAction) => {
 const withHeat = (counts: Counts) => ({ ...counts, heat: counts.views + counts.likes * 6 });
 
 export const GET: APIRoute = async ({ url }) => {
+    if (import.meta.env.STATIC_HOSTING) return json({ error: "纯静态站点无法保存服务端浏览与点赞数据", storage: "unavailable" });
     const postIds = (url.searchParams.get("posts") || "")
         .split(",")
             // URLSearchParams 已经完成了解码；再次 decodeURIComponent 会让畸形输入直接抛出异常。
@@ -138,6 +140,10 @@ export const POST: APIRoute = async ({ request }) => {
         body = await request.json();
     } catch {
         return json({ error: "Invalid JSON body" }, 400);
+    }
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+        return json({ error: "Invalid engagement request" }, 400);
     }
 
     const postId = normalizeEngagementId(body.post);

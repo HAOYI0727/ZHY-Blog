@@ -1,0 +1,301 @@
+---
+import { Icon } from "astro-icon/components";
+interface Props { articleId: string; title: string; articleUrl: string }
+const { articleId, title, articleUrl } = Astro.props;
+---
+
+<reading-notes data-article-id={articleId} data-article-title={title} data-article-url={articleUrl}>
+    <button type="button" class="notes-launcher" data-pagefind-ignore data-notes-launcher aria-controls="reading-notes-window" aria-expanded="false" aria-label="打开文章阅读笔记" title="阅读笔记 · Markdown">
+        <Icon name="material-symbols:edit-note-rounded" /><span>阅读笔记</span><i data-note-indicator hidden aria-hidden="true"></i>
+    </button>
+    <div class="reading-layout">
+    <div class="reading-pane" data-notes-article role="region" aria-label="文章阅读区域" tabindex="-1"><slot /></div>
+    <section data-pagefind-ignore id="reading-notes-window" class="notes-window ignore" data-notes-window role="region" aria-labelledby="reading-notes-heading" hidden>
+        <header class="notes-header">
+            <div><h2 id="reading-notes-heading">阅读笔记</h2><p title={title}>{title}</p></div>
+            <button type="button" data-notes-close aria-label="收起阅读笔记" title="收起，笔记会保留">✕</button>
+        </header>
+        <div class="notes-tools">
+            <div class="notes-modes" role="group" aria-label="笔记显示方式">
+                <button type="button" data-notes-mode="split" aria-pressed="true">边写边看</button>
+                <button type="button" data-notes-mode="edit" aria-pressed="false">编辑</button>
+                <button type="button" data-notes-mode="preview" aria-pressed="false">预览</button>
+            </div>
+            <button type="button" data-notes-quote title="把文章中选中的文字加入笔记">摘录选段</button>
+        </div>
+        <div class="notes-format" data-notes-format role="group" aria-label="插入 Markdown 格式">
+            <button type="button" data-notes-insert="heading" title="二级标题">H2</button>
+            <button type="button" data-notes-insert="bold" title="加粗"><b>B</b></button>
+            <button type="button" data-notes-insert="list" title="列表">≡ 列表</button>
+            <button type="button" data-notes-insert="code" title="代码块">&lt;/&gt;</button>
+            <span>Markdown · 实时预览</span>
+        </div>
+        <div class="notes-workspace" data-notes-workspace data-mode="split">
+            <div class="notes-editor" data-notes-editor>
+                <label for="reading-note-source">Markdown 编辑</label>
+                <textarea id="reading-note-source" data-notes-source maxlength="100000" spellcheck="false" placeholder={'## 我的理解\n\n- 一个重点\n- **关键概念**\n\n> 值得记住的一句话\n\n```python\nprint("Hello")\n```'}></textarea>
+            </div>
+            <div class="notes-preview" data-notes-preview-pane role="region" aria-label="Markdown 实时预览">
+                <span class="notes-preview-label">实时预览</span>
+                <div class="notes-rendered" data-notes-preview><p class="notes-empty">写下第一个想法，预览会自动更新。</p></div>
+            </div>
+        </div>
+        <footer class="notes-footer">
+            <div class="notes-feedback"><span data-notes-status role="status" aria-live="polite">只存于此浏览器，不会上传</span><small data-notes-count>0 / 100000 字符</small></div>
+            <div class="notes-file-actions"><button type="button" data-notes-save>保存</button><button type="button" data-notes-copy>复制 Markdown</button><button type="button" data-notes-download class="notes-primary">下载 .md</button></div>
+            <small>按文章自动保存；清除浏览器数据会移除笔记，请用 .md 文件备份。</small>
+        </footer>
+    </section>
+    </div>
+</reading-notes>
+
+<style>
+    reading-notes { display: block; min-width: 0; container-type: inline-size; scroll-margin-top: 6rem; margin-bottom: 1rem; }
+    .notes-launcher { position: fixed; right: 4.75rem; bottom: 1rem; z-index: 102; display: inline-flex; align-items: center; justify-content: center; width: 3rem; height: 3rem; border: 1px solid var(--line-divider); border-radius: 1rem; background: var(--card-bg); color: var(--primary); box-shadow: 0 3px 16px #0002; cursor: pointer; transition: background-color .2s, box-shadow .2s; view-transition-name: notes-toggle; }
+    .notes-launcher:hover, .notes-launcher[aria-expanded="true"] { background: var(--btn-regular-bg); box-shadow: 0 3px 18px color-mix(in srgb, var(--primary) 24%, transparent); }
+    .notes-launcher span { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .notes-launcher[hidden] { display: none !important; }
+    .notes-launcher :global(svg) { font-size: 1.4rem; }
+    .notes-launcher i { width: .35rem; height: .35rem; border-radius: 50%; background: var(--primary); position: absolute; top: .3rem; right: .3rem; }
+    .reading-layout, .reading-pane { min-width: 0; }
+    reading-notes[data-open="true"] .reading-layout { display: grid; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); gap: .6rem; height: calc(100dvh - 13rem); min-height: 22rem; }
+    reading-notes[data-open="true"] .reading-pane { min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; border-radius: 1rem; scroll-padding-top: 1rem; }
+    .reading-pane:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .notes-window { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--line-divider)); border-radius: 1rem; background: var(--card-bg); color: var(--text-color); font-size: .8rem; }
+    @container (min-width: 880px) {
+        reading-notes[data-open="true"] .reading-layout { grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr) 23rem; }
+    }
+    .notes-window[hidden], .notes-launcher [hidden] { display: none !important; }
+    .notes-window button { cursor: pointer; padding: .4rem .6rem; border: 1px solid var(--line-divider); border-radius: .55rem; background: var(--btn-regular-bg); color: var(--text-secondary); font: inherit; font-size: .75rem; }
+    .notes-window button:hover { background: color-mix(in srgb, var(--primary) 12%, var(--card-bg)); }
+    .notes-window button:focus-visible, .notes-launcher:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .notes-header, .notes-tools, .notes-format, .notes-footer { flex-shrink: 0; }
+    .notes-header { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .9rem 1rem .65rem; }
+    .notes-header > div { min-width: 0; }
+    .notes-header h2 { font-size: 1rem; font-weight: 700; margin: 0; }
+    .notes-header p { font-size: .7rem; margin: .25rem 0 0; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .notes-tools, .notes-format { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; padding: .4rem 1rem; }
+    .notes-tools { justify-content: space-between; }
+    .notes-modes { display: flex; gap: .25rem; }
+    .notes-window button[aria-pressed="true"], .notes-window button.notes-primary { color: var(--primary); background: color-mix(in srgb, var(--primary) 13%, var(--card-bg)); }
+    .notes-format span { font-size: .65rem; margin-left: auto; color: var(--text-secondary); }
+    .notes-workspace { flex: 1 0 12rem; min-height: 12rem; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin: .4rem 1rem; border: 1px solid var(--line-divider); border-radius: .65rem; overflow: hidden; }
+    .notes-editor { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: color-mix(in srgb, var(--card-bg) 92%, var(--primary)); }
+    .notes-editor label, .notes-preview-label { display: block; padding: .5rem .65rem; font-size: .65rem; color: var(--text-secondary); border-bottom: 1px solid var(--line-divider); }
+    .notes-editor textarea { flex: 1; width: 100%; min-height: 0; resize: none; padding: .7rem; background: transparent; border: 0; outline: none; color: var(--text-color); font-family: "JetBrains Mono Variable", monospace; font-size: .75rem; line-height: 1.8; tab-size: 2; }
+    .notes-editor textarea:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary) 50%, transparent); }
+    .notes-preview { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; border-left: 1px solid var(--line-divider); }
+    .notes-rendered { padding: .7rem; line-height: 1.8; overflow-wrap: anywhere; }
+    .notes-rendered :global(h1), .notes-rendered :global(h2), .notes-rendered :global(h3) { font-weight: 700; line-height: 1.5; margin: .6rem 0; }
+    .notes-rendered :global(h1) { font-size: 1.3rem; }
+    .notes-rendered :global(h2) { font-size: 1.1rem; }
+    .notes-rendered :global(h3) { font-size: 1rem; }
+    .notes-rendered :global(p) { margin: .5rem 0; }
+    .notes-rendered :global(ul), .notes-rendered :global(ol) { padding-left: 1.2rem; margin: .5rem 0; }
+    .notes-rendered :global(ul) { list-style: disc; }
+    .notes-rendered :global(ol) { list-style: decimal; }
+    .notes-rendered :global(blockquote) { border-left: 3px solid var(--primary); padding-left: .7rem; margin: .6rem 0; color: var(--text-secondary); }
+    .notes-rendered :global(pre) { white-space: pre; overflow-x: auto; padding: .6rem; border-radius: .4rem; background: color-mix(in srgb, var(--primary) 8%, var(--card-bg)); }
+    .notes-rendered :global(code) { font-family: "JetBrains Mono Variable", monospace; font-size: .75rem; }
+    .notes-rendered :global(a) { color: var(--primary); text-decoration: underline; }
+    .notes-rendered :global(img) { max-width: 100%; height: auto; border-radius: .4rem; }
+    .notes-rendered :global(table) { display: block; overflow-x: auto; border-collapse: collapse; }
+    .notes-rendered :global(th), .notes-rendered :global(td) { border: 1px solid var(--line-divider); padding: .25rem .45rem; }
+    .notes-rendered :global(hr) { margin: .75rem 0; border-top: 1px solid var(--line-divider); }
+    .notes-empty { color: var(--text-secondary); font-size: .75rem; }
+    .notes-footer { padding: .5rem 1rem .85rem; display: flex; flex-direction: column; gap: .5rem; flex: none; }
+    .notes-feedback { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .3rem; font-size: .7rem; color: var(--text-secondary); }
+    .notes-feedback [data-error="true"] { color: #db6c60; }
+    .notes-file-actions { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .notes-footer > small { color: var(--text-secondary); font-size: .65rem; line-height: 1.5; }
+    .notes-workspace[data-mode="edit"], .notes-workspace[data-mode="preview"] { grid-template-columns: minmax(0, 1fr); }
+    .notes-workspace[data-mode="edit"] .notes-preview, .notes-workspace[data-mode="preview"] .notes-editor { display: none; }
+    .notes-workspace[data-mode="preview"] .notes-preview { border-left: 0; }
+    .notes-format[hidden] { display: none; }
+    @media (max-width: 639px), (hover: none) and (pointer: coarse) and (max-height: 540px) and (max-width: 1023px) {
+        .notes-launcher, .notes-window { display: none !important; }
+    }
+</style>
+
+<style is:global>
+    html[data-notes-transition]::view-transition-old(root) { animation: notes-leave .18s ease-out both; }
+    html[data-notes-transition]::view-transition-new(root) { animation: notes-arrive .3s cubic-bezier(.2,.8,.2,1) both; }
+    html[data-notes-transition]::view-transition-group(notes-toggle) { animation-duration: .3s; }
+    @keyframes notes-leave { to { opacity: 0; } }
+    @keyframes notes-arrive { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<script>
+    import { loadReadingNote, saveReadingNote, noteFilename, exportReadingNote, MAX_NOTE_LENGTH, NOTES_UNAVAILABLE_QUERY } from "@utils/reading-notes";
+    import { activatePetSurface, closePetSurface } from "@utils/pet-surfaces";
+    import { readingPosition, scrollReadingTo, scrollReadingHeading } from "@utils/reading-viewport";
+    import { mountNotesLauncher } from "@utils/notes-launcher";
+    import { readingTransitions } from "@utils/reading-transitions";
+    import { initReadingContinuity } from "@utils/readingContinuity";
+    type PreviewRenderer = (source: string) => string;
+    let rendererPromise: Promise<PreviewRenderer> | undefined;
+    const loadRenderer = () => rendererPromise ||= import("@utils/note-preview").then(module => module.renderNotePreview).catch(error => { rendererPromise = undefined; throw error; });
+
+    class ReadingNotes extends HTMLElement {
+        private cleanup?: () => void;
+        disconnectedCallback() { this.cleanup?.(); this.cleanup = undefined; }
+        connectedCallback() {
+            if (this.cleanup) return;
+            const articlePane = this.querySelector<HTMLElement>("[data-notes-article]")!;
+            const article = articlePane.querySelector<HTMLElement>("#post-container");
+            const articleId = this.dataset.articleId!;
+            const unavailable = window.matchMedia(NOTES_UNAVAILABLE_QUERY);
+            const lifetime = new AbortController(); const { signal } = lifetime;
+            // Swup scrolls the document for hashes even when a local handler prevents
+            // default. Keep article-local links under the browser/workspace handler.
+            articlePane.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach(link => { link.dataset.noSwup = ""; });
+            articlePane.addEventListener("click", event => {
+                if (this.dataset.open !== "true" || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href^="#"]');
+                if (!link) return;
+                let target: HTMLElement | null;
+                try { target = document.getElementById(decodeURIComponent(link.hash.slice(1))); } catch { return; }
+                if (target && articlePane.contains(target) && scrollReadingHeading(target)) event.preventDefault();
+            }, { signal });
+            const launcher = this.querySelector<HTMLButtonElement>("[data-notes-launcher]")!;
+            const panel = this.querySelector<HTMLElement>("[data-notes-window]")!;
+            const source = panel.querySelector<HTMLTextAreaElement>("[data-notes-source]")!;
+            const preview = panel.querySelector<HTMLElement>("[data-notes-preview]")!;
+            const status = panel.querySelector<HTMLElement>("[data-notes-status]")!;
+            const count = panel.querySelector<HTMLElement>("[data-notes-count]")!;
+            const indicator = launcher.querySelector<HTMLElement>("[data-note-indicator]")!;
+            const releaseLauncher = mountNotesLauncher(launcher, unavailable, signal);
+            const transition = readingTransitions(this, signal);
+            const stored = loadReadingNote(articleId);
+            source.value = stored.note.markdown;
+            let desiredOpen = false, dirty = false, quote = "", lastFocus: HTMLElement | null = null;
+            let saveTimer = 0, previewTimer = 0, previewVersion = 0;
+            const setStatus = (text: string, error = false) => { status.textContent = text; status.dataset.error = String(error); };
+            const updateCount = () => { count.textContent = `${source.value.length} / ${MAX_NOTE_LENGTH} 字符`; indicator.hidden = !source.value.trim(); };
+            const save = () => {
+                window.clearTimeout(saveTimer);
+                if (!dirty) return;
+                const result = saveReadingNote(articleId, source.value);
+                if (result.error) { setStatus(result.error, true); return; }
+                dirty = false;
+                setStatus(`已保存到本地 · ${new Date(result.updatedAt!).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
+            };
+            const render = async () => {
+                window.clearTimeout(previewTimer);
+                const version = ++previewVersion, text = source.value;
+                if (!text.trim()) { preview.innerHTML = '<p class="notes-empty">写下第一个想法，预览会自动更新。</p>'; return; }
+                try {
+                    const renderer = await loadRenderer();
+                    if (signal.aborted || version !== previewVersion) return;
+                    preview.innerHTML = renderer(text);
+                } catch { if (!signal.aborted) preview.textContent = "预览加载失败，请再次切换到预览，或刷新页面后重试。"; }
+            };
+            const changed = () => {
+                dirty = true; updateCount(); setStatus("正在保存…");
+                window.clearTimeout(saveTimer); saveTimer = window.setTimeout(save, 400);
+                // Invalidate an in-flight parser load as soon as the draft changes.
+                previewVersion++; window.clearTimeout(previewTimer);
+                previewTimer = window.setTimeout(() => void render(), 120);
+            };
+            const progress = () => {
+                if (!article) return 0;
+                const { offset, distance } = readingPosition(article);
+                return Math.min(1, Math.max(0, offset / distance));
+            };
+            const layoutChanged = () => window.dispatchEvent(new Event("reading:layout-change"));
+            const close = (restoreFocus = true, animate = true) => {
+                desiredOpen = false;
+                const ratio = progress();
+                save();
+                transition.run(() => {
+                    panel.hidden = true; delete this.dataset.open;
+                    articlePane.setAttribute("tabindex", "-1");
+                    if (article && this.isConnected) scrollReadingTo(article, ratio);
+                    layoutChanged(); launcher.setAttribute("aria-expanded", "false");
+                    closePetSurface("notes");
+                    if (restoreFocus) (lastFocus?.isConnected ? lastFocus : launcher).focus({ preventScroll: true });
+                }, animate);
+            };
+            launcher.addEventListener("click", () => {
+                if (unavailable.matches) return;
+                if (desiredOpen) { close(); return; }
+                desiredOpen = true;
+                const ratio = progress();
+                lastFocus = document.activeElement as HTMLElement;
+                transition.run(() => {
+                    activatePetSurface("notes"); panel.hidden = false; this.dataset.open = "true"; launcher.setAttribute("aria-expanded", "true");
+                    articlePane.setAttribute("tabindex", "0");
+                    // Geometry and reading position change underneath the transition snapshot.
+                    this.scrollIntoView({ block: "start", behavior: "auto" });
+                    if (article) scrollReadingTo(article, ratio);
+                    initReadingContinuity();
+                    layoutChanged(); void render(); source.focus({ preventScroll: true });
+                });
+            }, { signal });
+            panel.querySelector("[data-notes-close]")!.addEventListener("click", () => close(), { signal });
+            source.addEventListener("input", changed, { signal });
+            panel.querySelector("[data-notes-save]")!.addEventListener("click", () => { dirty = true; save(); }, { signal });
+            panel.querySelectorAll<HTMLButtonElement>("[data-notes-mode]").forEach(button => button.addEventListener("click", () => {
+                panel.querySelector<HTMLElement>("[data-notes-workspace]")!.dataset.mode = button.dataset.notesMode;
+                panel.querySelector<HTMLElement>("[data-notes-format]")!.hidden = button.dataset.notesMode === "preview";
+                panel.querySelectorAll<HTMLButtonElement>("[data-notes-mode]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+                void render();
+            }, { signal }));
+            panel.querySelectorAll<HTMLButtonElement>("[data-notes-insert]").forEach(button => button.addEventListener("click", () => {
+                const start = source.selectionStart, end = source.selectionEnd, selected = source.value.slice(start, end);
+                const type = button.dataset.notesInsert;
+                const text = type === "bold" ? `**${selected || "关键概念"}**` : type === "heading" ? `\n## ${selected || "我的理解"}\n` : type === "list" ? `\n- ${selected || "一个重点"}\n` : `\n\`\`\`\n${selected || "代码"}\n\`\`\`\n`;
+                if (source.value.length - (end - start) + text.length > MAX_NOTE_LENGTH) { setStatus("笔记已达到长度限制，请先下载备份。", true); return; }
+                source.setRangeText(text, start, end, "end"); changed(); source.focus({ preventScroll: true });
+            }, { signal }));
+            document.addEventListener("selectionchange", () => {
+                const selection = window.getSelection();
+                const article = document.getElementById("post-container");
+                const node = selection?.anchorNode?.parentElement;
+                if (selection?.rangeCount && node?.closest('.custom-md') && article?.contains(node) && article.contains(selection.focusNode)) quote = selection.toString().trim().slice(0, 6000);
+            }, { signal });
+            panel.querySelector("[data-notes-quote]")!.addEventListener("click", () => {
+                if (!quote) { setStatus("先在文章正文中选中一段文字，再点击摘录选段。"); return; }
+                const addition = `\n\n${quote.split("\n").map(line => `> ${line}`).join("\n")}\n\n`;
+                if (source.value.length + addition.length > MAX_NOTE_LENGTH) { setStatus("笔记已达到长度限制，请先下载备份。", true); return; }
+                source.setRangeText(addition, source.selectionStart, source.selectionEnd, "end"); changed(); source.focus({ preventScroll: true });
+            }, { signal });
+            panel.querySelector("[data-notes-copy]")!.addEventListener("click", async () => {
+                try { await navigator.clipboard.writeText(source.value); if (!signal.aborted) setStatus("Markdown 已复制。" + (dirty ? "草稿尚待保存。" : "")); }
+                catch { if (!signal.aborted) setStatus("复制失败，请使用下载 .md 保存，或手动复制。", true); }
+            }, { signal });
+            panel.querySelector("[data-notes-download]")!.addEventListener("click", () => {
+                save();
+                const markdown = exportReadingNote(this.dataset.articleTitle!, this.dataset.articleUrl!, source.value);
+                const url = URL.createObjectURL(new Blob([markdown], { type: "text/markdown;charset=utf-8" }));
+                const link = document.createElement("a"); link.href = url; link.download = noteFilename(this.dataset.articleTitle!);
+                link.dataset.noSwup = "";
+                document.body.append(link); link.click();
+                // WebKit starts downloads asynchronously. Keep the anchor and Blob
+                // available even if Swup removes this article immediately afterward.
+                window.setTimeout(() => { link.remove(); URL.revokeObjectURL(url); }, 60_000);
+            }, { signal });
+            document.addEventListener("keydown", event => {
+                if (panel.hidden || !panel.contains(document.activeElement)) return;
+                if (event.key === "Escape") { event.preventDefault(); close(); }
+                if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") { event.preventDefault(); dirty = true; save(); }
+            }, { signal });
+            window.addEventListener("pagehide", save, { signal });
+            unavailable.addEventListener("change", () => { if (unavailable.matches && desiredOpen) close(false, false); }, { signal });
+            document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") save(); }, { signal });
+            window.addEventListener("lulu:surface-change", event => { const surface = (event as CustomEvent<string>).detail; if ((surface === "info" || surface === "chat") && desiredOpen) close(false, false); }, { signal });
+            if (stored.error) setStatus(stored.error, true);
+            else if (stored.note.updatedAt) setStatus("已恢复本篇文章的本地笔记。");
+            updateCount();
+            this.cleanup = () => {
+                save(); lifetime.abort(); previewVersion++; window.clearTimeout(previewTimer);
+                panel.hidden = true; launcher.setAttribute("aria-expanded", "false");
+                articlePane.setAttribute("tabindex", "-1");
+                closePetSurface("notes");
+                delete this.dataset.open;
+                desiredOpen = false; releaseLauncher();
+            };
+        }
+    }
+    if (!customElements.get("reading-notes")) customElements.define("reading-notes", ReadingNotes);
+</script>

@@ -26,7 +26,7 @@ draft: false
   - [使用 apt 仓库安装](#使用-apt-仓库安装)
 - [GPU 驱动安装](#gpu-驱动安装)
 - [安装 NVIDIA Container Toolkit](#安装-nvidia-container-toolkit)
-- [拉取并运行 PyTorch Docker 镜像](#拉取并运行-pytorch-docker-镜像)
+- [拉取并运行深度学习 Docker 镜像](#拉取并运行深度学习-docker-镜像)
 
 ---
 
@@ -94,7 +94,7 @@ draft: false
 ---
 ## 常见报错
 
-- [解决常见报错](#解决常见报错)
+- [解决常见报错](#docker-常见报错)
   - [报错 1：权限被拒绝（Permission Denied）](#报错-1权限被拒绝permission-denied)
     - [方法 1：使用 sudo](#方法-1使用-sudo)
     - [方法 2：将用户添加到 docker 用户组](#方法-2将用户添加到-docker-用户组)
@@ -103,7 +103,6 @@ draft: false
     - [方法二：设置 HTTP/HTTPS 代理](#方法二设置-httphttps-代理)
   - [报错 3：磁盘空间不足（No Space Left on Device）](#报错-3磁盘空间不足no-space-left-on-device)
     - [更改 Docker 的数据目录](#更改-docker-的数据目录)
-- [参考链接](#参考链接)
 
 ---
 
@@ -111,7 +110,7 @@ draft: false
 
 > 版本说明：
 > - **base** 版本基于 `pytorch/pytorch:2.5.1-cuda11.8-cudnn9-devel`，默认 `python` 版本为 3.11.10，可以通过 `conda install python==版本号` 直接修改版本。
-> - **dl** 版本在 **base** 基础上，额外安装了深度学习框架和常用工具，具体查看[安装清单](#安装)。
+> - **dl** 版本在 **base** 基础上，额外安装了深度学习框架和常用工具，具体查看[安装清单](#安装清单)。
 > 
 > 如果已经配置好了Docker，只需两行命令即可完成深度学习环境的搭建。命令在 Ubuntu 18.04/20.04/22.04 下可以顺利执行，其余系统可通过文内链接跳转安装。
 

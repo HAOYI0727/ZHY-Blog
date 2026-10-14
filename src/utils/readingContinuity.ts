@@ -1,3 +1,6 @@
+import { readingPosition, scrollReadingTo } from "@utils/reading-viewport";
+import { isArticlePath } from "@utils/storage";
+
 const STORAGE_KEY = "twilight:reading-progress:v1";
 const MIN_RESUMABLE_PROGRESS = 0.02;
 const COMPLETED_PROGRESS = 0.96;
@@ -10,16 +13,18 @@ type ReadingRecord = {
     updatedAt: number;
 };
 
-function readRecord(): ReadingRecord | null {
+export function readRecord(): ReadingRecord | null {
     try {
         const value = localStorage.getItem(STORAGE_KEY);
         if (!value) return null;
         const record = JSON.parse(value) as Partial<ReadingRecord>;
         if (
-            typeof record.url !== "string" ||
+            !record || !isArticlePath(record.url) ||
             typeof record.title !== "string" ||
             typeof record.progress !== "number" ||
             typeof record.updatedAt !== "number" ||
+            !Number.isFinite(record.progress) || !Number.isFinite(record.updatedAt) ||
+            record.updatedAt > Date.now() + 60_000 ||
             record.progress < MIN_RESUMABLE_PROGRESS ||
             record.progress >= COMPLETED_PROGRESS ||
             Date.now() - record.updatedAt > MAX_AGE_MS
@@ -97,6 +102,7 @@ export function initReadingContinuity() {
     let lastProgress = 0;
     let lastStoredAt = 0;
     let ticking = false;
+    let updateFrame = 0;
 
     const resetProgressBar = () => {
         if (progressFill) progressFill.style.transform = "scaleX(0)";
@@ -130,9 +136,8 @@ export function initReadingContinuity() {
             return;
         }
 
-        const articleTop = article.getBoundingClientRect().top + window.scrollY;
-        const readableDistance = Math.max(article.offsetHeight - window.innerHeight, 1);
-        const rawProgress = (window.scrollY - articleTop) / readableDistance;
+        const { offset, distance } = readingPosition(article);
+        const rawProgress = offset / distance;
         lastProgress = Math.min(Math.max(rawProgress, 0), 1);
         const percentage = Math.round(lastProgress * 100);
         progressFill.style.transform = `scaleX(${lastProgress})`;
@@ -152,10 +157,10 @@ export function initReadingContinuity() {
     };
 
     const requestUpdate = () => {
-        if (ticking) return;
+        if (ticking || signal.aborted) return;
         ticking = true;
-        window.requestAnimationFrame(() => {
-            update();
+        updateFrame = window.requestAnimationFrame(() => {
+            if (!signal.aborted) update();
             ticking = false;
         });
     };
@@ -164,6 +169,8 @@ export function initReadingContinuity() {
 
     if (article) {
         window.addEventListener("scroll", requestUpdate, { passive: true, signal });
+        article.closest("[data-notes-article]")?.addEventListener("scroll", requestUpdate, { passive: true, signal });
+        window.addEventListener("reading:layout-change", requestUpdate, { signal });
         window.addEventListener("resize", requestUpdate, { passive: true, signal });
         window.addEventListener("pagehide", () => update(true), { signal });
         document.addEventListener("visibilitychange", () => {
@@ -174,9 +181,8 @@ export function initReadingContinuity() {
         if (shouldResume && stored) {
             // Wait for layout and persisted assets before translating the saved ratio back to a pixel position.
             window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-                const articleTop = article.getBoundingClientRect().top + window.scrollY;
-                const readableDistance = Math.max(article.offsetHeight - window.innerHeight, 1);
-                window.scrollTo({ top: articleTop + readableDistance * stored.progress, behavior: "auto" });
+                if (signal.aborted) return;
+                scrollReadingTo(article, stored.progress);
                 const cleanUrl = `${window.location.pathname}${window.location.hash}`;
                 window.history.replaceState(window.history.state, "", cleanUrl);
                 update();
@@ -191,6 +197,7 @@ export function initReadingContinuity() {
     window.__twilightReadingContinuityCleanup = () => {
         if (article) update(true);
         controller.abort();
+        window.cancelAnimationFrame(updateFrame);
         resetProgressBar();
         window.__twilightReadingContinuityCleanup = undefined;
     };

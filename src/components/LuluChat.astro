@@ -1,0 +1,233 @@
+<lulu-chat id="lulu-ai-chat" hidden data-pagefind-ignore class="ignore" role="dialog" aria-labelledby="lulu-chat-title">
+    <header>
+        <img data-chat-avatar src="/lulu/lulu-1.png" alt="" />
+        <div><strong id="lulu-chat-title">噜噜 · 网站向导</strong><small>免费 AI · 陪你发现网站</small></div>
+        <button type="button" data-chat-close aria-label="关闭看板娘聊天">×</button>
+    </header>
+    <div class="chat-personas" role="group" aria-label="选择聊天伙伴">
+        <button type="button" data-chat-persona="lulu" aria-pressed="true">🍊 噜噜</button>
+        <button type="button" data-chat-persona="nailong" aria-pressed="false">🌿 奶龙</button>
+        <button type="button" data-chat-clear>清空对话</button>
+    </div>
+    <nav aria-label="网站快捷入口"><a href="/posts/">文章</a><a href="/archive/">归档</a><a href="/albums/">相册</a><a href="/exhibition/">展览</a></nav>
+    <div class="chat-messages" data-chat-messages role="log" aria-label="看板娘聊天记录" aria-live="polite"></div>
+    <div class="chat-prompts">
+        <button type="button" data-chat-prompt="带我逛逛这个网站，有哪些功能？">带我逛逛</button>
+        <button type="button" data-chat-prompt="如何搜索文章和使用 AI 总结？">怎么找文章</button>
+        <button type="button" data-chat-prompt="推荐几篇 AI Agent 入门文章">AI Agent 入门</button>
+    </div>
+    <p class="chat-status" data-chat-status role="status"></p>
+    <form>
+        <label class="sr-only" for="lulu-chat-question">向看板娘提问</label>
+        <textarea id="lulu-chat-question" rows="2" maxlength="2000" placeholder="想了解什么？问问我吧…"></textarea>
+        <div class="chat-actions"><small>Enter 发送 · Shift + Enter 换行</small><button type="button" data-chat-stop hidden>停止</button><button type="submit">发送</button></div>
+    </form>
+    <p class="chat-footnote">GLM-4.7-Flash · AI 回答仅供参考</p>
+</lulu-chat>
+
+<style>
+    lulu-chat { position: fixed; z-index: 90; left: max(1rem, env(safe-area-inset-left)); bottom: max(7.5rem, env(safe-area-inset-bottom)); width: min(370px, calc(100vw - 2rem)); height: min(560px, calc(100dvh - 8.5rem)); display: flex; flex-direction: column; overflow: hidden; border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent); border-radius: 1.25rem; background: var(--card-bg, #fff); color: var(--text-color); box-shadow: 0 12px 45px rgb(0 0 0 / 25%); font-size: .8rem; }
+    lulu-chat[hidden], [hidden] { display: none !important; }
+    header, .chat-personas, nav, .chat-prompts, .chat-status, form, .chat-footnote { flex-shrink: 0; }
+    header { display: flex; align-items: center; gap: .65rem; padding: .75rem .9rem; background: color-mix(in srgb, var(--primary) 10%, var(--card-bg)); }
+    header img { width: 42px; height: 42px; object-fit: contain; }
+    header div { flex: 1; } header strong { display: block; font-size: .92rem; } header small { display: block; opacity: .65; margin-top: .12rem; }
+    button { border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); border-radius: .6rem; padding: .4rem .65rem; background: color-mix(in srgb, var(--primary) 7%, transparent); color: inherit; font: inherit; cursor: pointer; }
+    button:hover, a:hover { background: color-mix(in srgb, var(--primary) 17%, transparent); }
+    button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    button:disabled { opacity: .5; cursor: wait; }
+    header button { border: 0; font-size: 1.4rem; padding: .1rem .5rem; }
+    .chat-personas { display: flex; align-items: center; gap: .35rem; padding: .65rem .85rem .4rem; }
+    .chat-personas button[aria-pressed="true"] { border-color: var(--primary); color: var(--primary); }
+    .chat-personas [data-chat-clear] { margin-left: auto; border: 0; background: none; opacity: .65; font-size: .7rem; padding-inline: .25rem; }
+    nav { display: flex; gap: .5rem; padding: .15rem .85rem .55rem; border-bottom: 1px solid color-mix(in srgb, var(--primary) 12%, transparent); }
+    nav a { color: var(--primary); padding: .12rem .35rem; border-radius: .3rem; font-size: .7rem; }
+    .chat-messages { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: .85rem; }
+    .chat-messages :global(.chat-bubble) { margin-bottom: .7rem; padding: .65rem .75rem; border-radius: .85rem .85rem .85rem .2rem; background: color-mix(in srgb, var(--primary) 7%, transparent); line-height: 1.7; overflow-wrap: anywhere; }
+    .chat-messages :global(.chat-bubble--user) { margin-left: 1.7rem; background: color-mix(in srgb, var(--primary) 14%, transparent); border-radius: .85rem .85rem .2rem .85rem; }
+    .chat-messages :global(.chat-bubble strong) { display: block; color: var(--primary); font-size: .69rem; margin-bottom: .2rem; }
+    .chat-messages :global(.chat-text) { white-space: pre-wrap; }
+    .chat-messages :global(.chat-streaming .chat-text::after) { content: "▍"; color: var(--primary); animation: chat-pulse .9s ease-in-out infinite; }
+    .chat-messages :global(.chat-wait) { display: flex; align-items: center; gap: .3rem; opacity: .75; font-size: .75rem; }
+    .chat-messages :global(.chat-wait i) { width: 5px; height: 5px; border-radius: 50%; background: var(--primary); animation: chat-pulse 1s ease-in-out infinite; }
+    .chat-messages :global(.chat-wait i:nth-child(2)) { animation-delay: .15s; }
+    .chat-messages :global(.chat-wait i:nth-child(3)) { animation-delay: .3s; }
+    .chat-messages :global(.chat-note) { display: block; font-size: .7rem; opacity: .65; border-top: 1px dashed color-mix(in srgb, var(--primary) 25%, transparent); margin-top: .4rem; padding-top: .3rem; }
+    .chat-messages :global(.chat-links) { display: flex; flex-direction: column; gap: .35rem; margin-top: .5rem; }
+    .chat-messages :global(.chat-links a) { padding: .3rem .5rem; border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); border-radius: .5rem; color: var(--primary); font-size: .72rem; }
+    .chat-prompts { display: flex; flex-wrap: wrap; gap: .35rem; padding: .35rem .85rem; }
+    .chat-prompts button { font-size: .68rem; padding: .3rem .5rem; }
+    .chat-status { min-height: 1.1rem; font-size: .7rem; opacity: .8; margin: .15rem .9rem .35rem; }
+    .chat-status[data-error="true"] { color: #e36a6a; opacity: 1; }
+    form { padding: 0 .85rem; }
+    textarea { width: 100%; resize: none; border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent); border-radius: .7rem; padding: .5rem .65rem; font: inherit; line-height: 1.5; color: inherit; background: color-mix(in srgb, var(--primary) 4%, transparent); }
+    .chat-actions { display: flex; align-items: center; gap: .4rem; margin-top: .4rem; }
+    .chat-actions small { flex: 1; font-size: .63rem; opacity: .6; }
+    .chat-actions button[type="submit"] { background: var(--primary); color: var(--card-bg); border-color: var(--primary); }
+    .chat-footnote { margin: .4rem .85rem .6rem; font-size: .62rem; text-align: center; opacity: .5; }
+    lulu-chat.chat-compact { overflow-y: auto; overscroll-behavior: contain; }
+    lulu-chat.chat-compact .chat-messages { flex: none; min-height: 5rem; max-height: 35dvh; }
+    lulu-chat.chat-compact .chat-prompts { display: none; }
+    @keyframes chat-pulse { 50% { opacity: .2; } }
+    @media (max-height: 580px) { lulu-chat { bottom: .5rem; height: calc(100dvh - 1rem); } }
+    @media (prefers-reduced-motion: reduce) { .chat-messages :global(.chat-streaming .chat-text::after), .chat-messages :global(.chat-wait i) { animation: none; } }
+</style>
+
+<script>
+    import { plainAIText, MAX_HISTORY_LENGTH, type AIMessage, type AILink } from "@utils/ai";
+    import { sseData } from "@utils/sse";
+    import { positionPetPanel } from "@utils/pet-chat-layout";
+    import { activatePetSurface, closePetSurface, type PetSurface } from "@utils/pet-surfaces";
+    type Persona = "lulu" | "nailong";
+    type Bubble = { role: "user" | "model"; text: string; links?: AILink[]; incomplete?: boolean };
+    const names = { lulu: "噜噜", nailong: "奶龙" };
+    class LuluChat extends HTMLElement {
+        private initialized = false;
+        private lifetime = new AbortController();
+        private persona: Persona = "lulu";
+        private controller?: AbortController;
+        private activeAnswer?: Bubble;
+        private conversations: Record<Persona, Bubble[]> = { lulu: [], nailong: [] };
+        private histories: Record<Persona, AIMessage[]> = { lulu: [], nailong: [] };
+        private drafts = { lulu: "", nailong: "" };
+        disconnectedCallback() { this.controller?.abort(); this.lifetime.abort(); }
+        connectedCallback() {
+            if (this.initialized) return;
+            this.initialized = true;
+            const log = this.querySelector<HTMLElement>("[data-chat-messages]")!;
+            const input = this.querySelector<HTMLTextAreaElement>("textarea")!;
+            const status = this.querySelector<HTMLElement>("[data-chat-status]")!;
+            const stopButton = this.querySelector<HTMLButtonElement>("[data-chat-stop]")!;
+            const trigger = () => document.querySelector<HTMLButtonElement>("[data-lulu-chat-toggle]");
+            const position = () => {
+                if (this.hidden) return;
+                const layout = positionPetPanel(this, { width: 370, height: 560 });
+                if (!layout) return;
+                this.classList.toggle("chat-compact", layout.height < 420);
+            };
+            window.addEventListener("resize", position, { signal: this.lifetime.signal });
+            window.visualViewport?.addEventListener("resize", position, { signal: this.lifetime.signal });
+            window.visualViewport?.addEventListener("scroll", position, { signal: this.lifetime.signal });
+            window.addEventListener("lulu:position-change", position, { signal: this.lifetime.signal });
+            const setStatus = (text: string, error = false) => { status.textContent = text; status.dataset.error = String(error); };
+            const setBusy = (busy: boolean) => {
+                this.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled = busy;
+                this.querySelectorAll<HTMLButtonElement>("[data-chat-prompt]").forEach(button => button.disabled = busy);
+                input.disabled = busy; stopButton.hidden = !busy; log.setAttribute("aria-live", busy ? "off" : "polite");
+            };
+            const append = (bubble: Bubble) => {
+                const node = document.createElement("div"); node.className = `chat-bubble chat-bubble--${bubble.role}`;
+                const author = document.createElement("strong"); author.textContent = bubble.role === "user" ? "你" : names[this.persona];
+                const content = document.createElement("span"); content.className = "chat-text"; content.textContent = plainAIText(bubble.text);
+                node.append(author, content);
+                if (bubble.incomplete) { const note = document.createElement("small"); note.className = "chat-note"; note.textContent = "回答未完成，可以重新发送问题。"; node.append(note); }
+                if (bubble.links?.length) {
+                    const links = document.createElement("div"); links.className = "chat-links";
+                    for (const item of bubble.links) {
+                        // Only server-provided relative destinations become links; model output remains text.
+                        if (!/^\/(?!\/)/.test(item.url) || item.url.includes("\\")) continue;
+                        const link = document.createElement("a"); link.href = item.url; link.textContent = `↗ ${item.title}`; links.append(link);
+                    }
+                    node.append(links);
+                }
+                log.append(node); return { node, content };
+            };
+            const render = () => {
+                log.replaceChildren();
+                append({ role: "model", text: `你好呀，我是${names[this.persona]}${this.persona === "lulu" ? " 🍊" : " 🌿"}！想找文章、了解网站功能，或者随便聊聊，都可以问我。` });
+                this.conversations[this.persona].forEach(append); log.scrollTop = log.scrollHeight;
+            };
+            const stop = () => {
+                if (!this.controller) return;
+                this.controller.abort(); this.controller = undefined;
+                if (this.activeAnswer) this.activeAnswer.incomplete = true;
+                this.activeAnswer = undefined; setBusy(false); render(); setStatus("已停止生成，可以继续提问。");
+            };
+            const choose = (persona: Persona) => {
+                if (persona === this.persona) return;
+                stop(); this.drafts[this.persona] = input.value; this.persona = persona;
+                input.value = this.drafts[persona]; setStatus(""); render();
+                this.querySelector<HTMLElement>("#lulu-chat-title")!.textContent = `${names[persona]} · 网站向导`;
+                this.querySelector<HTMLImageElement>("[data-chat-avatar]")!.src = `/lulu/${persona === "lulu" ? "lulu" : "nailong"}-1.png`;
+                this.querySelectorAll<HTMLButtonElement>("[data-chat-persona]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.chatPersona === persona)));
+            };
+            const close = (focus = true) => {
+                stop(); this.hidden = true; trigger()?.setAttribute("aria-expanded", "false");
+                closePetSurface("chat"); if (focus) trigger()?.focus();
+            };
+            window.addEventListener("lulu:surface-change", event => {
+                if ((event as CustomEvent<PetSurface>).detail !== "chat" && !this.hidden) close(false);
+            }, { signal: this.lifetime.signal });
+            window.addEventListener("lulu:chat-open", event => {
+                const detail = (event as CustomEvent<{ persona: Persona; message?: string }>).detail;
+                activatePetSurface("chat"); stop(); choose(detail.persona); this.hidden = false; position();
+                trigger()?.setAttribute("aria-expanded", "true"); input.focus();
+                if (detail.message) { input.value = detail.message.slice(0, 2000); form.requestSubmit(); }
+            }, { signal: this.lifetime.signal });
+            window.addEventListener("lulu:persona-change", event => choose((event as CustomEvent<Persona>).detail), { signal: this.lifetime.signal });
+            window.addEventListener("lulu:hide", () => close(false), { signal: this.lifetime.signal });
+            document.addEventListener("keydown", event => { if (event.key === "Escape" && !this.hidden) { event.preventDefault(); close(); } }, { signal: this.lifetime.signal });
+            this.querySelector("[data-chat-close]")!.addEventListener("click", () => close());
+            stopButton.addEventListener("click", stop);
+            this.querySelector("[data-chat-clear]")!.addEventListener("click", () => {
+                stop(); this.conversations[this.persona] = []; this.histories[this.persona] = []; input.value = ""; this.drafts[this.persona] = ""; render(); setStatus("对话已清空。"); input.focus();
+            });
+            this.querySelectorAll<HTMLButtonElement>("[data-chat-persona]").forEach(button => button.addEventListener("click", () => {
+                window.dispatchEvent(new CustomEvent("lulu:choose-persona", { detail: button.dataset.chatPersona }));
+            }));
+            const form = this.querySelector<HTMLFormElement>("form")!;
+            this.querySelectorAll<HTMLButtonElement>("[data-chat-prompt]").forEach(button => button.addEventListener("click", () => { input.value = button.dataset.chatPrompt!; form.requestSubmit(); }));
+            input.addEventListener("keydown", event => { if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); form.requestSubmit(); } });
+            form.addEventListener("submit", async event => {
+                event.preventDefault(); const message = input.value.trim(); if (!message || this.controller) return;
+                const persona = this.persona;
+                const controller = new AbortController(); this.controller = controller;
+                const answer: Bubble = { role: "model", text: "" }; this.activeAnswer = answer;
+                this.conversations[persona].push({ role: "user", text: message }, answer);
+                this.conversations[persona] = this.conversations[persona].slice(-40);
+                append({ role: "user", text: message }); const { node, content } = append(answer);
+                const waiting = document.createElement("span"); waiting.className = "chat-wait";
+                for (let i = 0; i < 3; i++) { const dot = document.createElement("i"); dot.setAttribute("aria-hidden", "true"); waiting.append(dot); }
+                waiting.append(document.createTextNode(`${names[persona]}正在思考…`)); node.append(waiting);
+                setBusy(true); setStatus("正在连接免费模型…"); log.scrollTop = log.scrollHeight;
+                const timer = window.setTimeout(() => controller.abort(), 105_000);
+                try {
+                    const response = await fetch("/api/ai/", {
+                        method: "POST", headers: { "content-type": "application/json" }, signal: controller.signal,
+                        body: JSON.stringify({ action: "pet", persona, message, currentPath: window.location.pathname, stream: true, history: this.histories[persona].slice(-MAX_HISTORY_LENGTH) }),
+                    });
+                    if (!response.ok || !response.body || !response.headers.get("content-type")?.includes("text/event-stream")) {
+                        const error = await response.json().catch(() => ({})); throw new Error(error.error || "聊天暂不可用，请稍后重试。");
+                    }
+                    let finished = false;
+                    for await (const frame of sseData(response.body)) {
+                        if (this.controller !== controller) break;
+                        const chunk = JSON.parse(frame) as { type: string; text?: string; error?: string; links?: AILink[] };
+                        if (chunk.type === "error") throw new Error(chunk.error || "回答中断，请重试。");
+                        if (chunk.type === "delta" && chunk.text) {
+                            const follow = log.scrollHeight - log.scrollTop - log.clientHeight < 64;
+                            answer.text += chunk.text; content.textContent = plainAIText(answer.text); waiting.hidden = true; node.classList.add("chat-streaming"); setStatus("正在生成回答…");
+                            if (follow) log.scrollTop = log.scrollHeight;
+                        }
+                        if (chunk.type === "done" && chunk.text) {
+                            answer.text = chunk.text; answer.links = chunk.links;
+                            this.histories[persona].push({ role: "user", text: message }, { role: "model", text: answer.text.slice(0, 6000) });
+                            this.histories[persona] = this.histories[persona].slice(-MAX_HISTORY_LENGTH);
+                            input.value = ""; this.drafts[persona] = ""; finished = true; render(); setStatus("回答已完成。"); break;
+                        }
+                    }
+                    if (!finished && this.controller === controller) throw new Error("回答传输中断，请重试。");
+                } catch (error) {
+                    if (this.controller !== controller) return;
+                    answer.incomplete = true; render();
+                    setStatus(controller.signal.aborted ? "等待超时，请稍后重试。" : error instanceof Error ? error.message : "连接失败，请稍后重试。", true);
+                } finally {
+                    window.clearTimeout(timer);
+                    if (this.controller === controller) { this.controller = undefined; this.activeAnswer = undefined; setBusy(false); }
+                }
+            });
+            render();
+        }
+    }
+    if (!customElements.get("lulu-chat")) customElements.define("lulu-chat", LuluChat);
+</script>

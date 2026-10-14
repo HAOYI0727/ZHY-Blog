@@ -4,6 +4,7 @@
  */
 import { onMount } from "svelte";
 import { getIconSvg, hasIcon } from "@utils/icons";
+import { scopeSvgIds } from "@utils/svg-ids";
 
 
 interface Props {
@@ -38,10 +39,12 @@ const combinedStyle = $derived(`${colorStyle}${style}`);
 const combinedClass = $derived(`${sizeClass} ${className}`.trim());
 
 // 获取内联 SVG
-const svgContent = $derived(getIconSvg(icon));
+const iconId = $props.id();
+const svgContent = $derived(scopeSvgIds(getIconSvg(icon) || "", iconId));
 const iconExists = $derived(hasIcon(icon));
 
 let remoteSvg = $state("");
+const scopedRemoteSvg = $derived(scopeSvgIds(remoteSvg, iconId));
 
 onMount(() => {
     if (!iconExists) {
@@ -74,7 +77,7 @@ onMount(() => {
         style={combinedStyle}
         aria-hidden="true"
     >
-        {@html remoteSvg}
+        {@html scopedRemoteSvg}
     </span>
 {:else}
     <span

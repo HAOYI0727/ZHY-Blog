@@ -1,3 +1,4 @@
+import { readingScroller, scrollReadingHeading } from "@utils/reading-viewport";
 import { NAVBAR_HEIGHT, NAVBAR_GAP } from "@constants/constants";
 import { widgetManager } from "@utils/widget";
 
@@ -59,7 +60,8 @@ export class TableOfContents extends HTMLElement {
         for (let i = 0; i < this.headings.length; i++) {
             const heading = this.headings[i];
             const rect = heading.getBoundingClientRect();
-            if (rect.top < 100) {
+            const pane = readingScroller(heading);
+            if (rect.top < (pane ? pane.getBoundingClientRect().top + 16 : 100)) {
                 activeIdx = i;
             } else {
                 break;
@@ -145,6 +147,8 @@ export class TableOfContents extends HTMLElement {
             .find((element) => element instanceof HTMLAnchorElement);
 
         if (anchor) {
+            const click = event as MouseEvent;
+            if (click.metaKey || click.ctrlKey || click.shiftKey || click.altKey || ("button" in click && click.button !== 0)) return;
             event.preventDefault();
             const id = decodeURIComponent(anchor.hash?.substring(1));
             const targetElement = document.getElementById(id);
@@ -152,10 +156,7 @@ export class TableOfContents extends HTMLElement {
                 const navbarHeight = parseInt(this.dataset.navbarHeight || NAVBAR_HEIGHT.toString());
                 const gap = NAVBAR_GAP * 16; // Convert rem to px
                 const targetTop = targetElement.getBoundingClientRect().top + window.scrollY - navbarHeight - gap;
-                window.scrollTo({
-                    top: targetTop,
-                    behavior: "smooth"
-                });
+                if (!scrollReadingHeading(targetElement)) window.scrollTo({ top: targetTop, behavior: "smooth" });
             }
             const idx = this.headingIdxMap.get(id);
             if (idx !== undefined) {
@@ -265,7 +266,7 @@ export class TableOfContents extends HTMLElement {
                 const badgeContent = heading.depth === minDepth ? (heading1Count++) :
                     heading.depth === minDepth + 1 ? '<div class="transition w-2 h-2 rounded-[0.1875rem] bg-(--toc-badge-bg)"></div>' :
                     '<div class="transition w-1.5 h-1.5 rounded-xs bg-black/5 dark:bg-white/10"></div>';
-                return `<a href="#${heading.slug}" class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-(--toc-btn-hover) active:bg-(--toc-btn-active) py-2">
+                return `<a data-no-swup href="#${heading.slug}" class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-(--toc-btn-hover) active:bg-(--toc-btn-active) py-2">
                     <div class="transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold ${depthClass} ${heading.depth === minDepth ? 'bg-(--toc-badge-bg) text-(--btn-content)' : ''}">
                         ${badgeContent}
                     </div>
@@ -288,7 +289,10 @@ export class TableOfContents extends HTMLElement {
 
         if (!this.regenerateTOC()) return;
 
-        this.tocEl = this.querySelector('.toc-scroll-container');
+        this.tocEl?.removeEventListener("click", this.handleAnchorClick, { capture: true });
+        this.tocEl = this.dataset.isFloating === "true"
+            ? this.querySelector('.toc-floating-panel')
+            : this.closest('.toc-scroll-container');
         this.tocEl?.addEventListener("click", this.handleAnchorClick, { capture: true });
 
         this.activeIndicator = this.querySelector(".active-indicator");
@@ -407,7 +411,7 @@ export class TableOfContents extends HTMLElement {
         this.headings.forEach((heading) => this.observer.unobserve(heading));
         this.observer.disconnect();
         this._backToTopObserver?.disconnect();
-        this.tocEl?.removeEventListener("click", this.handleAnchorClick);
+        this.tocEl?.removeEventListener("click", this.handleAnchorClick, { capture: true });
         
         const btn = this.querySelector('.toc-floating-btn');
         btn?.removeEventListener('click', this._handleBtnClick);

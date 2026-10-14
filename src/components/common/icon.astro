@@ -4,6 +4,7 @@
  * 如果静态数据中不存在，则回退到运行时 iconify-icon (不推荐)
  */
 import { getIconSvg, hasIcon } from "@utils/icons";
+import { nextSvgInstance, scopeSvgIds } from "@utils/svg-ids";
 
 
 export interface Props {
@@ -40,7 +41,7 @@ const colorStyle = color ? `color: ${color};` : "";
 const combinedStyle = `${colorStyle}${style}`;
 const combinedClass = `${sizeClass} ${className}`.trim();
 
-const staticSvg = getIconSvg(icon);
+const staticSvg = scopeSvgIds(getIconSvg(icon) || "", nextSvgInstance(Astro.request));
 const isStatic = hasIcon(icon);
 ---
 

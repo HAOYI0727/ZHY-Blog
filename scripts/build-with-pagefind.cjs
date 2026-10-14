@@ -1,7 +1,7 @@
 /* This is a script to build the site with Pagefind */
 
 const { execFileSync } = require('child_process');
-const { existsSync } = require('fs');
+const { cpSync, existsSync } = require('fs');
 const { join, resolve } = require('path');
 
 function runLocalBinary(command, args) {
@@ -81,6 +81,14 @@ function main() {
         console.log(`🔍 Running Pagefind search index generation...`);
         runLocalBinary('pagefind', ['--site', outputDir]);
 
+        // Local builds use dist/client, while `vercel --prebuilt` deploys the
+        // adapter's static copy. Both outputs must contain the search index.
+        const vercelStaticDir = resolve('.vercel/output/static');
+        if (platform === 'default' && existsSync(join(vercelStaticDir, 'index.html'))) {
+            cpSync(join(outputDir, 'pagefind'), join(vercelStaticDir, 'pagefind'), { recursive: true });
+            console.log('🔍 Search index copied to Vercel static output.');
+        }
+
         console.log('🧭 Verifying reader-facing UI features...');
         execFileSync(process.execPath, [resolve('scripts', 'check-ui-features.cjs'), outputDir], {
             stdio: 'inherit',
@@ -99,6 +107,10 @@ function main() {
             cwd: process.cwd(),
         });
 
+        execFileSync(process.execPath, [resolve('scripts', 'check-html-integrity.cjs'), outputDir], {
+            stdio: 'inherit',
+            cwd: process.cwd(),
+        });
         console.log('✅ Build completed!');
         console.log(`📊 Search index generated at: ${outputDir}/pagefind/`);
 

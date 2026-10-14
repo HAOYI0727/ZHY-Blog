@@ -65,6 +65,16 @@ export default defineConfig({
         },
     },
     integrations: [
+        {
+            name: "static-host-api-fallback",
+            hooks: {
+                "astro:route:setup": ({ route }) => {
+                    // GitHub Pages can serve the blog, but cannot run POST APIs.
+                    // Emit a helpful GET response instead of failing the whole build.
+                    if (process.env.GITHUB_ACTIONS && route.component.startsWith("src/pages/api/")) route.prerender = true;
+                },
+            },
+        },
         decapCmsOauth({
             configPath: "./.decap.yml", // Path to the Decap CMS configuration file
             decapCMSVersion: "3.9.0",
@@ -231,14 +241,20 @@ export default defineConfig({
         ],
     },
     vite: {
+        define: { "import.meta.env.STATIC_HOSTING": Boolean(process.env.GITHUB_ACTIONS) },
+        esbuild: { drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [] },
         plugins: [tailwindcss()],
+        server: {
+            watch: {
+                // Build output must never trigger development HMR. In particular,
+                // Vercel copies hundreds of pages while the dev server is running.
+                ignored: ["**/.vercel/**", "**/.netlify/**", "**/dist/**"],
+            },
+        },
         build: {
             cssCodeSplit: true,
             cssMinify: "esbuild",
             minify: "esbuild",
-            esbuildOptions: {
-                drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
-            },
             rollupOptions: {
                 onwarn(warning, warn) {
                     if (

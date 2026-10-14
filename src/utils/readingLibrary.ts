@@ -1,15 +1,28 @@
+import { isArticlePath } from "@utils/storage";
+
 const STORAGE_KEY = "twilight:reading-library:v1";
 const MAX_ITEMS = 200;
 
 type LibraryItem = { url: string; title: string; updatedAt: number };
 type LibraryState = { bookmarks: LibraryItem[]; read: LibraryItem[] };
 
-function readState(): LibraryState {
+function validItems(value: unknown): LibraryItem[] {
+    if (!Array.isArray(value)) return [];
+    const seen = new Set<string>();
+    return value.filter((item): item is LibraryItem => {
+        if (!item || !isArticlePath(item.url) || typeof item.title !== "string" ||
+            !Number.isFinite(item.updatedAt) || item.updatedAt < 0 || seen.has(item.url)) return false;
+        seen.add(item.url);
+        return true;
+    }).slice(0, MAX_ITEMS);
+}
+
+export function readState(): LibraryState {
     try {
         const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") as Partial<LibraryState>;
         return {
-            bookmarks: Array.isArray(parsed.bookmarks) ? parsed.bookmarks : [],
-            read: Array.isArray(parsed.read) ? parsed.read : [],
+            bookmarks: validItems(parsed?.bookmarks),
+            read: validItems(parsed?.read),
         };
     } catch {
         return { bookmarks: [], read: [] };

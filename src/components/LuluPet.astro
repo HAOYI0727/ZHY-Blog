@@ -1,11 +1,17 @@
+---
+import LuluChat from "./LuluChat.astro";
+---
 <aside class="lulu-pet" data-lulu-pet data-lulu-persona="lulu" aria-label="看板娘">
-    <button class="lulu-dialog" data-lulu-dialog type="button" aria-label="点击切换对话" aria-live="polite"></button>
-
     <button class="lulu-close" data-lulu-close type="button" aria-label="暂时隐藏看板娘" title="暂时隐藏看板娘">×</button>
     <button class="lulu-info-toggle" data-lulu-info-toggle type="button" aria-label="查看看板娘信息" aria-controls="lulu-info-panel" aria-expanded="false" title="查看看板娘信息">ⓘ</button>
+    <button class="lulu-chat-toggle" data-lulu-chat-toggle type="button" aria-label="和噜噜聊天" aria-controls="lulu-ai-chat" aria-expanded="false" title="和看板娘聊天">💬</button>
     <button class="lulu-character" data-lulu-character type="button" aria-label="拖动或和看板娘互动" title="按住角色拖动，点击可以切换形象">
         <img class="lulu-body" data-lulu-image src="/lulu/lulu-1.png" alt="看板娘" draggable="false" />
     </button>
+
+</aside>
+
+<button class="lulu-dialog" data-lulu-dialog hidden type="button" aria-label="点击切换对话" aria-live="polite"></button>
 
     <section id="lulu-info-panel" class="lulu-panel" data-lulu-panel hidden aria-label="看板娘信息">
         <header class="lulu-panel-header">
@@ -24,13 +30,16 @@
         </dl>
         <p class="lulu-panel-tip" data-lulu-tip>慢慢浏览，发现一点有趣的东西吧～</p>
     </section>
-</aside>
 
 <button class="lulu-reopen" data-lulu-reopen type="button" aria-label="显示看板娘" title="显示看板娘">🍊</button>
 
+<LuluChat />
+
 <style>
     .lulu-pet,
-    .lulu-reopen {
+    .lulu-reopen,
+    .lulu-dialog,
+    .lulu-panel {
         --lulu-accent: #f39b36;
         --lulu-panel: color-mix(in srgb, var(--card-bg, #fff) 90%, transparent);
         position: fixed;
@@ -90,11 +99,11 @@
     }
 
     .lulu-dialog {
-        position: absolute;
-        left: 70%;
-        bottom: 80%;
-        width: max-content;
-        max-width: min(215px, 60vw);
+        position: fixed;
+        z-index: 81;
+        width: 215px;
+        overflow: auto;
+        overscroll-behavior: contain;
         padding: .55rem .7rem;
         border: 1.5px solid color-mix(in srgb, var(--primary) 58%, transparent);
         border-radius: 1rem 1rem 1rem .35rem;
@@ -116,6 +125,8 @@
         border-width: 1.5px;
         text-align: left;
     }
+
+    .lulu-dialog[hidden] { display: none; }
 
     .lulu-dialog.is-visible {
         opacity: 1;
@@ -177,12 +188,16 @@
     .lulu-info-toggle:focus-visible { opacity: 1; }
     .lulu-info-toggle:hover { transform: scale(1.1); }
 
+    .lulu-chat-toggle { position: absolute; top: 46%; right: -5px; z-index: 3; width: 2rem; height: 2rem; padding: 0; border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent); border-radius: 50%; background: var(--card-bg); box-shadow: 0 3px 12px rgb(0 0 0 / 15%); cursor: pointer; pointer-events: auto; font-size: 1rem; }
+    .lulu-chat-toggle:hover { transform: scale(1.08); }
+    .lulu-chat-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+
     .lulu-panel {
-        position: absolute;
-        left: 0;
-        bottom: calc(100% + .6rem);
-        z-index: 4;
-        width: min(16rem, 72vw);
+        position: fixed;
+        z-index: 90;
+        width: 16rem;
+        overflow: auto;
+        overscroll-behavior: contain;
         padding: .65rem;
         border: 1px solid color-mix(in srgb, var(--primary) 38%, transparent);
         border-radius: 1rem;
@@ -347,10 +362,10 @@
 
     @media (max-width: 768px) {
         .lulu-pet { width: 88px; bottom: max(.65rem, env(safe-area-inset-bottom)); }
-        .lulu-dialog { left: 50%; bottom: 88%; max-width: 155px; font-size: .70rem; }
+        .lulu-dialog { font-size: .70rem; }
         .lulu-close { top: 5%; }
         .lulu-info-toggle { top: 5%; right: 1.85rem; }
-        .lulu-panel { left: -.25rem; width: min(15rem, calc(100vw - 1.5rem)); }
+
     }
 
     @media (hover: none), (max-width: 768px) {
@@ -366,13 +381,16 @@
 </style>
 
 <script>
+    import { positionPetPanel } from "@utils/pet-chat-layout";
+    import { activatePetSurface, activePetSurface, closePetSurface, type PetSurface } from "@utils/pet-surfaces";
     const pet = document.querySelector<HTMLElement>('[data-lulu-pet]');
     const character = document.querySelector<HTMLElement>('[data-lulu-character]');
     const image = document.querySelector<HTMLImageElement>('[data-lulu-image]');
-    const dialog = document.querySelector('[data-lulu-dialog]');
+    const dialog = document.querySelector<HTMLButtonElement>('[data-lulu-dialog]');
     const close = document.querySelector('[data-lulu-close]');
     const reopen = document.querySelector('[data-lulu-reopen]');
     const infoToggle = document.querySelector<HTMLButtonElement>('[data-lulu-info-toggle]');
+    const chatToggle = document.querySelector<HTMLButtonElement>('[data-lulu-chat-toggle]');
     const panel = document.querySelector<HTMLElement>('[data-lulu-panel]');
     const panelClose = document.querySelector<HTMLButtonElement>('[data-lulu-panel-close]');
     const context = document.querySelector<HTMLElement>('[data-lulu-context]');
@@ -449,16 +467,25 @@
     persona = readStorage(personaStorageKey) === 'nailong' ? 'nailong' : 'lulu';
     let dialogueIndex = 0;
 
-    const speak = (text: string, duration = 3600) => {
-        if (!dialog) return;
-        dialog.textContent = text;
-        dialog.classList.add('is-visible');
+    const dismissDialogue = () => {
         window.clearTimeout(dialogTimer);
-        dialogTimer = window.setTimeout(() => dialog.classList.remove('is-visible'), duration);
+        if (dialog) { dialog.classList.remove('is-visible'); dialog.hidden = true; }
+    };
+    const positionTextSurfaces = () => {
+        if (panel && !panel.hidden) positionPetPanel(panel, { width: 256 });
+        if (dialog && !dialog.hidden) positionPetPanel(dialog, { width: window.innerWidth <= 768 ? 175 : 215 });
+    };
+    const speak = (text: string, duration = 3600) => {
+        if (!dialog || activePetSurface() !== 'none' || document.body.classList.contains('lulu-hidden')) return;
+        dialog.textContent = text; dialog.hidden = false;
+        positionTextSurfaces(); dialog.classList.add('is-visible');
+        window.clearTimeout(dialogTimer);
+        dialogTimer = window.setTimeout(dismissDialogue, duration);
     };
 
     const getDialogueState = () => (pet?.dataset.luluState as CharacterState) || 'idle';
     const nextDialogue = (duration = 3600) => {
+        if (activePetSurface() !== 'none') return;
         const lines = dialogueSets[persona][getDialogueState()];
         const text = lines[dialogueIndex % lines.length];
         dialogueIndex += 1;
@@ -491,6 +518,8 @@
         close?.setAttribute('aria-label', `暂时隐藏${personaNames[persona]}`);
         close?.setAttribute('title', `暂时隐藏${personaNames[persona]}`);
         infoToggle?.setAttribute('aria-label', `查看${personaNames[persona]}信息`);
+        chatToggle?.setAttribute('aria-label', `和${personaNames[persona]}聊天`);
+        chatToggle?.setAttribute('title', `和${personaNames[persona]}聊天`);
         panel?.setAttribute('aria-label', `${personaNames[persona]}信息`);
         panelClose?.setAttribute('aria-label', `关闭${personaNames[persona]}信息`);
         reopen?.setAttribute('aria-label', `显示看板娘${personaNames[persona]}`);
@@ -511,6 +540,8 @@
         dialogueIndex = 0;
         writeStorage(personaStorageKey, persona);
         updateAppearance();
+        positionTextSurfaces();
+        window.dispatchEvent(new CustomEvent('lulu:persona-change', { detail: persona }));
         if (announce) speak(persona === 'lulu' ? '噜噜回来啦～今天也请多多关照！🍊' : '奶龙来报到～一起去发现新鲜事吧！🌿', 3000);
     };
 
@@ -560,20 +591,31 @@
         const progress = total > 0 ? Math.round((window.scrollY / total) * 100) : 0;
         if (progressLabel) progressLabel.textContent = total > 0 ? `${Math.max(0, Math.min(100, progress))}%` : '当前页';
         if (tip) tip.textContent = state === 'reading' ? `慢慢读，${personaNames[persona]}会陪你把这一页看完～` : '慢慢浏览，发现一点有趣的东西吧～';
+        positionTextSurfaces();
     };
 
     const openPanel = () => {
         if (!panel) return;
+        activatePetSurface('info'); dismissDialogue();
         panel.hidden = false;
         infoToggle?.setAttribute('aria-expanded', 'true');
-        syncPageContext();
+        syncPageContext(); positionTextSurfaces();
     };
 
     const closePanel = () => {
         if (!panel) return;
         panel.hidden = true;
         infoToggle?.setAttribute('aria-expanded', 'false');
+        closePetSurface('info');
     };
+    window.addEventListener('lulu:surface-change', event => {
+        const next = (event as CustomEvent<PetSurface>).detail;
+        if (next !== 'none') dismissDialogue();
+        if (next !== 'info') closePanel();
+    });
+    window.addEventListener('lulu:position-change', positionTextSurfaces);
+    window.visualViewport?.addEventListener('resize', positionTextSurfaces);
+    window.visualViewport?.addEventListener('scroll', positionTextSurfaces);
 
     const resetIdleTimer = () => {
         window.clearTimeout(idleTimer);
@@ -631,6 +673,7 @@
         pet.style.top = `${Math.max(margin, Math.min(maxTop, top))}px`;
         pet.style.right = 'auto';
         pet.style.bottom = 'auto';
+        window.dispatchEvent(new Event('lulu:position-change'));
     };
 
     const restorePetPosition = () => {
@@ -692,7 +735,23 @@
             nextDialogue(3600);
         }
     });
-    infoToggle?.addEventListener('click', openPanel);
+    chatToggle?.addEventListener('click', () => {
+        if (activePetSurface() === 'chat') { activatePetSurface('none'); return; }
+        closePanel(); resetIdleTimer();
+        window.dispatchEvent(new CustomEvent('lulu:chat-open', { detail: { persona } }));
+    });
+    window.addEventListener('lulu:ask', event => {
+        const message = (event as CustomEvent<string>).detail;
+        if (typeof message !== 'string' || !message.trim()) return;
+        document.body.classList.remove('lulu-hidden'); removeStorage('lulu-hidden');
+        closePanel(); resetIdleTimer();
+        window.dispatchEvent(new CustomEvent('lulu:chat-open', { detail: { persona, message } }));
+    });
+    window.addEventListener('lulu:choose-persona', event => {
+        const next = (event as CustomEvent<Persona>).detail;
+        if (next === 'lulu' || next === 'nailong') setPersona(next);
+    });
+    infoToggle?.addEventListener('click', () => panel?.hidden ? openPanel() : closePanel());
     panelClose?.addEventListener('click', closePanel);
     personaButtons.forEach((button) => {
         button.addEventListener('click', () => {
@@ -703,7 +762,7 @@
     document.addEventListener('click', (event) => {
         if (!panel || panel.hidden) return;
         const target = event.target as Node;
-        if (!panel.contains(target) && !infoToggle?.contains(target)) closePanel();
+        if (!panel.contains(target) && !pet?.contains(target)) closePanel();
     });
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') closePanel();
@@ -719,11 +778,13 @@
     window.addEventListener('resize', () => {
         if (pet && pet.style.top && pet.style.left) setPetPosition(pet.offsetLeft, pet.offsetTop);
         updateInfo();
-        updateAppearance();
+        updateAppearance(); positionTextSurfaces();
     }, { passive: true });
     close?.addEventListener('click', () => {
+        activatePetSurface('none'); closePanel(); dismissDialogue();
         document.body.classList.add('lulu-hidden');
         writeStorage('lulu-hidden', '1');
+        window.dispatchEvent(new Event('lulu:hide'));
     });
     reopen?.addEventListener('click', () => {
         document.body.classList.remove('lulu-hidden');

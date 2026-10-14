@@ -1,0 +1,231 @@
+---
+import { Icon } from "astro-icon/components";
+interface Props { postId: string }
+const { postId } = Astro.props;
+---
+
+<ai-reader class="ai-reader" data-post-id={postId} data-pagefind-ignore>
+    <div class="ai-reader__header">
+        <div class="ai-reader__heading">
+            <span class="ai-reader__icon"><Icon name="material-symbols:auto-awesome-rounded" /></span>
+            <div><h2>AI 阅读助手</h2><p>先读重点，再深入理解</p></div>
+        </div>
+        <span class="ai-reader__badge">GLM-4.7-FLASH · 免费</span>
+    </div>
+    <div class="ai-reader__intro" data-ai-intro>用几句话抓住文章要点，也可以围绕这篇文章向 AI 提问。选中正文文字，可在段落旁讲解、举例或翻译；文末还可速查术语、复习自测。</div>
+    <div class="ai-reader__summary" data-ai-summary hidden></div>
+    <div class="ai-reader__actions">
+        <button type="button" class="ai-reader__primary" data-ai-generate><Icon name="material-symbols:auto-awesome-rounded" /><span data-ai-generate-label>生成文章总结</span></button>
+        <button type="button" data-ai-copy hidden><Icon name="material-symbols:content-copy-outline-rounded" /><span>复制总结</span></button>
+        <button type="button" data-ai-guide>规划阅读路线 ↗</button>
+        <button type="button" data-ai-stop hidden>停止生成</button>
+        <span class="ai-reader__source" data-ai-source></span>
+    </div>
+    <p class="ai-reader__status" role="status" aria-live="polite" data-ai-status></p>
+    <details class="ai-reader__chat">
+        <summary><span><Icon name="material-symbols:chat-bubble-outline-rounded" /> 向 AI 提问</span><span class="ai-reader__chat-hint">文章追问 · 简单聊天</span></summary>
+        <div class="ai-reader__chat-body">
+            <div class="ai-reader__suggestions">
+                <button type="button" data-ai-suggestion="用一个通俗的例子解释这篇文章最重要的概念。">举个通俗的例子</button>
+                <button type="button" data-ai-suggestion="阅读这篇文章需要哪些基础知识？">需要哪些基础？</button>
+                <button type="button" data-ai-suggestion="根据这篇文章，给我三个值得继续思考的问题。">还有什么值得思考？</button>
+            </div>
+            <div class="ai-reader__messages" role="log" aria-live="polite" aria-label="与 AI 的对话" data-ai-messages></div>
+            <form data-ai-form>
+                <label class="sr-only" for="ai-reader-question">向 AI 提问</label>
+                <textarea id="ai-reader-question" name="question" rows="2" maxlength="2000" required placeholder="问问文章里的概念，或和 AI 简单聊聊…"></textarea>
+                <div class="ai-reader__form-footer"><button type="button" data-ai-clear>清空对话</button><button type="submit" class="ai-reader__primary">发送 <Icon name="material-symbols:arrow-upward-rounded" /></button></div>
+            </form>
+        </div>
+    </details>
+    <p class="ai-reader__footnote">AI 生成内容仅供阅读参考，请以正文为准。点击后会将文章及问题发送至智谱 GLM。</p>
+</ai-reader>
+
+<style>
+    .ai-reader { display: block; margin: 0 0 1.75rem; padding: 1.25rem; border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line-divider)); border-radius: 1rem; background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 7%, var(--card-bg)), var(--card-bg)); color: var(--text-color); }
+    .ai-reader [hidden] { display: none !important; }
+    .ai-reader__header, .ai-reader__heading, .ai-reader__actions, .ai-reader__form-footer, summary, summary span { display: flex; align-items: center; }
+    .ai-reader__header { justify-content: space-between; gap: 1rem; }
+    .ai-reader__heading { gap: .7rem; }
+    .ai-reader__icon { display: grid; place-items: center; width: 2.65rem; height: 2.65rem; border-radius: .8rem; color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); font-size: 1.5rem; flex: none; }
+    h2 { margin: 0; font-size: 1rem; font-weight: 700; }
+    .ai-reader__heading p { margin: .15rem 0 0; font-size: .75rem; color: var(--text-secondary); }
+    .ai-reader__badge { color: var(--primary); font-size: .6rem; letter-spacing: .08em; white-space: nowrap; }
+    .ai-reader__intro { margin: 1rem 0; font-size: .85rem; line-height: 1.7; color: var(--text-secondary); }
+    .ai-reader__summary { margin: 1rem 0; font-size: .9rem; line-height: 1.9; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .ai-reader button { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; border: 1px solid var(--line-divider); border-radius: .65rem; padding: .5rem .8rem; background: var(--btn-regular-bg); color: var(--text-secondary); font: inherit; font-size: .78rem; cursor: pointer; transition: background-color .15s, opacity .15s; }
+    .ai-reader button:hover { background: var(--btn-regular-bg-hover); }
+    .ai-reader button:disabled { cursor: wait; opacity: .55; }
+    .ai-reader button.ai-reader__primary { background: var(--primary); border-color: var(--primary); color: var(--deep-text); font-weight: 600; }
+    .ai-reader button:focus-visible, summary:focus-visible, textarea:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+    .ai-reader__actions { flex-wrap: wrap; gap: .5rem; }
+    .ai-reader__source { margin-left: auto; font-size: .68rem; color: var(--text-secondary); }
+    .ai-reader__status { margin: .6rem 0 0; font-size: .8rem; line-height: 1.6; color: var(--text-secondary); }
+    .ai-reader__status:empty { display: none; }
+    .ai-reader__status[data-error="true"] { color: #d55555; }
+    .ai-reader__chat { margin-top: 1rem; border-top: 1px solid var(--line-divider); }
+    summary { list-style: none; justify-content: space-between; gap: .6rem; padding: .9rem 0 .2rem; font-size: .85rem; cursor: pointer; }
+    summary::-webkit-details-marker { display: none; }
+    summary span { gap: .4rem; }
+    summary span:first-child { color: var(--primary); font-weight: 600; }
+    .ai-reader__chat-hint { font-size: .7rem; color: var(--text-secondary); }
+    .ai-reader__chat-body { padding-top: .9rem; }
+    .ai-reader__suggestions { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .ai-reader__suggestions button { padding: .35rem .55rem; font-size: .7rem; }
+    .ai-reader__messages { max-height: 25rem; overflow-y: auto; overscroll-behavior: contain; margin: .9rem 0; }
+    .ai-reader__messages:empty { display: none; }
+    .ai-reader__messages :global(.ai-message) { margin: .65rem 0; padding: .7rem .85rem; border-radius: .75rem; background: var(--btn-regular-bg); white-space: pre-wrap; overflow-wrap: anywhere; font-size: .85rem; line-height: 1.8; }
+    .ai-reader__messages :global(.ai-message--user) { margin-left: 1.5rem; background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    .ai-reader__messages :global(.ai-message strong) { display: block; margin-bottom: .3rem; color: var(--primary); font-size: .7rem; }
+    .ai-reader__messages :global(.ai-wait) { display: flex; align-items: center; gap: .65rem; min-height: 1.8rem; color: var(--text-secondary); font-size: .78rem; }
+    .ai-reader__messages :global(.ai-wait__dots) { display: inline-flex; align-items: center; gap: .3rem; }
+    .ai-reader__messages :global(.ai-wait__dots span) { width: .35rem; height: .35rem; border-radius: 50%; background: var(--primary); animation: ai-wait-pulse 1.2s ease-in-out infinite; }
+    .ai-reader__messages :global(.ai-wait__dots span:nth-child(2)) { animation-delay: .15s; }
+    .ai-reader__messages :global(.ai-wait__dots span:nth-child(3)) { animation-delay: .3s; }
+    .ai-reader__messages :global(.ai-message--streaming [data-ai-answer]::after) { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: .2rem; vertical-align: -.12em; background: var(--primary); animation: ai-cursor-blink .85s steps(2, start) infinite; }
+    .ai-reader__messages :global(.ai-message--incomplete) { border: 1px dashed color-mix(in srgb, var(--primary) 35%, var(--line-divider)); }
+    .ai-reader__messages :global(.ai-message__notice) { display: block; margin-top: .6rem; color: var(--text-secondary); font-size: .7rem; }
+    @keyframes ai-wait-pulse { 0%, 70%, 100% { opacity: .35; transform: translateY(0); } 35% { opacity: 1; transform: translateY(-3px); } }
+    @keyframes ai-cursor-blink { to { opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .ai-reader__messages :global(.ai-wait__dots span), .ai-reader__messages :global(.ai-message--streaming [data-ai-answer]::after) { animation: none; } }
+    textarea { width: 100%; resize: vertical; min-height: 4.5rem; max-height: 12rem; padding: .7rem .8rem; border: 1px solid var(--line-divider); border-radius: .7rem; background: var(--card-bg); color: var(--text-color); font: inherit; font-size: .85rem; }
+    .ai-reader__form-footer { justify-content: space-between; margin-top: .5rem; }
+    .ai-reader__footnote { margin: .9rem 0 0; font-size: .65rem; line-height: 1.7; color: var(--text-secondary); }
+    @media (max-width: 640px) { .ai-reader { padding: 1rem; } .ai-reader__badge { display: none; } .ai-reader__chat-hint { font-size: .65rem; } .ai-reader__source { width: 100%; margin: .2rem 0 0; } }
+</style>
+
+<script>
+    import { MAX_HISTORY_LENGTH, plainAIText, type AIMessage } from "@utils/ai";
+    import { sseData } from "@utils/sse";
+    type Result = { text: string; model: string; truncated: boolean; cached?: boolean; error?: string };
+    class AIReader extends HTMLElement {
+        private initialized = false;
+        private controller?: AbortController;
+        private stopped = false;
+        private history: AIMessage[] = [];
+        private summaryText = "";
+        disconnectedCallback() { this.controller?.abort(); }
+        connectedCallback() {
+            if (this.initialized) return;
+            this.initialized = true;
+            const generate = this.querySelector<HTMLButtonElement>("[data-ai-generate]")!;
+            const generateLabel = this.querySelector<HTMLElement>("[data-ai-generate-label]")!;
+            const output = this.querySelector<HTMLElement>("[data-ai-summary]")!;
+            const intro = this.querySelector<HTMLElement>("[data-ai-intro]")!;
+            const status = this.querySelector<HTMLElement>("[data-ai-status]")!;
+            const source = this.querySelector<HTMLElement>("[data-ai-source]")!;
+            const copy = this.querySelector<HTMLButtonElement>("[data-ai-copy]")!;
+            const form = this.querySelector<HTMLFormElement>("[data-ai-form]")!;
+            this.querySelector("[data-ai-guide]")!.addEventListener("click", () => {
+                window.dispatchEvent(new CustomEvent("lulu:ask", { detail: "我正在阅读这篇文章，想进一步学习这个主题。请推荐本站 2–3 篇由浅入深的阅读路线，说明每篇的阅读目的。" }));
+            });
+            const question = this.querySelector<HTMLTextAreaElement>("textarea")!;
+            const messages = this.querySelector<HTMLElement>("[data-ai-messages]")!;
+            const setStatus = (text: string, error = false) => { status.textContent = text; status.dataset.error = String(error); };
+            const stop = this.querySelector<HTMLButtonElement>("[data-ai-stop]")!;
+            stop.addEventListener("click", () => { this.stopped = true; this.controller?.abort(); });
+            const setBusy = (busy: boolean) => {
+                this.setAttribute("aria-busy", String(busy));
+                this.querySelectorAll<HTMLButtonElement>("button").forEach(button => button.disabled = busy && button !== stop);
+                stop.hidden = !busy;
+                question.disabled = busy;
+            };
+            const requestAI = async (action: "summary" | "chat", message?: string, onText?: (text: string) => void): Promise<Result> => {
+                const controller = new AbortController();
+                this.controller = controller; this.stopped = false;
+                const timer = window.setTimeout(() => controller.abort(), 105_000);
+                try {
+                    const response = await fetch("/api/ai/", {
+                        method: "POST", headers: { "content-type": "application/json" },
+                        body: JSON.stringify({ action, postId: this.dataset.postId, message, stream: action === "chat", history: action === "chat" ? this.history.slice(-MAX_HISTORY_LENGTH) : [] }),
+                        signal: controller.signal,
+                    });
+                    if (response.ok && response.headers.get("content-type")?.includes("text/event-stream") && response.body) {
+                        let text = "";
+                        for await (const frame of sseData(response.body)) {
+                            const chunk = JSON.parse(frame) as Result & { type: "start" | "delta" | "done" | "error" };
+                            if (chunk.type === "error") throw new Error(chunk.error || "回答传输中断，请重试。");
+                            if (chunk.type === "delta" && typeof chunk.text === "string") { text += chunk.text; onText?.(text); }
+                            if (chunk.type === "done" && chunk.text) { onText?.(chunk.text); return chunk; }
+                        }
+                        throw new Error("回答传输中断，已保留收到的内容，请重试。");
+                    }
+                    let result: Result;
+                    try { result = await response.json(); } catch { throw new Error("AI 接口暂不可用，请检查站点是否已启用服务端 API。"); }
+                    if (!response.ok || !result.text) throw new Error(result.error || "AI 暂时无法回答，请稍后重试。");
+                    return result;
+                } finally { window.clearTimeout(timer); if (this.controller === controller) this.controller = undefined; }
+            };
+            const reportError = (error: unknown) => {
+                if (!this.isConnected) return;
+                if (this.stopped) { setStatus("已停止生成，已收到的内容会保留。可继续提问或重试。"); return; }
+                setStatus(error instanceof Error && error.name === "AbortError" ? "等待响应超时，请稍后重试。" : error instanceof Error ? error.message : "网络连接失败，请稍后重试。", true);
+            };
+            generate.addEventListener("click", async () => {
+                setBusy(true); generateLabel.textContent = "正在阅读文章…"; setStatus("智谱 GLM 正在整理重点，请稍候…");
+                try {
+                    const result = await requestAI("summary");
+                    this.summaryText = result.text; output.textContent = result.text;
+                    output.hidden = false; intro.hidden = true; copy.hidden = false;
+                    source.textContent = `${result.model}${result.cached ? " · 已缓存" : ""}`;
+                    setStatus(result.truncated ? "这篇文章较长，总结基于开头、中间和结尾的节选。" : "");
+                } catch (error) { reportError(error); }
+                finally { setBusy(false); generateLabel.textContent = this.summaryText ? "再次查看总结" : "生成文章总结"; }
+            });
+            copy.addEventListener("click", async () => {
+                try { await navigator.clipboard.writeText(this.summaryText); setStatus("总结已复制。"); }
+                catch { setStatus("复制失败，请选择总结文字后手动复制。", true); }
+            });
+            const appendMessage = (role: "user" | "model", text: string) => {
+                const node = document.createElement("div"); node.className = `ai-message ai-message--${role}`;
+                const author = document.createElement("strong"); author.textContent = role === "user" ? "你" : "智谱 GLM";
+                const content = document.createElement("span"); content.dataset.aiAnswer = ""; content.textContent = text;
+                node.append(author, content); messages.append(node); messages.scrollTop = messages.scrollHeight;
+                return node;
+            };
+            form.addEventListener("submit", async event => {
+                event.preventDefault(); const message = question.value.trim();
+                if (!message || question.disabled) return;
+                setBusy(true); setStatus("");
+                const userNode = appendMessage("user", message);
+                const answerNode = appendMessage("model", "");
+                answerNode.setAttribute("aria-live", "off");
+                const answerText = answerNode.querySelector<HTMLElement>("[data-ai-answer]")!;
+                const waiting = document.createElement("div"); waiting.className = "ai-wait"; waiting.setAttribute("role", "status");
+                const dots = document.createElement("span"); dots.className = "ai-wait__dots"; dots.setAttribute("aria-hidden", "true");
+                for (let index = 0; index < 3; index++) dots.append(document.createElement("span"));
+                const waitingLabel = document.createElement("span"); waitingLabel.textContent = "正在思考…";
+                waiting.append(dots, waitingLabel); answerNode.append(waiting); messages.scrollTop = messages.scrollHeight;
+                let receivedText = false;
+                try {
+                    const result = await requestAI("chat", message, text => {
+                        const follow = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 64;
+                        receivedText = true; waiting.hidden = true; answerNode.classList.add("ai-message--streaming");
+                        answerText.textContent = plainAIText(text);
+                        setStatus("正在生成回答…");
+                        if (follow) messages.scrollTop = messages.scrollHeight;
+                    });
+                    answerText.textContent = result.text;
+                    this.history.push({ role: "user", text: message }, { role: "model", text: result.text.slice(0, 6_000) });
+                    this.history = this.history.slice(-MAX_HISTORY_LENGTH); question.value = "";
+                    setStatus(result.truncated ? "回答基于长文节选。如需细节，可在问题中引用相关段落。" : "回答已完成。");
+                } catch (error) {
+                    if (receivedText) {
+                        answerNode.classList.add("ai-message--incomplete");
+                        const notice = document.createElement("span"); notice.className = "ai-message__notice"; notice.textContent = "回答未完成 · 可重试"; answerNode.append(notice);
+                    } else { userNode.remove(); answerNode.remove(); }
+                    reportError(error);
+                } finally {
+                    waiting.remove(); answerNode.classList.remove("ai-message--streaming"); answerNode.removeAttribute("aria-live");
+                    setBusy(false); if (this.isConnected) question.focus();
+                }
+            });
+            this.querySelectorAll<HTMLButtonElement>("[data-ai-suggestion]").forEach(button => button.addEventListener("click", () => {
+                question.value = button.dataset.aiSuggestion || ""; form.requestSubmit();
+            }));
+            this.querySelector("[data-ai-clear]")!.addEventListener("click", () => { this.history = []; messages.replaceChildren(); question.value = ""; setStatus(""); question.focus(); });
+            question.addEventListener("keydown", event => { if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); form.requestSubmit(); } });
+        }
+    }
+    if (!customElements.get("ai-reader")) customElements.define("ai-reader", AIReader);
+</script>

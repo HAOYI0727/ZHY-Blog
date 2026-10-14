@@ -1,0 +1,235 @@
+---
+interface Props { postId: string }
+const { postId } = Astro.props;
+---
+
+<reading-companion data-post-id={postId} data-pagefind-ignore>
+    <section class="study-footer" aria-label="AI 阅读巩固">
+        <strong>读完了，巩固一下</strong>
+        <p>梳理术语，或用三道题检查理解。阅读中选中正文文字，也可以在段落旁让 AI 讲解、举例或翻译。</p>
+        <div class="study-actions">
+            <button type="button" data-study-task="glossary">术语速查</button>
+            <button type="button" data-study-task="review">复习自测</button>
+        </div>
+        <details class="study-manual">
+            <summary>手动输入选段</summary>
+            <form data-study-passage-form>
+                <label>想理解的文字<textarea rows="3" maxlength="1200" required placeholder="粘贴文章中的一句话、公式或概念（最多 1200 字）…"></textarea></label>
+                <button type="submit">开始选段讲解</button>
+            </form>
+        </details>
+        <p class="study-note">点击后才调用 AI；内容仅供参考，请以正文为准。</p>
+        <div data-study-home></div>
+    </section>
+    <template data-study-template>
+        <section class="study-panel" data-study-panel data-pagefind-ignore aria-label="AI 段落与复习助手">
+            <header><strong data-study-title>选段阅读助手</strong><button type="button" data-study-close aria-label="关闭阅读辅助">×</button></header>
+            <p class="study-quote" data-study-quote hidden></p>
+            <div class="study-actions" data-study-passage-actions>
+                <button type="button" data-study-action="explain">通俗讲解</button>
+                <button type="button" data-study-action="example">举个例子</button>
+                <button type="button" data-study-action="translate">翻译 / 改写</button>
+            </div>
+            <p class="study-note" data-study-selection-note>选择一种方式，点击后开始生成。</p>
+            <div class="study-wait" data-study-wait hidden role="status"><span aria-hidden="true">● ● ●</span> 正在思考…</div>
+            <div class="study-result" data-study-result aria-label="AI 阅读辅助结果"></div>
+            <button type="button" data-study-reference hidden>查看参考思路</button>
+            <section class="study-reference" data-study-reference-section hidden aria-label="复习参考思路">
+                <strong>参考思路 · 回到正文核对</strong>
+                <div class="study-result" data-study-reference-result></div>
+            </section>
+            <p class="study-status" data-study-status role="status" aria-live="polite"></p>
+            <div class="study-actions">
+                <button type="button" data-study-stop hidden>停止生成</button>
+                <button type="button" data-study-retry hidden>重试</button>
+                <button type="button" data-study-copy hidden>复制结果</button>
+            </div>
+            <p class="study-note">GLM-4.7-Flash · 点击后将选段与文章发送至智谱。刷新或离开页面后清空。</p>
+        </section>
+    </template>
+</reading-companion>
+
+<style is:global>
+    reading-companion { display: block; margin: 1.5rem 0; }
+    .study-footer, .study-panel { padding: 1rem; border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--line-divider)); border-radius: .9rem; background: var(--card-bg); color: var(--text-color); font-size: .85rem; line-height: 1.7; overflow-wrap: anywhere; }
+    .study-footer > strong, .study-panel header strong { color: var(--primary); font-weight: 700; font-size: .95rem; }
+    .study-footer > p { margin: .5rem 0; color: var(--text-secondary); }
+    .study-panel { margin: 1rem 0; box-shadow: 0 3px 15px rgb(0 0 0 / 4%); scroll-margin-top: 6rem; }
+    .study-panel [hidden] { display: none !important; }
+    .study-panel header { display: flex; gap: .6rem; align-items: center; justify-content: space-between; }
+    .study-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin-top: .6rem; }
+    .study-footer button, .study-panel button { border: 1px solid var(--line-divider); padding: .4rem .7rem; border-radius: .6rem; font: inherit; font-size: .78rem; background: var(--btn-regular-bg); color: var(--text-secondary); cursor: pointer; }
+    .study-footer button:hover, .study-panel button:hover { background: var(--btn-regular-bg-hover); }
+    .study-footer button:disabled, .study-panel button:disabled { opacity: .55; cursor: wait; }
+    .study-panel button[aria-pressed="true"] { color: var(--primary); border-color: var(--primary); }
+    .study-footer button:focus-visible, .study-panel button:focus-visible, .study-manual textarea:focus-visible, .study-manual summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+    .study-manual { margin-top: .6rem; }
+    .study-manual summary { cursor: pointer; color: var(--text-secondary); font-size: .75rem; }
+    .study-manual label { display: block; margin-top: .6rem; font-size: .75rem; }
+    .study-manual textarea { display: block; width: 100%; resize: vertical; max-height: 12rem; margin: .4rem 0; padding: .6rem; border: 1px solid var(--line-divider); border-radius: .6rem; font: inherit; background: var(--card-bg); color: var(--text-color); }
+    .study-panel .study-quote { margin: .65rem 0; padding: .6rem .75rem; border-left: 3px solid var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); white-space: pre-wrap; max-height: 9rem; overflow-y: auto; font-size: .8rem; }
+    .study-panel .study-result { margin-top: .7rem; white-space: pre-wrap; font-size: .85rem; line-height: 1.85; }
+    .study-panel .study-result.is-streaming::after { content: "▍"; color: var(--primary); animation: study-pulse 1s steps(2, start) infinite; }
+    .study-panel .study-reference { margin-top: .9rem; padding-top: .8rem; border-top: 1px solid var(--line-divider); }
+    .study-panel .study-reference > strong { font-size: .8rem; color: var(--primary); }
+    .study-panel .study-status { margin: .6rem 0; font-size: .75rem; color: var(--text-secondary); }
+    .study-panel .study-status[data-error="true"] { color: #d55555; }
+    .study-panel .study-note, .study-footer .study-note { margin: .6rem 0 0; font-size: .67rem; line-height: 1.6; color: var(--text-secondary); }
+    .study-panel .study-wait { margin: .8rem 0; color: var(--text-secondary); font-size: .8rem; }
+    .study-panel .study-wait span { color: var(--primary); animation: study-pulse 1.2s ease-in-out infinite; }
+    @keyframes study-pulse { 50% { opacity: .25; } }
+    @media (prefers-reduced-motion: reduce) { .study-panel .study-wait span, .study-panel .study-result.is-streaming::after { animation: none; } }
+</style>
+
+<script>
+    import { plainAIText } from "@utils/ai";
+    import { sseData } from "@utils/sse";
+    import { MAX_PASSAGE_LENGTH, passageAnchor, passagePrompt, glossaryPrompt, reviewPrompt, referencePrompt, type PassageAction } from "@utils/reading-assistance";
+    type Task = PassageAction | "glossary" | "review";
+    class ReadingCompanion extends HTMLElement {
+        private initialized = false;
+        private lifetime = new AbortController();
+        private controller?: AbortController;
+        private panel?: HTMLElement;
+        private selectionTimer?: number;
+        disconnectedCallback() {
+            this.controller?.abort(); this.lifetime.abort();
+            window.clearTimeout(this.selectionTimer); this.panel?.remove();
+        }
+        connectedCallback() {
+            if (this.initialized) return;
+            this.initialized = true;
+            const article = this.closest("#post-container")?.querySelector<HTMLElement>(".markdown-content");
+            if (!article) return;
+            const fragment = this.querySelector<HTMLTemplateElement>("[data-study-template]")!.content.cloneNode(true) as DocumentFragment;
+            const panel = fragment.querySelector<HTMLElement>("[data-study-panel]")!; this.panel = panel;
+            const pick = <T extends HTMLElement = HTMLElement>(name: string) => panel.querySelector<T>(`[data-study-${name}]`)!;
+            const home = this.querySelector<HTMLElement>("[data-study-home]")!;
+            const output = pick("result"), referenceOutput = pick("reference-result"), referenceSection = pick("reference-section");
+            const quote = pick("quote"), title = pick("title"), status = pick("status"), waiting = pick("wait");
+            const reference = pick<HTMLButtonElement>("reference"), stop = pick<HTMLButtonElement>("stop"), retry = pick<HTMLButtonElement>("retry"), copy = pick<HTMLButtonElement>("copy");
+            const passageActions = pick("passage-actions"), selectionNote = pick("selection-note");
+            let passage = "", questions = "", currentTask: Task = "explain";
+            let lastRequest: { task: Task; prompt: string; reference: boolean } | undefined;
+            const titles: Record<Task, string> = { explain: "选段 · 通俗讲解", example: "选段 · 举个例子", translate: "选段 · 翻译 / 改写", glossary: "术语速查", review: "复习自测 · 先独立思考" };
+            const setStatus = (text: string, error = false) => { status.textContent = text; status.dataset.error = String(error); };
+            const setBusy = (busy: boolean) => {
+                panel.setAttribute("aria-busy", String(busy));
+                this.querySelectorAll<HTMLButtonElement>("button").forEach(button => button.disabled = busy);
+                panel.querySelectorAll<HTMLButtonElement>("button").forEach(button => button.disabled = busy && button !== stop && !button.hasAttribute("data-study-close"));
+                stop.hidden = !busy;
+            };
+            const reset = () => {
+                this.controller?.abort(); this.controller = undefined; setBusy(false);
+                output.textContent = ""; output.classList.remove("is-streaming"); referenceOutput.textContent = ""; referenceOutput.classList.remove("is-streaming");
+                referenceSection.hidden = true; reference.hidden = true; questions = "";
+                copy.hidden = true; retry.hidden = true; waiting.hidden = true; setStatus("");
+            };
+            const openPassage = (text: string, anchor: Element) => {
+                reset(); currentTask = "explain"; passage = text.slice(0, MAX_PASSAGE_LENGTH); title.textContent = "选段阅读助手";
+                quote.textContent = passage; quote.hidden = false; passageActions.hidden = false; selectionNote.hidden = false;
+                pick("selection-note").textContent = text.length > MAX_PASSAGE_LENGTH ? "选段较长，仅使用前 1200 字。请选择讲解、举例或翻译。" : "选择一种方式，点击后开始生成。";
+                panel.querySelectorAll("[data-study-action]").forEach(button => button.removeAttribute("aria-pressed"));
+                anchor.after(panel);
+            };
+            const run = async (task: Task, prompt: string, showReference = false) => {
+                this.controller?.abort();
+                const controller = new AbortController(); this.controller = controller;
+                lastRequest = { task, prompt, reference: showReference }; currentTask = task;
+                const target = showReference ? referenceOutput : output;
+                target.textContent = ""; target.classList.remove("is-streaming");
+                if (showReference) referenceSection.hidden = false;
+                else { referenceSection.hidden = true; reference.hidden = true; questions = ""; }
+                title.textContent = titles[task]; selectionNote.hidden = true;
+                panel.querySelectorAll<HTMLElement>("[data-study-action]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.studyAction === task)));
+                setBusy(true); waiting.hidden = false; retry.hidden = true; copy.hidden = true; setStatus("正在连接免费模型…");
+                const timer = window.setTimeout(() => controller.abort("timeout"), 105_000);
+                try {
+                    const response = await fetch("/api/ai/", { method: "POST", headers: { "content-type": "application/json" }, signal: controller.signal,
+                        body: JSON.stringify({ action: "chat", postId: this.dataset.postId, message: prompt, history: [], stream: true }) });
+                    if (!response.ok || !response.body || !response.headers.get("content-type")?.includes("text/event-stream")) {
+                        const error = await response.json().catch(() => ({})); throw new Error(error.error || "阅读辅助暂不可用，请稍后重试。");
+                    }
+                    let text = "", done = false;
+                    for await (const data of sseData(response.body)) {
+                        if (this.controller !== controller) return;
+                        const frame = JSON.parse(data) as { type: string; text?: string; error?: string; truncated?: boolean };
+                        if (frame.type === "error") throw new Error(frame.error || "回答传输中断。");
+                        if (frame.type === "delta" && typeof frame.text === "string") {
+                            text += frame.text; waiting.hidden = true; target.textContent = plainAIText(text); target.classList.add("is-streaming"); setStatus("正在生成…");
+                        }
+                        if (frame.type === "done" && frame.text) {
+                            target.textContent = frame.text; done = true;
+                            if (task === "review" && !showReference) { questions = frame.text; reference.hidden = false; }
+                            setStatus(frame.truncated ? "基于长文节选，请结合完整正文核对。" : "已完成，请结合正文核对。"); break;
+                        }
+                    }
+                    if (!done) throw new Error("回答传输中断，已保留收到的内容。");
+                } catch (error) {
+                    if (this.controller !== controller || !this.isConnected) return;
+                    setStatus(controller.signal.aborted ? controller.signal.reason === "timeout" ? "等待超时，可重试。" : "已停止生成，可重试。" : error instanceof Error ? error.message : "网络连接失败，请重试。", !controller.signal.aborted);
+                    if (target.textContent) setStatus(`${status.textContent} 已保留部分内容，回答尚未完成。`, !controller.signal.aborted);
+                    retry.hidden = false;
+                } finally {
+                    window.clearTimeout(timer);
+                    if (this.controller === controller) {
+                        this.controller = undefined; target.classList.remove("is-streaming"); waiting.hidden = true;
+                        setBusy(false); copy.hidden = !(output.textContent || referenceOutput.textContent);
+                    }
+                }
+            };
+            panel.querySelectorAll<HTMLButtonElement>("[data-study-action]").forEach(button => button.addEventListener("click", () => {
+                const action = button.dataset.studyAction as PassageAction;
+                void run(action, passagePrompt(action, passage));
+            }));
+            this.querySelectorAll<HTMLButtonElement>("[data-study-task]").forEach(button => button.addEventListener("click", () => {
+                reset(); home.append(panel); quote.hidden = true; passageActions.hidden = true;
+                const task = button.dataset.studyTask as "glossary" | "review";
+                void run(task, task === "review" ? reviewPrompt : glossaryPrompt);
+            }));
+            reference.addEventListener("click", () => { if (questions) void run("review", referencePrompt(questions), true); });
+            stop.addEventListener("click", () => this.controller?.abort("stopped"));
+            retry.addEventListener("click", () => { if (lastRequest) void run(lastRequest.task, lastRequest.prompt, lastRequest.reference); });
+            copy.addEventListener("click", async () => {
+                try { await navigator.clipboard.writeText([output.textContent, referenceOutput.textContent].filter(Boolean).join("\n\n")); setStatus("已复制。"); }
+                catch { setStatus("复制失败，可选中文字手动复制。", true); }
+            });
+            pick("close").addEventListener("click", () => { reset(); panel.remove(); });
+            this.querySelector<HTMLFormElement>("[data-study-passage-form]")!.addEventListener("submit", event => {
+                event.preventDefault(); const input = this.querySelector<HTMLTextAreaElement>("textarea")!;
+                if (this.controller || !input.value.trim()) return;
+                openPassage(input.value.trim(), input.closest("details")!); panel.querySelector<HTMLButtonElement>("[data-study-action]")!.focus();
+            });
+            let selecting = false;
+            const captureSelection = () => {
+                if (this.controller || selecting) return;
+                const selection = window.getSelection();
+                if (!selection || selection.isCollapsed || selection.rangeCount !== 1) return;
+                const range = selection.getRangeAt(0);
+                if (!article.contains(range.startContainer) || !article.contains(range.endContainer)) return;
+                const insideTool = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest("[data-study-panel], button, input, textarea");
+                if (insideTool(range.startContainer) || insideTool(range.endContainer)) return;
+                if (panel.isConnected && article.contains(panel) && range.intersectsNode(panel)) return;
+                const text = selection.toString().trim(); if (text.length < 2 || (text.slice(0, MAX_PASSAGE_LENGTH) === passage && panel.isConnected && currentTask !== "glossary" && currentTask !== "review")) return;
+                const end = range.endContainer === article ? article.childNodes[Math.max(0, range.endOffset - 1)] : range.endContainer;
+                const element = end instanceof Element ? end : end?.parentElement;
+                // Markdown wraps headings in sections; place help after the actual paragraph,
+                // and outside a list/table/code block so their DOM remains valid.
+                const anchor = element ? passageAnchor(element) : undefined;
+                if (anchor && anchor !== article && article.contains(anchor)) openPassage(text, anchor);
+            };
+            const scheduleSelection = () => {
+                window.clearTimeout(this.selectionTimer);
+                this.selectionTimer = window.setTimeout(captureSelection, 200);
+            };
+            document.addEventListener("selectionchange", scheduleSelection, { signal: this.lifetime.signal });
+            document.addEventListener("pointerdown", event => { if (event.target instanceof Node && article.contains(event.target)) selecting = true; }, { signal: this.lifetime.signal });
+            document.addEventListener("pointerup", () => { selecting = false; scheduleSelection(); }, { signal: this.lifetime.signal });
+            document.addEventListener("pointercancel", () => { selecting = false; }, { signal: this.lifetime.signal });
+            document.addEventListener("keydown", event => {
+                if (event.key === "Escape" && panel.isConnected && panel.contains(document.activeElement)) { reset(); panel.remove(); }
+            }, { signal: this.lifetime.signal });
+        }
+    }
+    if (!customElements.get("reading-companion")) customElements.define("reading-companion", ReadingCompanion);
+</script>

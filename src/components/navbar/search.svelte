@@ -2,7 +2,6 @@
 import { onDestroy, onMount } from "svelte";
 
 import type { SearchResult } from "@/global";
-import { url } from "@utils/url";
 import { navigateToPage } from "@utils/navigation";
 import { onClickOutside } from "@utils/widget";
 import { i18n } from "@i18n/translation";
@@ -22,24 +21,12 @@ let isMobilePanelOpen = $state(false);
 let selectedIndex = $state(-1);
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 let requestSequence = 0;
+let activeSearch: AbortController | undefined;
 let lastFocusedElement: HTMLElement | null = null;
 
 const panelVisible = $derived(
     isMobilePanelOpen || (isDesktopSearchExpanded && keyword.trim().length > 0),
 );
-
-const fakeResult: SearchResult[] = [
-    {
-        url: url("/"),
-        meta: { title: "This Is a Fake Search Result" },
-        excerpt: "Because the search cannot work in the <mark>dev</mark> environment.",
-    },
-    {
-        url: url("/"),
-        meta: { title: "If You Want to Test the Search" },
-        excerpt: "Try running <mark>pnpm build && pnpm preview</mark> instead.",
-    },
-];
 
 function focusSearchInput(desktop: boolean) {
     requestAnimationFrame(() => {
@@ -101,6 +88,15 @@ function clearSearch() {
     focusSearchInput(window.matchMedia("(min-width: 1280px)").matches);
 }
 
+function askAI() {
+    const topic = keyword.trim();
+    if (!topic) return;
+    dismissSearch();
+    window.dispatchEvent(new CustomEvent("lulu:ask", {
+        detail: `我想找与「${topic.slice(0, 1000)}」相关的本站文章，请推荐并简要说明适合谁阅读。`,
+    }));
+}
+
 function selectResult(index: number) {
     if (result.length === 0) {
         selectedIndex = -1;
@@ -145,6 +141,7 @@ function handleSearchKeydown(event: KeyboardEvent) {
 }
 
 function handleResultClick(event: MouseEvent, resultUrl: string) {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     dismissSearch();
     keyword = "";
@@ -154,11 +151,10 @@ function handleResultClick(event: MouseEvent, resultUrl: string) {
     navigateToPage(resultUrl);
 }
 
-async function search(query: string) {
+async function search(query: string, currentRequest = ++requestSequence) {
     const normalizedQuery = query.trim();
-    if (!normalizedQuery || !initialized) return;
+    if (!normalizedQuery || !initialized || currentRequest !== requestSequence) return;
 
-    const currentRequest = ++requestSequence;
     status = "loading";
 
     try {
@@ -169,7 +165,14 @@ async function search(query: string) {
                 response.results.slice(0, 12).map((item) => item.data()),
             );
         } else if (import.meta.env.DEV) {
-            searchResults = fakeResult;
+            const controller = new AbortController();
+            activeSearch = controller;
+            const timer = setTimeout(() => controller.abort(), 10_000);
+            try {
+                const response = await fetch(`/api/search/?q=${encodeURIComponent(normalizedQuery.slice(0, 100))}`, { signal: controller.signal });
+                if (!response.ok) throw new Error("Local search unavailable");
+                searchResults = (await response.json()).results;
+            } finally { clearTimeout(timer); }
         } else {
             if (currentRequest === requestSequence) {
                 result = [];
@@ -224,6 +227,7 @@ function handlePagefindReady() {
 }
 
 function handlePagefindError() {
+    requestSequence += 1;
     pagefindLoaded = false;
     initialized = true;
     if (keyword.trim()) status = "unavailable";
@@ -253,9 +257,10 @@ onMount(() => {
 
 $effect(() => {
     const query = keyword.trim();
+    const currentRequest = ++requestSequence;
     if (debounceTimer) clearTimeout(debounceTimer);
+    activeSearch?.abort();
     if (!query) {
-        requestSequence += 1;
         result = [];
         status = "idle";
         selectedIndex = -1;
@@ -265,8 +270,10 @@ $effect(() => {
         status = "loading";
         return;
     }
+    result = [];
+    status = "loading";
     selectedIndex = -1;
-    debounceTimer = setTimeout(() => search(query), 250);
+    debounceTimer = setTimeout(() => search(query, currentRequest), 250);
 });
 
 $effect(() => {
@@ -275,6 +282,8 @@ $effect(() => {
 });
 
 onDestroy(() => {
+    requestSequence += 1;
+    activeSearch?.abort();
     if (debounceTimer) clearTimeout(debounceTimer);
     if (typeof document !== "undefined") {
         document.getElementById("navbar")?.classList.remove("is-searching");
@@ -305,6 +314,7 @@ onDestroy(() => {
         aria-keyshortcuts="Control+K Meta+K /"
         placeholder={i18n(I18nKey.search)}
         bind:value={keyword}
+        maxlength="100"
         onfocus={expandDesktopSearch}
         onkeydown={handleSearchKeydown}
         class="transition-all pl-10 pr-9 text-sm bg-transparent outline-0 h-full {isDesktopSearchExpanded ? 'w-full opacity-100' : 'w-0 opacity-0 pointer-events-none'} text-black/60 dark:text-white/60"
@@ -352,6 +362,7 @@ onDestroy(() => {
                 aria-haspopup="listbox"
                 placeholder={i18n(I18nKey.searchHint)}
                 bind:value={keyword}
+                maxlength="100"
                 onkeydown={handleSearchKeydown}
                 class="pl-10 pr-11 w-full h-full text-sm bg-transparent outline-0 text-black/60 dark:text-white/60"
             >
@@ -367,6 +378,11 @@ onDestroy(() => {
             {/if}
         </div>
 
+        {#if keyword.trim()}
+            <button type="button" onclick={askAI} class="ai-search-assist">
+                💬 让 AI 帮我找文章 <span>免费 · 按主题推荐</span>
+            </button>
+        {/if}
         <div
             id="search-results"
             role={status === "ready" ? "listbox" : undefined}
@@ -421,6 +437,10 @@ onDestroy(() => {
 </div>
 
 <style>
+    .ai-search-assist { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; margin-top: .6rem; padding: .65rem .8rem; border-radius: .75rem; background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); font-size: .8rem; text-align: left; }
+    .ai-search-assist:hover { background: color-mix(in srgb, var(--primary) 17%, transparent); }
+    .ai-search-assist:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .ai-search-assist span { opacity: .65; font-size: .65rem; }
     input:focus { outline: 0; }
     :global(.search-panel) {
         max-height: min(34rem, calc(100dvh - 6.25rem));

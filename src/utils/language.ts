@@ -1,3 +1,4 @@
+import { getPreference, setPreference } from "@utils/storage";
 import {
     type SupportedLanguage,
     SUPPORTED_LANGUAGES,
@@ -20,17 +21,12 @@ const LANG_STORAGE_KEY = "selected-language";
 
 // 存储语言设置
 export function setStoredLanguage(lang: string): void {
-    if (typeof localStorage !== "undefined") {
-        localStorage.setItem(LANG_STORAGE_KEY, lang);
-    }
+    setPreference(LANG_STORAGE_KEY, lang);
 }
 
 // 获取存储的语言设置
 export function getStoredLanguage(): string | null {
-    if (typeof localStorage !== "undefined") {
-        return localStorage.getItem(LANG_STORAGE_KEY);
-    }
-    return null;
+    return getPreference(LANG_STORAGE_KEY);
 }
 
 // 获取默认语言配置
@@ -180,14 +176,14 @@ export function initTranslateService(): void {
         if (key === "to") { // translate.js 使用 "to" 存储目标语言
             setStoredLanguage(value);
         } else {
-            localStorage.setItem(key, value);
+            setPreference(key, value);
         }
     };
     translate.storage.get = function (key: string) {
         if (key === "to") {
             return getStoredLanguage();
         }
-        return localStorage.getItem(key);
+        return getPreference(key);
     };
     // 启动翻译监听
     translate.listener.start();
